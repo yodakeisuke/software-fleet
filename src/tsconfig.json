@@ -1,4 +1,11 @@
 {
   "extends": "./.claude-plugin/types/tsconfig.json",
-  "include": [".claude-plugin/types", "hooks", "logic", "engine-protocol", "skills", "tests"]
+  "include": [
+    ".claude-plugin/types",
+    "hooks",
+    "logic",
+    "types",
+    "skills",
+    "tests"
+  ]
 }

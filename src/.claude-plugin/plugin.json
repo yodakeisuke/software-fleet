@@ -6,5 +6,5 @@
     "name": "Keisuke Yoda"
   },
   "license": "MIT",
-  "types": "./engine-protocol/index.d.ts"
+  "types": "./types/fleet.d.ts"
 }

@@ -5,19 +5,16 @@ export type NonEmptyString = string & { readonly brand: 'NonEmptyString' }
 export type PositiveInt = number & { readonly brand: 'PositiveInt' }
 export type NonEmptyList<T> = readonly [T, ...T[]]
 
-// tool の入力スキーマ（JSON Schema のうち fleet が使う部分）。mod はこれで入力も検査する
-export type JsonSchema = {
+// tool の入力スキーマ（JSON Schema のうち fleet が使う部分）。mod はこれで入力の形も検査する
+export type JsonSchemaNode = {
   type?: 'object' | 'array' | 'string'
   description?: string
-  properties?: Readonly<Record<string, JsonSchema>>
+  properties?: Readonly<Record<string, JsonSchemaNode>>
   required?: readonly string[]
-  items?: JsonSchema
-  minItems?: number
-  maxItems?: number
+  items?: JsonSchemaNode
   minLength?: number
-  maxLength?: number
   enum?: readonly string[]
-  oneOf?: readonly JsonSchema[]
+  oneOf?: readonly JsonSchemaNode[]
 }
 
 // fleet の状態（artifact の DB の文書）。置き場所は fleet/<書き手>/...、書くのはその書き手だけ

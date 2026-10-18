@@ -1,4 +1,4 @@
-import type { NonEmptyList as List, Result as Data } from '../../engine-protocol'
+import type { NonEmptyList as List, Result as Data } from '../../types/fleet'
 import { Result } from './result'
 
 // --- public interface

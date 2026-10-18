@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import type { Ship } from '../../../engine-protocol'
+import type { Ship } from '../../../types/fleet'
 import { Turn } from '../../../logic/turn/turn'
 
 const converged: Ship = { state: 'converged', since: '2026-10-18T10:00:00.000Z' }

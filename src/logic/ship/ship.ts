@@ -1,4 +1,4 @@
-import type { Result as Data, ShipName } from '../../engine-protocol'
+import type { Result as Data, ShipName } from '../../types/fleet'
 import { Result } from '../primitive/result'
 
 // --- public interface

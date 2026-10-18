@@ -1,4 +1,4 @@
-import type { Review, Ship as ShipStatus, ShipName } from '../../engine-protocol'
+import type { Review, Ship as ShipStatus, ShipName } from '../../types/fleet'
 
 // --- public interface
 export const Turn = {

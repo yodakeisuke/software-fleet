@@ -1,4 +1,4 @@
-import type { PositiveInt as Count, Result as Data } from '../../engine-protocol'
+import type { PositiveInt as Count, Result as Data } from '../../types/fleet'
 import { Result } from './result'
 
 // --- public interface
