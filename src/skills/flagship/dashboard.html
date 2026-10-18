@@ -186,9 +186,7 @@ const render = () => {
 const glance = () => {
   if (!S.db) return `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
   if (!S.loaded) return '<p class="req wait">読み込み中</p>'
-  // 判断の回答を flagship に送るには、この artifact ごとに 1 回の同意が要る。答える前にここで済ませる
-  const permit = ['prompt', 'denied'].includes(S.permit) ? `<button class="act pri" data-act="permit"><span class="al">flagship への送信を許可する</span><span class="ae">判断に答えるのに、最初の 1 回だけ必要です</span></button>` : ''
-  const brief = permit + (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.fleet.brief ? `<h1 class="req">${esc(S.fleet.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
+  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.fleet.brief ? `<h1 class="req">${esc(S.fleet.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const ships = SHIPS.map(ship => {
     const v = view(ship), on = required(ship, S.reviews[ship])
     return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span></span><span class="snote">${esc(v.note)}</span></a>
@@ -362,16 +360,6 @@ const resend = async (askId, button) => {
   S.failed = `判断の回答を flagship に送れませんでした（${sent.error?.code ?? 'unknown'}）。ページを再読み込みすると、送信の許可をもう一度聞かれます`
   render()
 }
-// 送信の同意を求める。一度断っていれば、platform の許可パネルを開く（ページを開き直さずに済む）
-const permit = async () => {
-  const permissions = await claude.use('permissions')
-  if (!permissions) return
-  if (S.permit === 'denied') await permissions.manage().catch(() => {})
-  else await permissions.request(['comments'])
-  S.permit = await permissions.state('comments')
-  if (S.permit === 'granted') S.failed = ''
-  render()
-}
 const undo = key => {
   const done = S.done[key]
   if (!done) return
@@ -395,7 +383,6 @@ document.addEventListener('click', event => {
   if (act === 'go') go(Number(to))
   if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
   if (act === 'close') { S.open = null; renderSheet() }
-  if (act === 'permit') permit()
 })
 document.addEventListener('input', event => { if (event.target.dataset.free) S.drafts[event.target.dataset.free] = event.target.value })
 addEventListener('hashchange', render)
@@ -412,7 +399,6 @@ const start = async () => {
   if (!S.db) return render()
   const canSend = S.comments ? await S.comments.canSendToClaude().catch(error => error?.code ?? 'error') : 'comments なし'
   if (canSend !== 'available') S.failed = `このビューからは判断の回答を flagship に送れません（${canSend}）`
-  S.permit = await (await claude.use('permissions'))?.state('comments')
   listen('fleet', docs => {
     S.fleet = docs.flagship ?? {}
     S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]]))
