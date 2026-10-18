@@ -15,7 +15,9 @@
 
 ## fleet構造
 ### flagship
-- 全体の状況とダッシュボードの管理
+- shipsの起動
+- ships間で議論が収束しなかった場合の調停
+- 無視できないトレードオフや、リスクを伴う判断のみユーザへエスカレーションする
 ### ships
 - requirement
   誰が何をできるようになるのか。要求ごとに端的に１行ずつ書く。
@@ -51,35 +53,28 @@
   - ops
     - 保守運用の責任者として、運用で困らないように指摘を加え、必要なら開発にも加わる
 
-### escorts
-- 未定。skillを作っていく中で適切な責務を見出していく
-
 ### skill の構成
-- `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`
+- `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
+
+## ui指針
+- 例えば Tinder UI のような、スマフォでの楽で直感的な体験をファーストに考える
 
 ### 技術的原則
-- 状態はファイルで保存。jsonで構造化されたものを全てのセッションが共有する
-  - 置き場所は `~/.software-fleet/fleets/<fleet-id>/`。repo の外に置き、worktree や repo をまたいで同じ状態を見る。コミットしない
-  - event sourcing。`events/` が正で、`state/<area>.json` はそこからの投影。既読位置は各セッションの `$.state` に持つ
-    - 1イベント1ファイル（`events/<時刻>-<セッションID>.json`）。$.fs に追記がなく、1つのファイルへの読み書きでは同時更新が消えるため
-  - 更新ツールの入力は1件の変更（イベント）。状態全体は入力にも出力にも載せない
-  - fleet の構成（ship・宛先のセッションID・artifact URL）も state の1つ（`state/fleet.json`）
-  - view の html は保存しない。publish 時に state と template（mod に同梱）から一時ファイルへ書き出す
-- html arttifactはangentが書かない。状態から投影される格好とする。つまり事前定義のtemplateに流し込まれる
-- mod の使い所
-  - 専用toolの登録: 状態の更新はこのtoolだけ。ship ごとに、その ship の成果物に合わせた型付きtoolを持つ
-    - 同梱 skill の呼び出し（tool.call の Skill）を合図に $.tool.register({ ..., isDeferred: false }) する。登録はそのセッション限りで、他セッションを汚さない
-    - 合図の引数（fleet-id と ship名）で、登録するtoolを決める。見えるのは自分の ship のtoolと、全 ship 共通の読み取りtoolだけ
-    - ship ごとの定義（stateの型・toolの入力スキーマ・イベントへの変換・viewのtemplate）は `src/skills/<ship>/` に SKILL.md と並べて置く
-      - ここには $ を使わない純粋な定義だけを置く。$ は import 先の関数へ渡せない（validate が拒否する）。I/O は hooks 側で行う
-    - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
-  - 直接編集の禁止: fleet が持つ状態json・view への Edit/Write を tool.call で拒否する
-    - 効かせるのは fleet のセッションだけ（専用toolと同じ合図の後）。mod は全セッションで読まれるため
-    - パスで絞る。Artifact tool は止めない。他の artifact やコードの編集は通す
-    - Bash 経由の書き換えは塞がない（コマンドをパスで判定するのは脆い）
-  - 候補（未検証）。書き込みが専用toolに一本化されるので、更新の瞬間を mod が知れる
-    - 他の ship への通知（$.session.send）
-    - 状態から artifact を描き直す
-    - 前のターンからの差分を、各 ship の次のターンの最初に注入する（prompt.submit の context）。prompt.compose は system prompt が毎ターン変わりキャッシュを作り直すので使わない
-    - push（$.session.send）は相手が動くべき findings のときだけ。相手のターンを起こすので、更新のたびには送らない
-    - ship のターン終了ごとに進捗を記録する（turn.complete）
+- 状態は fleet ごとに1つの artifact の DB（db capability）に置く。全セッションとスマホのページが同じ状態を見る。ローカルファイルは持たない
+  - fleet-id は flagship のセッションID。DB の URL を fleet の全セッションに渡す
+  - event sourcing はしない。文書がそのまま状態。競合は DB の if_version で検知される（古い版への書き込みは失敗し、何も書かれない）
+  - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答）はページが、別の文書に書く
+  - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
+- html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
+  - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える
+  - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
+- 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
+  - シグネチャは成果物ごとに最適にする。URL・文書ID・if_version・時刻・書いた ship は mod が付け、LLM には書かせない
+  - 型は `src/logic/` に1か所だけ定義する。tool の入力スキーマと検査はここから作る。ページはビルドせずに publish するので、表示の導出（レビュー待ちなど数行）だけはページが自分で持つ
+  - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）
+- ship の合図: 同梱 skill の呼び出し（tool.call の Skill）で、そのセッションがどの ship かを mod が知る
+  - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
+  - toolや hook のエントリポイントは `src/skills/<ship>/tool/`、`hooks/register.tsx` は on に1行ずつ登録するだけ。$ を引数にして別ファイルの関数へ渡さない（validate が拒否する）。$.state の鍵も、使うファイルの中に文字列のまま書く（import した const は validate が拒否する）
+- 候補（未検証）
+  - 他の ship への通知（$.session.send）。相手が動くべき findings のときだけ。更新のたびには送らない
+  - 前のターンからの差分を、各 ship の次のターンの最初に注入する（prompt.submit の context）。文書の更新時刻で差分を取る

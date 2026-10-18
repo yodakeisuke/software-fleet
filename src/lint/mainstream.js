@@ -4,8 +4,8 @@ const rule = (description, create) => ({ meta: { type: 'problem', docs: { descri
 const EVENTS = ['session.start', 'command.run', 'prompt.submit', 'prompt.edit', 'ui.render', 'ui.close']
 // mod 自身が登録したツール。これに答える tool.call は本体のツールに介入しない
 const OWN_TOOL = /^mcp__software-fleet__/
-// fleet が tool.call で扱う本体のツール。Skill は合図（ship の専用ツールを登録する）、Edit・Write は fleet の状態の直接編集を拒否する
-const FLEET_TOOLS = ['Skill', 'Edit', 'Write']
+// fleet が tool.call で扱う本体のツール。Skill は合図（ship の専用ツールを登録する）、ArtifactData は fleet の DB への生の書き込みを拒否する
+const FLEET_TOOLS = ['Skill', 'ArtifactData']
 // 本体のコンテキスト（モデルが読むもの）や会話の流れ・入力欄の提案を変える呼び出し。session.send は fleet の ship 同士の通知に使うので外す
 const CONTEXT_CALLS = ['prompt.submit', 'prompt.compose', 'prompt.suggest', 'session.append', 'session.compact', 'turn.abort']
 // 待つと本流が目に見えて止まる呼び出し（名詞ごと、または名詞.動詞）。数 ms の読み書きは気にしない

@@ -87,7 +87,8 @@
     },
     {
       "files": [
-        "**/hooks/**"
+        "**/hooks/**",
+        "**/skills/*/tool/**"
       ],
       "rules": {
         "logic-layout/result-only": "error",

@@ -1,0 +1,386 @@
+<title>Software Fleet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* 1 列のスマホ画面: 上がスクロールする一覧（ships と決めたこと）、下が親指で操作するドック（あなたの番） */
+:root{
+  --bg:oklch(0.97 0.008 75);--surface:oklch(0.995 0.003 75);--fg:oklch(0.24 0.012 60);--muted:oklch(0.5 0.012 60);
+  --line:oklch(0.88 0.01 70);--acc:oklch(0.56 0.14 40);--on-acc:oklch(0.99 0.003 75);
+  --work:oklch(0.55 0.13 250);--review:oklch(0.62 0.14 75);--done:oklch(0.56 0.13 150);--stuck:oklch(0.55 0.17 25);--wait:oklch(0.78 0.01 60);
+  --shadow:oklch(0 0 0 / .08);--scrim:oklch(0 0 0 / .35);
+  --font:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);
+  --line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);
+  --work:oklch(0.72 0.12 250);--review:oklch(0.8 0.13 75);--done:oklch(0.74 0.13 150);--stuck:oklch(0.7 0.16 25);--wait:oklch(0.42 0.01 60);
+  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);
+  --line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);
+  --work:oklch(0.72 0.12 250);--review:oklch(0.8 0.13 75);--done:oklch(0.74 0.13 150);--stuck:oklch(0.7 0.16 25);--wait:oklch(0.42 0.01 60);
+  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.app{position:relative;height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.glance{flex:1;min-height:0;overflow-y:auto;padding-block:18px 12px;display:flex;flex-direction:column;gap:10px}
+.req{margin:0;font-size:15px;line-height:1.5;font-weight:700;text-wrap:balance}
+.req.wait{color:var(--muted);font-weight:400}
+.h2{font-size:15px;font-weight:700}
+.cnt{font-size:13px;color:var(--muted)}
+.ships{display:flex;flex-direction:column}
+.shiph{display:flex;align-items:baseline;gap:8px;padding-bottom:6px}
+.legend{margin-left:auto;font-size:11px;color:var(--muted)}
+.ship{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.sm{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.sr{display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:3px;flex:none;background:var(--wait)}
+.s-working{background:var(--work)}.s-review{background:var(--review)}.s-converged{background:var(--done)}.s-stuck{background:var(--stuck)}.s-waiting,.s-none{background:var(--wait)}
+.sname{font-size:14px;font-weight:700}
+.st{font-size:12px;color:var(--muted)}
+.snote{font-size:12px;line-height:1.5;color:var(--muted);padding-left:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw{flex:none;width:52px;height:44px;display:flex;align-items:center;justify-content:center}
+.trk{position:relative;width:40px;height:24px;border-radius:999px;background:var(--line)}
+.knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:left .15s}
+.sw.on .trk{background:var(--fg)}
+.sw.on .knob{left:19px}
+.log summary{cursor:pointer;font-size:14px;font-weight:700;list-style:none;display:flex;align-items:center;min-height:44px;gap:8px}
+.log summary::-webkit-details-marker{display:none}
+.log summary::after{content:"›";margin-left:auto;color:var(--muted);font-size:18px}
+.logi{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.lt{font-size:14px;font-weight:700}
+.lw{font-size:13px;color:var(--muted)}
+.dock{flex:none;display:flex;flex-direction:column;gap:6px;padding-top:8px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -10px 24px var(--shadow)}
+.nav{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:0 8px}
+.arrow{width:48px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center}
+.arrow.off{opacity:.25;pointer-events:none}
+.navc{display:flex;flex-direction:column;align-items:center;gap:4px}
+.navt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.navt b{color:var(--acc)}
+.dots{display:flex;align-items:center}
+.dotb{width:24px;height:20px;display:flex;align-items:center;justify-content:center}
+.dotb span{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.dotb.on span{width:18px;border-radius:4px;background:var(--fg)}
+.rail{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;align-items:stretch}
+.rail::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;padding:0 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.qbtn{display:flex;flex-direction:column;gap:2px;width:100%;min-height:44px}
+.dq{font-size:16px;line-height:1.45;font-weight:700;text-wrap:pretty}
+.more{font-size:12px;font-weight:700;color:var(--acc)}
+.dw{font-size:12px;line-height:1.6;color:var(--muted)}
+.acts{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:2px}
+.act{display:flex;flex-direction:column;justify-content:center;gap:1px;width:100%;min-height:48px;padding:5px 14px;border-radius:12px;box-shadow:inset 0 0 0 1.5px var(--line);transition:opacity .12s;min-width:0}
+.act.pri{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.act.free{min-height:44px;flex-direction:row;align-items:center;gap:8px;color:var(--muted);font-size:14px;font-weight:700}
+.act.free span{border-bottom:1px dashed currentColor}
+.locked .act,.locked .qbtn{pointer-events:none}
+.locked .act{opacity:.55}
+.al{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;line-height:1.3;min-width:0}
+.ae{font-size:11.5px;line-height:1.35;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atag{flex:none;font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--on-acc);color:var(--acc)}
+.ft{width:100%;min-height:96px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:16px;line-height:1.5;resize:none}
+.ft:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent}
+.ftrow{display:grid;grid-template-columns:96px 1fr;gap:8px}
+.fb{min-height:48px;border-radius:12px;font-size:15px;font-weight:700;text-align:center;box-shadow:inset 0 0 0 1.5px var(--line)}
+.fb.pri{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.rship{font-size:24px;font-weight:700}
+.dmsg{font-size:16px;font-weight:700;line-height:1.5;word-break:break-all}
+.dsub{font-size:12px;color:var(--muted)}
+.warn{font-size:12px;line-height:1.5;color:var(--stuck)}
+.undo{min-height:52px;border-radius:14px;box-shadow:inset 0 0 0 2px var(--fg);font-size:16px;font-weight:700;text-align:center;margin-top:auto}
+.tbar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.tfill{height:100%;background:var(--fg);transform-origin:left;animation:shrink 5s linear forwards}
+@keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.dnone{display:flex;align-items:center;gap:8px;min-height:44px;font-size:15px}
+.dnone .cnt{margin-left:auto}
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:20;display:flex;flex-direction:column;justify-content:flex-end}
+.sheet{height:90%;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;overflow:hidden}
+.sbody{flex:1;min-height:0;overflow-y:auto;padding-block:18px 12px;display:flex;flex-direction:column;gap:14px}
+.sq{font-size:17px;line-height:1.5;font-weight:700}
+.sec2{display:flex;flex-direction:column;gap:8px}
+.sh{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--acc)}
+.stxt{font-size:14px;line-height:1.7;text-wrap:pretty;white-space:pre-wrap}
+.fig{max-width:100%;overflow-x:auto;border-radius:12px}
+.fig svg{max-width:100%;height:auto}
+.opt2{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
+.ot{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.otag{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--acc);color:var(--on-acc)}
+.oc{font-size:13px;color:var(--muted)}
+.evw{overflow-x:auto}
+.ev{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.ev th,.ev td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;line-height:1.35;word-break:break-all}
+.ev .ax{width:70px}
+.ev .rec{background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.w{display:block;font-size:10px;color:var(--muted);font-weight:400;margin-top:2px}
+.mk{display:block;font-size:15px;font-weight:700;line-height:1.2}
+.nt{display:block;color:var(--muted);font-size:10.5px}
+.sfoot{flex:none;padding-block:10px calc(22px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--bg)}
+.close{width:100%;min-height:52px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:15px;font-weight:700;text-align:center}
+.back{font-size:14px;font-weight:700;color:var(--acc);min-height:44px;display:flex;align-items:center}
+.big{font-size:24px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
+</style>
+
+<div class="app" id="app">
+  <main class="glance gut" id="glance"><p class="req wait">読み込み中</p></main>
+  <section class="dock" id="dock" aria-label="あなたの番"></section>
+  <div class="scrim" id="sheet" hidden></div>
+</div>
+
+<script>
+// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答）だけを fleet/user に書く
+// required・レビュー待ちは src/logic/turn/turn.ts と同じ規則
+const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
+const S = { db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const $ = id => document.getElementById(id)
+const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
+const motion = () => !matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// --- 導出
+const required = (ship, review) => review?.required ?? ['code-design', 'qa'].includes(ship)
+const awaiting = (ship, status, review) => status.state === 'converged' && required(ship, review) && review?.approved_since !== status.since
+const yourTurn = () => {
+  const closed = new Set(S.decisions.map(d => d.closes))
+  const asks = Object.entries(S.asks).filter(([id]) => !(id in S.answers) && !closed.has(id))
+    .sort(([, a], [, b]) => String(a.at).localeCompare(String(b.at))).map(([id, ask]) => ({ kind: 'ask', key: `ask:${id}`, id, ask }))
+  const reviews = SHIPS.filter(ship => S.ships[ship] && awaiting(ship, S.ships[ship], S.reviews[ship]))
+    .map(ship => ({ kind: 'review', key: `review:${ship}:${S.ships[ship].since}`, ship, status: S.ships[ship] }))
+  return [...asks, ...reviews]
+}
+// 決めた直後の件は、5 秒間その場に「取り消す」として残す
+const items = () => {
+  const list = yourTurn().filter(item => !(item.key in S.done))
+  Object.values(S.done).sort((a, b) => a.index - b.index).forEach(d => list.splice(Math.min(d.index, list.length), 0, { ...d.item, done: d }))
+  return list
+}
+
+// --- 表示の言葉
+const view = ship => {
+  const status = S.ships[ship]
+  if (!status) return { cls: 's-none', label: '未報告', note: '' }
+  if (status.state === 'working') return { cls: 's-working', label: '作業中', note: status.doing }
+  if (status.state === 'stuck') return { cls: 's-stuck', label: '詰まり', note: status.reason }
+  if (status.state === 'waiting') return { cls: 's-waiting', label: '待機', note: `${status.on === 'user' ? 'あなた' : status.on} を待っている: ${status.what}` }
+  return awaiting(ship, status, S.reviews[ship])
+    ? { cls: 's-review', label: 'レビュー待ち', note: `${hhmm(status.since)} に収束` }
+    : { cls: 's-converged', label: '収束', note: `${hhmm(status.since)} に収束` }
+}
+const fig = html => (html ? `<div class="fig">${html}</div>` : '')
+const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
+
+// --- 描画
+const render = () => {
+  const ship = location.hash.slice(1)
+  $('glance').innerHTML = SHIPS.includes(ship) ? shipPage(ship) : glance()
+  renderDock(SHIPS.includes(ship))
+  renderSheet()
+}
+const glance = () => {
+  if (!S.db) return `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
+  if (!S.loaded) return '<p class="req wait">読み込み中</p>'
+  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.fleet.brief ? `<h1 class="req">${esc(S.fleet.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
+  const ships = SHIPS.map(ship => {
+    const v = view(ship), on = required(ship, S.reviews[ship])
+    return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span></span><span class="snote">${esc(v.note)}</span></a>
+      <button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
+  }).join('')
+  const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')
+  return `${brief}<div class="ships"><div class="shiph"><span class="h2">ships</span><span class="legend">要レビュー</span></div>${ships}</div>
+    <details class="log"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
+}
+const shipPage = ship => {
+  const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
+  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">承認する</span></button>` : ''
+  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${ship}</div>
+    <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
+    <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
+    <div class="acts">${approve}</div>`
+}
+const renderDock = hidden => {
+  const dock = $('dock')
+  dock.hidden = hidden || !S.db || !S.loaded
+  if (dock.hidden) return
+  const typing = document.activeElement?.dataset?.free
+  const caret = typing && document.activeElement.selectionStart
+  const list = items()
+  S.at = Math.max(0, Math.min(S.at, list.length - 1))
+  if (list.length === 0) { dock.innerHTML = '<div class="dnone gut"><span class="h2">あなたの番</span><span class="cnt">なし</span></div>'; return }
+  const cur = list[S.at]
+  const dots = list.map((_, k) => `<button class="dotb${k === S.at ? ' on' : ''}" data-act="go" data-to="${k}" aria-label="${k + 1} 件目へ"><span></span></button>`).join('')
+  dock.innerHTML = `<div class="nav"><button class="arrow${S.at <= 0 ? ' off' : ''}" data-act="go" data-to="${S.at - 1}" aria-label="前の件">‹</button>
+    <div class="navc"><span class="navt"><b>${cur.kind === 'ask' ? '判断' : 'レビュー'}</b> · ${S.at + 1} / ${list.length}</span><span class="dots">${dots}</span></div>
+    <button class="arrow${S.at >= list.length - 1 ? ' off' : ''}" data-act="go" data-to="${S.at + 1}" aria-label="次の件">›</button></div>
+    <div class="rail${S.locked ? ' locked' : ''}" id="rail">${list.map(slide).join('')}</div>`
+  const rail = $('rail')
+  rail.scrollLeft = S.at * rail.clientWidth
+  rail.addEventListener('scroll', onScroll, { passive: true })
+  const field = typing && rail.querySelector(`[data-free="${CSS.escape(typing)}"]`)
+  if (field) { field.focus({ preventScroll: true }); field.setSelectionRange(caret, caret) }
+}
+const slide = item => {
+  if (item.done) {
+    const left = Math.max(0, 5000 - (Date.now() - item.done.since))
+    return `<div class="slide"><div class="dmsg">✓ ${esc(item.done.msg)}</div><div class="dsub">5 秒後に確定して、この件は消えます</div>${item.done.warn ? `<div class="warn">${esc(item.done.warn)}</div>` : ''}
+      <div class="tbar"><div class="tfill" style="animation-delay:-${5000 - left}ms"></div></div><button class="undo" data-act="undo" data-key="${esc(item.key)}">取り消す</button></div>`
+  }
+  if (item.kind === 'review') {
+    return `<div class="slide"><div class="rship">${item.ship}</div><div class="dw">${hhmm(item.status.since)} に収束。構造と QA を確かめて承認する</div>
+      <div class="acts"><a class="act" href="#${item.ship}"><span class="al">ページで見る ›</span></a><button class="act pri" data-act="approve" data-ship="${item.ship}"><span class="al">承認する</span></button></div></div>`
+  }
+  const ask = item.ask
+  const question = `<button class="qbtn" data-act="open" data-ask="${esc(item.id)}"><span class="dq">${esc(ask.question)}</span>
+    <span class="more">${ask.evaluation ? '背景・詳細・評価表を見る ›' : '背景・詳細を見る ›'}</span></button>`
+  if (S.free === item.id) {
+    return `<div class="slide">${question}<div class="acts"><textarea class="ft" data-free="${esc(item.id)}" maxlength="1000" aria-label="回答" placeholder="回答を書く">${esc(S.drafts[item.id])}</textarea>
+      <div class="ftrow"><button class="fb" data-act="freeback">戻る</button><button class="fb pri" data-act="freesend" data-ask="${esc(item.id)}">この内容で送信</button></div></div></div>`
+  }
+  const opts = ordered(ask).map(o => `<button class="act${o.id === ask.recommended ? ' pri' : ''}" data-act="pick" data-ask="${esc(item.id)}" data-option="${esc(o.id)}">
+    <span class="al">${esc(o.label)}${o.id === ask.recommended ? '<span class="atag">推奨</span>' : ''}</span><span class="ae">${esc(o.consequence)}</span></button>`).join('')
+  return `<div class="slide">${question}<div class="acts"><button class="act free" data-act="free" data-ask="${esc(item.id)}"><span>自由記述で答える</span></button>${opts}</div></div>`
+}
+const renderSheet = () => {
+  const sheet = $('sheet'), ask = S.asks[S.open]
+  sheet.hidden = !ask
+  if (!ask) return
+  const opts = ask.options.map(o => `<div class="opt2"><div class="ot">${esc(o.label)}${o.id === ask.recommended ? '<span class="otag">推奨</span>' : ''}</div>
+    <div class="oc">${esc(o.consequence)}</div><div class="stxt">${esc(o.detail.text)}</div>${fig(o.detail.diagram)}</div>`).join('')
+  const ev = ask.evaluation
+  const table = ev ? `<div class="sec2"><div class="sh">評価表</div><div class="evw"><table class="ev">
+    <tr><th class="ax">評価軸</th>${ask.options.map(o => `<th class="${o.id === ask.recommended ? 'rec' : ''}">${esc(o.label)}</th>`).join('')}</tr>
+    ${ev.axes.map((axis, a) => `<tr><th class="ax">${esc(axis.name)}<span class="w">重み ${esc(axis.weight)}</span></th>${ask.options.map((o, k) => {
+      const cell = ev.cells[k]?.[a] ?? {}
+      return `<td class="${o.id === ask.recommended ? 'rec' : ''}"><span class="mk">${esc(cell.rating)}</span><span class="nt">${esc(cell.note)}</span></td>`
+    }).join('')}</tr>`).join('')}</table></div></div>` : ''
+  sheet.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="判断の詳細"><div class="sbody gut"><div class="sq">${esc(ask.question)}</div>
+    <div class="sec2"><div class="sh">背景</div><div class="stxt">${esc(ask.background.text)}</div>${fig(ask.background.diagram)}</div>
+    <div class="sec2"><div class="sh">選択肢ごとの詳細</div>${opts}</div>${table}</div>
+    <div class="sfoot gut"><button class="close" data-act="close">閉じる</button></div></div>`
+}
+
+// --- 操作
+let lockTimer
+const lockBriefly = () => {
+  clearTimeout(lockTimer)
+  S.locked = true
+  $('rail')?.classList.add('locked')
+  lockTimer = setTimeout(() => { S.locked = false; $('rail')?.classList.remove('locked') }, 250)
+}
+const onScroll = event => {
+  const rail = event.currentTarget, at = Math.round(rail.scrollLeft / (rail.clientWidth || 1))
+  lockBriefly()
+  if (at === S.at) return
+  S.at = at
+  document.querySelectorAll('.dotb').forEach((dot, k) => dot.classList.toggle('on', k === at))
+  const list = items()
+  document.querySelector('.navt').innerHTML = `<b>${list[at]?.kind === 'ask' ? '判断' : 'レビュー'}</b> · ${at + 1} / ${list.length}`
+  document.querySelectorAll('.arrow')[0].classList.toggle('off', at <= 0)
+  document.querySelectorAll('.arrow')[1].classList.toggle('off', at >= list.length - 1)
+}
+const go = to => {
+  const rail = $('rail')
+  if (rail) rail.scrollTo({ left: Math.max(0, to) * rail.clientWidth, behavior: motion() ? 'smooth' : 'auto' })
+}
+const finish = (key, done) => {
+  S.done[key] = Object.assign(done, { since: Date.now(), index: S.at })
+  done.timer = setTimeout(() => { delete S.done[key]; lockBriefly(); render() }, 5000)
+  render()
+}
+const reviewDoc = ship => S.db.doc(`fleet/user/reviews/${ship}`)
+const clean = object => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined))
+const fail = error => { S.failed = `書き込めませんでした（${error?.code ?? error}）。もう一度試してください`; render() }
+
+const toggle = ship => {
+  const review = S.reviews[ship] ?? {}
+  reviewDoc(ship).set(clean({ ...review, required: !required(ship, review) })).catch(fail)
+}
+const approve = ship => {
+  if (S.locked) return
+  const item = yourTurn().find(i => i.kind === 'review' && i.ship === ship)
+  const before = S.reviews[ship]
+  reviewDoc(ship).set(clean({ ...before, approved_since: S.ships[ship].since })).catch(fail)
+  if (!item) return
+  finish(item.key, { item, msg: `${ship} を承認しました`, undo: () => (before ? reviewDoc(ship).set(before) : reviewDoc(ship).delete()).catch(fail) })
+}
+// 判断の回答: DB に書き、コメントで flagship に送る（送れるのはタップの直後だけ）
+const answer = async (askId, body, msg, says, button) => {
+  if (S.locked) return
+  const item = yourTurn().find(i => i.key === `ask:${askId}`)
+  if (!item) return
+  const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
+  const done = { item, msg, warn: '', thread: null }
+  done.undo = () => {
+    S.db.doc(`fleet/user/answers/${askId}`).delete().catch(fail)
+    if (done.thread) S.comments.sendToClaude({ threadId: done.thread, text: `判断 ${askId} の回答を取り消します` }).catch(() => {})
+  }
+  S.free = null
+  finish(item.key, done)
+  S.db.doc(`fleet/user/answers/${askId}`).set(body).catch(fail)
+  const text = `判断 ${askId}「${S.asks[askId].question}」に${says}`
+  const sent = anchor ? await S.comments.sendToClaude({ anchor, text }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
+  if (sent.threadId) done.thread = sent.threadId
+  else { done.warn = `flagship には届いていません（${sent.error?.code ?? 'unknown'}）。回答は記録しました`; render() }
+}
+const pick = (askId, optionId, button) => {
+  const option = S.asks[askId].options.find(o => o.id === optionId)
+  return answer(askId, { choice: optionId }, `「${option.label}」で決めました`, `「${option.label}」（${optionId}）と答えました`, button)
+}
+const sendFree = (askId, button) => {
+  const text = (S.drafts[askId] ?? '').trim()
+  if (!text) return document.querySelector(`[data-free="${CSS.escape(askId)}"]`)?.focus()
+  return answer(askId, { text }, `自由記述で回答しました「${text.length > 40 ? `${text.slice(0, 40)}…` : text}」`, `自由記述で答えました:\n${text}`, button)
+}
+const undo = key => {
+  const done = S.done[key]
+  if (!done) return
+  clearTimeout(done.timer)
+  delete S.done[key]
+  done.undo()
+  render()
+}
+document.addEventListener('click', event => {
+  const el = event.target.closest('[data-act]')
+  if (!el) return
+  const { act, ship, ask, option, to, key } = el.dataset
+  if (act === 'toggle') toggle(ship)
+  if (act === 'approve') approve(ship)
+  if (act === 'pick') pick(ask, option, el)
+  if (act === 'free' && !S.locked) { S.free = ask; render(); document.querySelector(`[data-free="${CSS.escape(ask)}"]`)?.focus() }
+  if (act === 'freeback') { S.free = null; render() }
+  if (act === 'freesend') sendFree(ask, el)
+  if (act === 'undo') undo(key)
+  if (act === 'go') go(Number(to))
+  if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
+  if (act === 'close') { S.open = null; renderSheet() }
+})
+document.addEventListener('input', event => { if (event.target.dataset.free) S.drafts[event.target.dataset.free] = event.target.value })
+addEventListener('hashchange', render)
+
+// --- DB を読む
+const listen = (path, apply) => S.db.collection(path).onSnapshot(snap => {
+  apply(Object.fromEntries(snap.docs.map(doc => [doc.id, doc.data()])))
+  S.loaded = true
+  render()
+}, error => { S.failed = `fleet のデータを読めません（${error.code}）`; S.db = null; render() })
+const start = async () => {
+  S.db = await claude.use('db')
+  S.comments = await claude.use('comments')
+  if (!S.db) return render()
+  listen('fleet', docs => {
+    S.fleet = docs.flagship ?? {}
+    S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]]))
+  })
+  listen('fleet/flagship/asks', docs => { S.asks = docs })
+  listen('fleet/flagship/decisions', docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
+  listen('fleet/user/answers', docs => { S.answers = docs })
+  listen('fleet/user/reviews', docs => { S.reviews = docs })
+}
+render()
+start()
+</script>

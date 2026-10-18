@@ -35,6 +35,6 @@ promptに書くことは本当に最小限にします。細かいことは書�
 ## 制約
 - 全ての promptファイルは、front matter とデータ構造の説明を除き 30行以内とする
 - htmlやjson状態を直接更新しない。更新は mod が登録する専用toolだけで行う。そのI/OはLLMに伝わる必要がある
-  - fleet のセッションで、fleet が持つ状態json・viewへの Edit/Write だけを mod が tool.call で拒否する。他のファイルや artifact は止めない
+  - fleet の DB への生の ArtifactData 書き込みだけを mod が tool.call で拒否する。他のファイルや artifact は止めない
 
 mods の仕様は https://code.claude.com/docs/en/plugins/mods/reference と、engine が生成する型定義（src/.claude-plugin/types/）を正とする。記憶で書かない。
