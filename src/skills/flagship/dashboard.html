@@ -44,6 +44,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .s-working{background:var(--work)}.s-review{background:var(--review)}.s-converged{background:var(--done)}.s-stuck{background:var(--stuck)}.s-waiting,.s-none{background:var(--wait)}
 .sname{font-size:14px;font-weight:700}
 .st{font-size:12px;color:var(--muted)}
+.go{margin-left:auto;font-size:18px;line-height:1;color:var(--muted)}
 .snote{font-size:12px;line-height:1.5;color:var(--muted);padding-left:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sw{flex:none;width:52px;height:44px;display:flex;align-items:center;justify-content:center}
 .trk{position:relative;width:40px;height:24px;border-radius:999px;background:var(--line)}
@@ -133,6 +134,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
   <div class="scrim" id="sheet" hidden></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous"></script>
 <script>
 // 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答）だけを answers・reviews に書く
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
@@ -174,7 +176,8 @@ const view = ship => {
     ? { cls: 's-review', label: 'レビュー待ち', note: `${hhmm(status.since)} に収束` }
     : { cls: 's-converged', label: '収束', note: `${hhmm(status.since)} に収束` }
 }
-const fig = html => (html ? `<div class="fig">${html}</div>` : '')
+// 図は LLM が書いた HTML/SVG。このページはユーザ本人として回答・承認を送れるので、スクリプトとイベント属性は落としてから埋め込む
+const fig = html => (html ? `<div class="fig">${DOMPurify.sanitize(html, { USE_PROFILES: { html: true, svg: true } })}</div>` : '')
 const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
 
 // --- 描画
@@ -190,7 +193,7 @@ const glance = () => {
   const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const ships = SHIPS.map(ship => {
     const v = view(ship), on = required(ship, S.reviews[ship])
-    return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span></span><span class="snote">${esc(v.note)}</span></a>
+    return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span><span class="go" aria-hidden="true">›</span></span><span class="snote">${esc(v.note)}</span></a>
       <button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
   }).join('')
   const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')

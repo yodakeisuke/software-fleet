@@ -17,12 +17,14 @@ export const joinFleet = {
     for (const tool of tools) await engine.offer(tool.spec)
   },
 
-  // flagship が同梱のダッシュボードを publish したら、その URL でこのセッションを flagship にし、DB の置き場所を DB に置く（ページはそれを読む）
+  // flagship が同梱のダッシュボードを publish したら、その URL で flagship にし、DB の置き場所を DB に置く（publish し直すたびに置き直す。ページはそれを読む）
   // publish は LLM のターンで行う（auto モードの判定が、ユーザの /set-afloat を依頼として照らし合わせられるように）
   published: async (engine: Engine, publish: { file: unknown; dashboard: string; reply: string | undefined }) => {
     if (publish.file !== publish.dashboard || publish.reply === undefined) return
     await FleetDb.urlOf(publish.reply).either(async url => {
-      if (!(await board(engine, { url, role: 'flagship' }, []))) return
+      await board(engine, { url, role: 'flagship' }, [])
+      const session = await engine.fleet()
+      if (session === undefined || !FleetDb.isFleet(url, session.url)) return
       const where = FleetDb.paths()
       await FleetDb.put(engine, where.self, where, 'DbPathsSet')
     }, async () => undefined)
