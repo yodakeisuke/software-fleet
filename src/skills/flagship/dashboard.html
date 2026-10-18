@@ -134,7 +134,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
   <div class="scrim" id="sheet" hidden></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous"></script>
 <script>
 // 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答）だけを answers・reviews に書く
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
@@ -176,8 +175,7 @@ const view = ship => {
     ? { cls: 's-review', label: 'レビュー待ち', note: `${hhmm(status.since)} に収束` }
     : { cls: 's-converged', label: '収束', note: `${hhmm(status.since)} に収束` }
 }
-// 図は LLM が書いた HTML/SVG。このページはユーザ本人として回答・承認を送れるので、スクリプトとイベント属性は落としてから埋め込む
-const fig = html => (html ? `<div class="fig">${DOMPurify.sanitize(html, { USE_PROFILES: { html: true, svg: true } })}</div>` : '')
+const fig = html => (html ? `<div class="fig">${html}</div>` : '')
 const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
 
 // --- 描画
