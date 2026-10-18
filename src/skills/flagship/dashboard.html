@@ -148,7 +148,8 @@ const required = (ship, review) => review?.required ?? ['code-design', 'qa'].inc
 const awaiting = (ship, status, review) => status.state === 'converged' && required(ship, review) && review?.approved_since !== status.since
 const yourTurn = () => {
   const closed = new Set(S.decisions.map(d => d.closes))
-  const asks = Object.entries(S.asks).filter(([id]) => !(id in S.answers) && !closed.has(id))
+  // 回答済みでも flagship に届いていない判断は残し、送り直せるようにする
+  const asks = Object.entries(S.asks).filter(([id]) => (!(id in S.answers) || S.answers[id].undelivered) && !closed.has(id))
     .sort(([, a], [, b]) => String(a.at).localeCompare(String(b.at))).map(([id, ask]) => ({ kind: 'ask', key: `ask:${id}`, id, ask }))
   const reviews = SHIPS.filter(ship => S.ships[ship] && awaiting(ship, S.ships[ship], S.reviews[ship]))
     .map(ship => ({ kind: 'review', key: `review:${ship}:${S.ships[ship].since}`, ship, status: S.ships[ship] }))
@@ -185,7 +186,9 @@ const render = () => {
 const glance = () => {
   if (!S.db) return `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
   if (!S.loaded) return '<p class="req wait">読み込み中</p>'
-  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.fleet.brief ? `<h1 class="req">${esc(S.fleet.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
+  // 判断の回答を flagship に送るには、この artifact ごとに 1 回の同意が要る。答える前にここで済ませる
+  const permit = ['prompt', 'denied'].includes(S.permit) ? `<button class="act pri" data-act="permit"><span class="al">flagship への送信を許可する</span><span class="ae">判断に答えるのに、最初の 1 回だけ必要です</span></button>` : ''
+  const brief = permit + (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.fleet.brief ? `<h1 class="req">${esc(S.fleet.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const ships = SHIPS.map(ship => {
     const v = view(ship), on = required(ship, S.reviews[ship])
     return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span></span><span class="snote">${esc(v.note)}</span></a>
@@ -237,6 +240,11 @@ const slide = item => {
   const ask = item.ask
   const question = `<button class="qbtn" data-act="open" data-ask="${esc(item.id)}"><span class="dq">${esc(ask.question)}</span>
     <span class="more">${ask.evaluation ? '背景・詳細・評価表を見る ›' : '背景・詳細を見る ›'}</span></button>`
+  const sentBefore = S.answers[item.id]
+  if (sentBefore?.undelivered) {
+    return `<div class="slide">${question}<div class="dw">回答「${esc(said(item.id, sentBefore))}」は flagship に届いていません（${esc(sentBefore.undelivered)}）</div>
+      <div class="acts"><button class="act pri" data-act="resend" data-ask="${esc(item.id)}"><span class="al">flagship に送り直す</span></button></div></div>`
+  }
   if (S.free === item.id) {
     return `<div class="slide">${question}<div class="acts"><textarea class="ft" data-free="${esc(item.id)}" maxlength="1000" aria-label="回答" placeholder="回答を書く">${esc(S.drafts[item.id])}</textarea>
       <div class="ftrow"><button class="fb" data-act="freeback">戻る</button><button class="fb pri" data-act="freesend" data-ask="${esc(item.id)}">この内容で送信</button></div></div></div>`
@@ -325,7 +333,13 @@ const answer = async (askId, body, msg, says, button) => {
   const text = `判断 ${askId}「${S.asks[askId].question}」に${says}`
   const sent = anchor ? await S.comments.sendToClaude({ anchor, text }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
   if (sent.threadId) done.thread = sent.threadId
-  else { done.warn = `flagship には届いていません（${sent.error?.code ?? 'unknown'}）。回答は記録しました`; render() }
+  else {
+    const code = sent.error?.code ?? 'unknown'
+    done.warn = `flagship には届いていません（${code}）。回答は記録しました`
+    S.failed = `判断の回答を flagship に送れませんでした（${code}）`
+    S.db.doc(`fleet/user/answers/${askId}`).set({ ...body, undelivered: code }).catch(fail)
+    render()
+  }
 }
 const pick = (askId, optionId, button) => {
   const option = S.asks[askId].options.find(o => o.id === optionId)
@@ -335,6 +349,28 @@ const sendFree = (askId, button) => {
   const text = (S.drafts[askId] ?? '').trim()
   if (!text) return document.querySelector(`[data-free="${CSS.escape(askId)}"]`)?.focus()
   return answer(askId, { text }, `自由記述で回答しました「${text.length > 40 ? `${text.slice(0, 40)}…` : text}」`, `自由記述で答えました:\n${text}`, button)
+}
+// 回答の中身を、flagship に送る文にする
+const said = (askId, body) => (body.text !== undefined ? `自由記述: ${body.text}` : `${S.asks[askId].options.find(o => o.id === body.choice)?.label ?? body.choice}（${body.choice}）`)
+// 届かなかった回答を送り直す（送れるのはタップの直後だけ）
+const resend = async (askId, button) => {
+  const body = S.answers[askId]
+  const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
+  const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `判断 ${askId}「${S.asks[askId].question}」に答えました: ${said(askId, body)}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
+  const { undelivered, ...answer } = body
+  if (sent.threadId) { S.failed = ''; S.db.doc(`fleet/user/answers/${askId}`).set(answer).catch(fail); return }
+  S.failed = `判断の回答を flagship に送れませんでした（${sent.error?.code ?? 'unknown'}）。ページを再読み込みすると、送信の許可をもう一度聞かれます`
+  render()
+}
+// 送信の同意を求める。一度断っていれば、platform の許可パネルを開く（ページを開き直さずに済む）
+const permit = async () => {
+  const permissions = await claude.use('permissions')
+  if (!permissions) return
+  if (S.permit === 'denied') await permissions.manage().catch(() => {})
+  else await permissions.request(['comments'])
+  S.permit = await permissions.state('comments')
+  if (S.permit === 'granted') S.failed = ''
+  render()
 }
 const undo = key => {
   const done = S.done[key]
@@ -354,10 +390,12 @@ document.addEventListener('click', event => {
   if (act === 'free' && !S.locked) { S.free = ask; render(); document.querySelector(`[data-free="${CSS.escape(ask)}"]`)?.focus() }
   if (act === 'freeback') { S.free = null; render() }
   if (act === 'freesend') sendFree(ask, el)
+  if (act === 'resend') resend(ask, el)
   if (act === 'undo') undo(key)
   if (act === 'go') go(Number(to))
   if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
   if (act === 'close') { S.open = null; renderSheet() }
+  if (act === 'permit') permit()
 })
 document.addEventListener('input', event => { if (event.target.dataset.free) S.drafts[event.target.dataset.free] = event.target.value })
 addEventListener('hashchange', render)
@@ -372,6 +410,9 @@ const start = async () => {
   S.db = await claude.use('db')
   S.comments = await claude.use('comments')
   if (!S.db) return render()
+  const canSend = S.comments ? await S.comments.canSendToClaude().catch(error => error?.code ?? 'error') : 'comments なし'
+  if (canSend !== 'available') S.failed = `このビューからは判断の回答を flagship に送れません（${canSend}）`
+  S.permit = await (await claude.use('permissions'))?.state('comments')
   listen('fleet', docs => {
     S.fleet = docs.flagship ?? {}
     S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]]))

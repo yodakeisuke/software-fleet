@@ -5,7 +5,7 @@ argument-hint: <ヒアリング内容・依頼>
 ---
 $ARGUMENTS
 
-上の依頼を実現する fleet を起こす。末尾の artifact の URL が fleet のダッシュボードと DB で、ユーザはスマホでこれを見る。まず set_brief で依頼の要約を出す。
+上の依頼を実現する fleet を起こす。まず Artifact で `${CLAUDE_PLUGIN_ROOT}/skills/flagship/dashboard.html` を capabilities `{ db: {}, comments: {} }` で publish する（中身は読まない・書かない）。その URL が fleet のダッシュボードと DB で、ユーザはスマホでこれを見る。続けて set_brief で依頼の要約を出す。
 
 全 ship（requirement / behavior / code-design / implementation / qa / cs / security / ops）を、それぞれ別セッションで起こす。指示は「Skill `software-fleet:<ship>` を args `<artifact の URL>` で呼んでから取り組め」と依頼本文だけ。
 
