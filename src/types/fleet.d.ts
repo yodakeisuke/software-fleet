@@ -42,8 +42,18 @@ export type Ship = Status & { since: string }
 export type Answer = { choice: OptionId } | { text: string }
 export type Review = { required?: boolean; approved_since?: string }
 
+// requirement ship が書く。要求とその裏返しのテスト。kind の順にページが描く（logic がこの順に並べて保存する）
+export type RequirementKind = '機能' | 'セキュリティ' | '性能' | '可用性' | '運用・監視' | '移行'
+export type Test = { act: string; evidence: string }
+// ページが「who、can」の 1 文にする
+export type Requirement = { kind: RequirementKind; change: '新' | '改'; who: string; can: string; tests: Test[] }
+// 要求を指す鍵。ID の代わりに今の文で指す
+export type Which = { who: string; can: string }
+export type RequirementChange = { op: 'add'; to: Requirement } | { op: 'replace'; which: Which; to: Requirement } | { op: 'remove'; which: Which }
+export type Requirements = { requirements: Requirement[] }
+
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
-export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; answers: string; reviews: string; self: string }
+export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; answers: string; reviews: string; requirements: string; self: string }
 
 // セッションが属する fleet（mod が $.state に持つ）
 export type Role = 'flagship' | ShipName
@@ -80,5 +90,6 @@ declare module 'claude-code' {
     'mcp__software-fleet__ask_user': Ask
     'mcp__software-fleet__record_decision': Decision
     'mcp__software-fleet__report_status': { status: Status }
+    'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
   }
 }

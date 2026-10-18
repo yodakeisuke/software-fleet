@@ -5,6 +5,7 @@ import { Result } from './logic/result'
 export const FleetDb = {
   paths: () => paths,
   put: (engine: Engine, path: string, data: object, done: string) => put(engine, path, data, done),
+  revise: (engine: Engine, path: string, next: Next, done: string) => revise(engine, path, next, done),
   create: (engine: Engine, path: string, data: object, done: string) => create(engine, path, data, done),
   read: (engine: Engine, path: string) => read(engine, path),
   urlOf: (text: string) => urlOf(text),
@@ -21,6 +22,8 @@ const paths: DbPaths = {
   decisions: 'fleet/flagship/decisions',
   answers: 'fleet/user/answers',
   reviews: 'fleet/user/reviews',
+  // ship の成果物は fleet/<ship>/deliverables/<名前>
+  requirements: 'fleet/requirement/deliverables/requirements',
   self: 'fleet/db-paths',
 }
 // "collection/id" を、collection と文書 id に分ける
@@ -28,15 +31,23 @@ const split = (path: string) => ({ collection: path.slice(0, path.lastIndexOf('/
 // 書けなかった理由
 const refused = (reply: { text?: string; deny?: string }, path: string): ToolReply => ({ deny: reply.deny ?? reply.text ?? `${path} を書けなかった` })
 
+// 今の中身（なければ undefined）から、新しい中身を作る。作れなければ理由
+type Next = (data: Record<string, unknown> | undefined) => { either: <R>(onOk: (value: object) => R, onError: (error: string) => R) => R }
+
 // 文書を 1 つ書く。今の版を読んでから、その版に固定して書く（古い版への書き込みは DB が拒む）
-const put = async (engine: Engine, path: string, data: object, done: string): Promise<ToolReply> => {
+const put = (engine: Engine, path: string, data: object, done: string) => revise(engine, path, () => Result.given<Data<object, string>>({ ok: true, value: data }), done)
+
+// 文書を 1 つ読み、その中身から新しい中身を作って、読んだ版に固定して書く。間に別の書き込みがあれば DB が拒み、何も書かない
+const revise = async (engine: Engine, path: string, next: Next, done: string): Promise<ToolReply> => {
   const session = await engine.fleet()
   if (session === undefined) return { deny: 'このセッションは fleet に乗っていない' }
   const got = await engine.db(session.url, { action: 'get', ...split(path) })
   if (got.isError === true) return { deny: got.text ?? `${path} を読めなかった` }
-  const version = (await stored(got.text ?? '')).either(doc => doc?.version, () => undefined)
-  const wrote = await engine.db(session.url, { action: 'set', ...split(path), data, ...(version === undefined ? {} : { if_version: version }) })
-  return wrote.isError === true || wrote.deny !== undefined ? refused(wrote, path) : { result: done }
+  const doc = (await stored(got.text ?? '')).either(found => found, () => undefined)
+  return next(doc?.data).either(async data => {
+    const wrote = await engine.db(session.url, { action: 'set', ...split(path), data, ...(doc === undefined ? {} : { if_version: doc.version }) })
+    return wrote.isError === true || wrote.deny !== undefined ? refused(wrote, path) : { result: done }
+  }, async error => ({ deny: error }))
 }
 
 // 新しい文書を 1 つ書く。id は時刻から作るので、まだない

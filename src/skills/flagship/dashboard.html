@@ -125,10 +125,29 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .close{width:100%;min-height:52px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:15px;font-weight:700;text-align:center}
 .back{font-size:14px;font-weight:700;color:var(--acc);min-height:44px;display:flex;align-items:center}
 .big{font-size:24px;font-weight:700}
+/* requirement: 要求を 1 文で読む。印は別の列に置き、折り返しても文の左端をそろえる。文節で折り返す（lang="ja" が要る） */
+.rhead{display:flex;align-items:center;gap:6px;min-height:44px;font-size:17px;font-weight:700}
+.rhead span{font-size:20px;font-weight:400;color:var(--muted)}
+.rkh{position:sticky;top:-18px;z-index:1;background:var(--bg);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--acc);padding:12px 0 5px;border-bottom:1px solid var(--line)}
+.rrow{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:9px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rmk{width:20px;height:18px;margin-top:3px;border-radius:5px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px var(--fg)}
+.rmk.new{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.rbody{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rsen,.ract,.rev{margin:0;text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
+.rsen{font-size:15px;line-height:1.65}
+.rflow{display:flex;flex-direction:column;gap:1px;padding-top:6px;border-top:1px dashed var(--line)}
+.rflow:first-of-type{border-top:0;padding-top:0}
+.ract{font-size:13px;line-height:1.55;color:var(--muted)}
+.rev{display:grid;grid-template-columns:16px minmax(0,1fr);font-size:14px;line-height:1.55;font-weight:700}
+.rev span:first-child{color:var(--acc)}
+.rdock{display:flex;flex-direction:column;gap:8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
+.seg a{min-height:40px;border-radius:9px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.seg a[aria-current]{background:var(--fg);color:var(--bg)}
 @media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
 </style>
 
-<div class="app" id="app">
+<div class="app" id="app" lang="ja">
   <main class="glance gut" id="glance"><p class="req wait">読み込み中</p></main>
   <section class="dock" id="dock" aria-label="あなたの番"></section>
   <div class="scrim" id="sheet" hidden></div>
@@ -139,7 +158,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -179,15 +198,19 @@ const fig = html => (html ? `<div class="fig">${html}</div>` : '')
 const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
 
 // --- 描画
+// 画面は #<ship> か #<ship>.<サブページ>（hash に使えるのは英数字と . _ ~ - だけ）
 const render = () => {
-  const ship = location.hash.slice(1)
-  $('glance').innerHTML = SHIPS.includes(ship) ? shipPage(ship) : glance()
-  renderDock(SHIPS.includes(ship))
+  const [hash, sub] = location.hash.slice(1).split('.')
+  const ship = SHIPS.includes(hash) ? hash : ''
+  $('glance').innerHTML = ship === 'requirement' ? requirementPage(sub) : ship ? shipPage(ship) : glance()
+  renderDock(ship, sub)
   renderSheet()
 }
+// DB を読めるまでの表示。読めたら空
+const unready = () => (!S.db ? `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
+  : !S.loaded ? '<p class="req wait">読み込み中</p>' : '')
 const glance = () => {
-  if (!S.db) return `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
-  if (!S.loaded) return '<p class="req wait">読み込み中</p>'
+  if (unready()) return unready()
   const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const ships = SHIPS.map(ship => {
     const v = view(ship), on = required(ship, S.reviews[ship])
@@ -206,10 +229,26 @@ const shipPage = ship => {
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
     <div class="acts">${approve}</div>`
 }
-const renderDock = hidden => {
+// requirement: 要求と、その裏返しのテストの 2 枚。DB の要求リストは区分の順に並んでいる
+const requirementPage = sub => {
+  const test = sub === 'test'
+  const flow = t => `<div class="rflow"><p class="ract">${esc(t.act)}</p><p class="rev"><span aria-hidden="true">→</span><span>${esc(t.evidence)}</span></p></div>`
+  const row = r => `<div class="rrow"><span class="rmk${r.change === '新' ? ' new' : ''}">${esc(r.change)}</span>
+    <div class="rbody"><p class="rsen">${esc(`${r.who}、${r.can}`)}</p>${test ? r.tests.map(flow).join('') : ''}</div></div>`
+  const body = S.requirements.map((r, at) => (S.requirements[at - 1]?.kind === r.kind ? '' : `<h2 class="rkh">${esc(r.kind)}</h2>`) + row(r)).join('')
+  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
+}
+const requirementDock = sub => {
+  const status = S.ships.requirement
+  const approve = status && awaiting('requirement', status, S.reviews.requirement) ? '<button class="act pri" data-act="approve" data-ship="requirement"><span class="al">承認する</span></button>' : ''
+  const tab = (href, label, on) => `<a href="${href}"${on ? ' aria-current="page"' : ''}>${label}</a>`
+  return `<div class="rdock gut"><nav class="seg" aria-label="要求とテスト">${tab('#requirement', '要求', sub !== 'test')}${tab('#requirement.test', 'テスト', sub === 'test')}</nav>${approve}</div>`
+}
+const renderDock = (ship, sub) => {
   const dock = $('dock')
-  dock.hidden = hidden || !S.db || !S.loaded
+  dock.hidden = (ship !== '' && ship !== 'requirement') || !S.db || !S.loaded
   if (dock.hidden) return
+  if (ship === 'requirement') { dock.innerHTML = requirementDock(sub); return }
   const typing = document.activeElement?.dataset?.free
   const caret = typing && document.activeElement.selectionStart
   const list = items()
@@ -411,6 +450,7 @@ const start = async () => {
   listen(S.paths.decisions, docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
+  S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
 }
 render()
 start()

@@ -1,4 +1,4 @@
-import type { Engine, FleetSession, FleetTool } from '../../types/fleet'
+import type { Engine, FleetSession, FleetTool, ShipName } from '../../types/fleet'
 import { FleetDb } from '../fleet-db'
 import { Boarding } from '../logic/boarding'
 
@@ -31,10 +31,10 @@ export const joinFleet = {
   },
 
   // ship の合図: Skill software-fleet:<ship> が artifact の URL 付きで呼ばれたら、そのセッションをその ship にし、ship の tool を出す
-  skill: async (engine: Engine, call: { skill: string; args: string }, tools: readonly FleetTool[]) => {
+  skill: async (engine: Engine, call: { skill: string; args: string }, tools: (ship: ShipName) => readonly FleetTool[]) => {
     // skill の名前は software-fleet:<ship>
     const role = Boarding.ships().find(ship => call.skill === `software-fleet:${ship}`)
     if (role === undefined) return
-    await FleetDb.urlOf(call.args).either(url => board(engine, { url, role }, tools), async () => false)
+    await FleetDb.urlOf(call.args).either(url => board(engine, { url, role }, tools(role)), async () => false)
   },
 }
