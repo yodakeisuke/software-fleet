@@ -1,6 +1,6 @@
 import type { MatchedHook } from 'claude-code'
-import { ArtifactDb } from './artifact-db'
-import { Ship } from '../../../logic/ship/ship'
+import { ArtifactDb } from './fleet-db'
+import { Ship } from '../logic/ship/ship'
 import { reportStatusTool } from './tools'
 
 const fleet = { plugin: 'software-fleet', key: 'fleet' } as const

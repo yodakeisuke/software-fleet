@@ -1,5 +1,5 @@
 import type { Hook, MatchedHook } from 'claude-code'
-import { ArtifactDb } from './artifact-db'
+import { ArtifactDb } from './fleet-db'
 import { askUserTool, recordDecisionTool, setBriefTool } from './tools'
 
 const fleet = { plugin: 'software-fleet', key: 'fleet' } as const

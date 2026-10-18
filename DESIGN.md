@@ -74,7 +74,7 @@
   - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）
 - ship の合図: 同梱 skill の呼び出し（tool.call の Skill）で、そのセッションがどの ship かを mod が知る
   - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
-  - toolや hook のエントリポイントは `src/skills/<ship>/tool/`、`hooks/register.tsx` は on に1行ずつ登録するだけ。$ を引数にして別ファイルの関数へ渡さない（validate が拒否する）。$.state の鍵も、使うファイルの中に文字列のまま書く（import した const は validate が拒否する）
+  - 置き場所: `skills/` は LLM が読むもの（SKILL.md・dashboard.html）、`hooks/` は $ を使うもの（tool の定義と処理・hook）、`logic/` はドメイン。`hooks/register.tsx` は on に1行ずつ登録するだけ。$ を引数にして別ファイルの関数へ渡さない（validate が拒否する）。$.state の鍵も、使うファイルの中に文字列のまま書く（import した const は validate が拒否する）
 - 候補（未検証）
   - 他の ship への通知（$.session.send）。相手が動くべき findings のときだけ。更新のたびには送らない
   - 前のターンからの差分を、各 ship の次のターンの最初に注入する（prompt.submit の context）。文書の更新時刻で差分を取る

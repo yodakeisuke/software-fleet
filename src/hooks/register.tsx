@@ -1,8 +1,8 @@
 import type { Register } from 'claude-code'
-import { board } from '../skills/flagship/tool/board'
-import { guard } from '../skills/flagship/tool/guard'
-import { dashboard, setAfloat } from '../skills/flagship/tool/set-afloat'
-import { askUser, recordDecision, reportStatus, setBrief } from '../skills/flagship/tool/write'
+import { board } from './ship'
+import { guard } from './guard'
+import { dashboard, setAfloat } from './flagship'
+import { askUser, recordDecision, reportStatus, setBrief } from './tools'
 
 // ディレクトリの審査は、on の登録がこのファイルに 1 行ずつ並んでいないと読めない
 export const register: Register = on => {

@@ -1,5 +1,5 @@
-import type { Result as Data } from '../../../types/fleet'
-import { Result } from '../../../logic/primitive/result'
+import type { Result as Data } from '../types/fleet'
+import { Result } from '../logic/primitive/result'
 
 // claude.ai の artifact と、その DB を扱う ArtifactData tool の約束事
 export const ArtifactDb = {

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { JsonSchema } from '../../../../skills/flagship/tool/json-schema'
-import { askUserTool, reportStatusTool } from '../../../../skills/flagship/tool/tools'
+import { JsonSchema } from '../../hooks/json-schema'
+import { askUserTool, reportStatusTool } from '../../hooks/tools'
 
 const status = (value: unknown) => JsonSchema.check(reportStatusTool.inputSchema, { status: value }).either<unknown>(() => '', e => e)
 

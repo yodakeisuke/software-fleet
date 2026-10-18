@@ -1,5 +1,5 @@
-import type { JsonSchemaNode, Result as Data } from '../../../types/fleet'
-import { Result } from '../../../logic/primitive/result'
+import type { JsonSchemaNode, Result as Data } from '../types/fleet'
+import { Result } from '../logic/primitive/result'
 
 // tool の入力の形（型・必須・空でない・enum）を、LLM に渡したのと同じ JSON Schema で検査する。意味の検査は logic がする
 export const JsonSchema = {
