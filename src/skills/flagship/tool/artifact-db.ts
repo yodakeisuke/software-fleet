@@ -19,10 +19,10 @@ const isFleet = (url: unknown, fleetUrl: string) => {
   const id = idOf(url)
   return id === undefined || id === idOf(fleetUrl)
 }
-// URL の pathname の /artifact/<id> か /code/artifact/<id> から id を取る
+// URL の pathname が /artifact/<id> か /code/artifact/<id> そのものなら id を取る。../ などを含む別の形は取らない（fleet とみなして止める）
 const idOf = (url: unknown) => {
   const pathname = typeof url === 'string' ? /^https?:\/\/[^/?#]+(\/[^?#]*)/.exec(url)?.[1] : undefined
-  return pathname === undefined ? undefined : /^\/(code\/)?artifact\/([\w-]+)/.exec(pathname)?.[2]
+  return pathname === undefined ? undefined : /^\/(code\/)?artifact\/([\w-]+)\/?$/.exec(pathname)?.[2]
 }
 // 読み取りの action。これ以外（書き込みと、将来増える action）はすべて書き込みとみなす
 const isRead = (action: string) => ['get', 'list', 'query', 'profiles'].includes(action)

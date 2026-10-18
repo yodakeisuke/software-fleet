@@ -21,6 +21,7 @@ describe('artifact-db', () => {
   })
 
   test('宛先の id が取れなければ fleet とみなす', () => {
+    expect(ArtifactDb.isFleet('https://claude.ai/artifact/other/../abc', 'https://claude.ai/artifact/abc')).toBe(true)
     expect(ArtifactDb.isFleet(undefined, fleet)).toBe(true)
     expect(ArtifactDb.isFleet('abc', fleet)).toBe(true)
     expect(ArtifactDb.isFleet('https://claude.ai/chat/abc', fleet)).toBe(true)
