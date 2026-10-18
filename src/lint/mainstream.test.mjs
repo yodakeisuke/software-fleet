@@ -18,6 +18,7 @@ run('no-context', [
   "$.agent.spawn({ subagentType: 'software-fleet:x', prompt: 'p' })",
   "on('tool.call', { tool: 'mcp__software-fleet__x' }, () => ({ result: 'ok' }))",
   "on('tool.call', { tool: 'Skill' }, ($, e, next) => next(e))",
+  "on('tool.call', { tool: setBrief.tool }, ($, e) => setBrief.run(engine($), e))",
   "on('tool.call', { tool: 'ArtifactData' }, () => ({ deny: 'fleet の DB は専用ツールで書く' }))",
   "$.session.send({ to: { sessionId: 's' }, text: 'a' })",
 ], [
@@ -30,6 +31,7 @@ run('no-context', [
   "on('tool.call', { tool: 'Bash' }, () => ({ deny: 'no' }))",
   "on('tool.call', { tool: 'Edit' }, () => ({ deny: 'no' }))",
   "on('tool.call', () => ({ deny: 'no' }))",
+  "on('tool.call', { tool: other.name }, () => ({ deny: 'no' }))",
 ])
 
 run('no-delay', [

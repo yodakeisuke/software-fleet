@@ -1,9 +1,13 @@
 import type { JsonSchemaNode, Result as Data } from '../types/fleet'
-import { Result } from '../logic/primitive/result'
+import { Result } from './logic/result'
 
 // tool の入力の形（型・必須・空でない・enum）を、LLM に渡したのと同じ JSON Schema で検査する。意味の検査は logic がする
 export const JsonSchema = {
   check: <T>(schema: JsonSchemaNode, value: unknown) => verdict<T>(value, problems(schema, value, '入力')),
+  // 空でない文字列
+  text: (description?: string): JsonSchemaNode => ({ type: 'string', minLength: 1, ...(description ? { description } : {}) }),
+  object: (properties: Record<string, JsonSchemaNode>, required: string[], description?: string): JsonSchemaNode =>
+    ({ type: 'object', properties, required, ...(description ? { description } : {}) }),
 }
 
 // 問題がなければ値をそのまま通し、あれば全部を 1 つの文にして失敗にする

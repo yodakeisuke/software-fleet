@@ -1,11 +1,10 @@
-import type { Ask as AskDoc, Result as Data } from '../../types/fleet'
-import { Result } from '../primitive/result'
+import type { Ask as AskDoc, Result as Data } from '../../../types/fleet'
+import { Result } from '../../../fleet/logic/result'
 
 // --- public interface
 export const Ask = {
   of: (ask: AskDoc) => of(ask),
   limits: () => limits(),
-  id: (now: number) => id(now),
 }
 
 // --- operations
@@ -35,5 +34,3 @@ const misshapen = (ask: AskDoc) => {
   const fits = !table || (table.cells.length === ask.options.length && table.cells.every(row => row.length === table.axes.length))
   return fits ? [] : ['evaluation.cells は options と同じ行数で、各行は axes と同じ数']
 }
-// 判断の id は、出した時刻から作る
-const id = (now: number) => `ask-${now}`

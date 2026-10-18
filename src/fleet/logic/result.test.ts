@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { Result } from '../../../logic/primitive/result'
+import { Result } from './result'
 
 // either で鎖を抜けて、比べられるデータに戻す
 type Data = { ok: boolean; value?: unknown; error?: unknown }

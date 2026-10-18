@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import type { JsonSchemaNode } from '../../types/fleet'
-import { JsonSchema } from '../../hooks/json-schema'
+import type { JsonSchemaNode } from '../types/fleet'
+import { JsonSchema } from './json-schema'
 
 const error = (schema: JsonSchemaNode, value: unknown) => JsonSchema.check(schema, value).either(() => '', e => e)
 const shape: JsonSchemaNode = {

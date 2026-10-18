@@ -1,6 +1,6 @@
-// 永続化のルール。ユーザーのディスクに残してよいのは設定と、fleet の状態だけ。
-const MESSAGE = 'ディスクに残してよいのは設定（$.store の settings）と fleet の状態（$.fs.write で ~/.software-fleet の下）だけ。それ以外はセッションの間だけ atom に持つ'
-// $.store は settings の set・delete だけ通す。$.fs.write は fleet の状態の書き出しに使う。$.config.set・$.process は書き込みの抜け道
+// 永続化のルール。ユーザーのディスクに残してよいのは設定だけ（fleet の状態は artifact の DB にある）。
+const MESSAGE = 'ディスクに残してよいのは設定（$.store の settings）だけ。それ以外はセッションの間だけ $.state に持つ'
+// $.store は settings の set・delete だけ通す。$.config.set・$.process は書き込みの抜け道
 const isAllowed = (area, action, key) => area !== 'store' || !['set', 'delete'].includes(action) || key?.value === 'settings'
 const isWrite = (area, action) => (area === 'config' && action === 'set') || area === 'process'
 const nameOf = node => (node?.type === 'MemberExpression' && !node.computed ? node.property.name : undefined)

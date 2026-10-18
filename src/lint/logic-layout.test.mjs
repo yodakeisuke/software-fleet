@@ -70,9 +70,9 @@ describe('組み込みルール', () => {
     ['max-lines-per-function は 15 行まで', lint, withRule(lines(13)), withRule(lines(14)), 'eslint(max-lines-per-function)'],
     ['max-depth は 2 まで', lint, withRule(depth(2)), withRule(depth(3)), 'eslint(max-depth)'],
     ['max-params は 3 まで', lint, withRule(params(3)), withRule(params(4)), 'eslint(max-params)'],
-    ['logic から hooks を読まない', lint, valid, "import { x } from '../hooks/register'\n" + valid, 'eslint(no-restricted-imports)'],
-    ['logic から engine（claude-code）を読まない', lint, valid, "import type { On } from 'claude-code'\n" + valid, 'eslint(no-restricted-imports)'],
-    ['logic から node: を読まない', lint, valid, "import { readFileSync } from 'node:fs'\n" + valid, 'eslint(no-restricted-imports)'],
+    ['logic から hooks を読まない', lint, valid, "import { x } from '../hooks/register'\n" + valid, 'structure(import-direction)'],
+    ['logic から engine（claude-code）を読まない', lint, valid, "import type { On } from 'claude-code'\n" + valid, 'structure(import-direction)'],
+    ['logic から node: を読まない', lint, valid, "import { readFileSync } from 'node:fs'\n" + valid, 'structure(import-direction)'],
     ['logic に無効化コメントを書かない', disables, valid, '// oxlint-disable\n' + valid, 'lint:disable'],
   ]
   for (const [name, check, passing, failing, code] of examples) it(name, () => {

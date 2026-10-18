@@ -134,10 +134,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 </div>
 
 <script>
-// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答）だけを fleet/user に書く
-// required・レビュー待ちは src/logic/turn/turn.ts と同じ規則
+// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答）だけを answers・reviews に書く
+// 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
+// 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -186,7 +187,7 @@ const render = () => {
 const glance = () => {
   if (!S.db) return `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
   if (!S.loaded) return '<p class="req wait">読み込み中</p>'
-  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.fleet.brief ? `<h1 class="req">${esc(S.fleet.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
+  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const ships = SHIPS.map(ship => {
     const v = view(ship), on = required(ship, S.reviews[ship])
     return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span></span><span class="snote">${esc(v.note)}</span></a>
@@ -298,7 +299,8 @@ const finish = (key, done) => {
   done.timer = setTimeout(() => { delete S.done[key]; lockBriefly(); render() }, 5000)
   render()
 }
-const reviewDoc = ship => S.db.doc(`fleet/user/reviews/${ship}`)
+const reviewDoc = ship => S.db.doc(`${S.paths.reviews}/${ship}`)
+const answerDoc = askId => S.db.doc(`${S.paths.answers}/${askId}`)
 const clean = object => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined))
 const fail = error => { S.failed = `書き込めませんでした（${error?.code ?? error}）。もう一度試してください`; render() }
 
@@ -322,12 +324,12 @@ const answer = async (askId, body, msg, says, button) => {
   const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
   const done = { item, msg, warn: '', thread: null }
   done.undo = () => {
-    S.db.doc(`fleet/user/answers/${askId}`).delete().catch(fail)
+    answerDoc(askId).delete().catch(fail)
     if (done.thread) S.comments.sendToClaude({ threadId: done.thread, text: `判断 ${askId} の回答を取り消します` }).catch(() => {})
   }
   S.free = null
   finish(item.key, done)
-  S.db.doc(`fleet/user/answers/${askId}`).set(body).catch(fail)
+  answerDoc(askId).set(body).catch(fail)
   const text = `判断 ${askId}「${S.asks[askId].question}」に${says}`
   const sent = anchor ? await S.comments.sendToClaude({ anchor, text }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
   if (sent.threadId) done.thread = sent.threadId
@@ -335,7 +337,7 @@ const answer = async (askId, body, msg, says, button) => {
     const code = sent.error?.code ?? 'unknown'
     done.warn = `flagship には届いていません（${code}）。回答は記録しました`
     S.failed = `判断の回答を flagship に送れませんでした（${code}）`
-    S.db.doc(`fleet/user/answers/${askId}`).set({ ...body, undelivered: code }).catch(fail)
+    answerDoc(askId).set({ ...body, undelivered: code }).catch(fail)
     render()
   }
 }
@@ -356,7 +358,7 @@ const resend = async (askId, button) => {
   const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
   const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `判断 ${askId}「${S.asks[askId].question}」に答えました: ${said(askId, body)}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
   const { undelivered, ...answer } = body
-  if (sent.threadId) { S.failed = ''; S.db.doc(`fleet/user/answers/${askId}`).set(answer).catch(fail); return }
+  if (sent.threadId) { S.failed = ''; answerDoc(askId).set(answer).catch(fail); return }
   S.failed = `判断の回答を flagship に送れませんでした（${sent.error?.code ?? 'unknown'}）。ページを再読み込みすると、送信の許可をもう一度聞かれます`
   render()
 }
@@ -399,14 +401,15 @@ const start = async () => {
   if (!S.db) return render()
   const canSend = S.comments ? await S.comments.canSendToClaude().catch(error => error?.code ?? 'error') : 'comments なし'
   if (canSend !== 'available') S.failed = `このビューからは判断の回答を flagship に送れません（${canSend}）`
-  listen('fleet', docs => {
-    S.fleet = docs.flagship ?? {}
-    S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]]))
-  })
-  listen('fleet/flagship/asks', docs => { S.asks = docs })
-  listen('fleet/flagship/decisions', docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
-  listen('fleet/user/answers', docs => { S.answers = docs })
-  listen('fleet/user/reviews', docs => { S.reviews = docs })
+  const where = await S.db.doc('fleet/db-paths').get().catch(() => null)
+  if (!where?.exists) { S.failed = 'DB の置き場所（fleet/db-paths）がまだありません。flagship がこのページを publish し直すと置かれます'; S.db = null; return render() }
+  S.paths = where.data()
+  S.db.doc(S.paths.brief).onSnapshot(snap => { S.brief = snap.data()?.brief; render() }, () => {})
+  listen(S.paths.ships, docs => { S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]])) })
+  listen(S.paths.asks, docs => { S.asks = docs })
+  listen(S.paths.decisions, docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
+  listen(S.paths.answers, docs => { S.answers = docs })
+  listen(S.paths.reviews, docs => { S.reviews = docs })
 }
 render()
 start()

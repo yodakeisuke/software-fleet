@@ -70,11 +70,38 @@
   - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
 - 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
   - シグネチャは成果物ごとに最適にする。URL・文書ID・if_version・時刻・書いた ship は mod が付け、LLM には書かせない
-  - 型は `src/logic/` に1か所だけ定義する。tool の入力スキーマと検査はここから作る。ページはビルドせずに publish するので、表示の導出（レビュー待ちなど数行）だけはページが自分で持つ
+  - 入力の形（型・必須・空でない・enum）は tool の JSON Schema が見る。意味（件数・文字数・推奨は選択肢のどれか など）は logic が見る。同じことを 2 か所で見ない
   - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）
 - ship の合図: 同梱 skill の呼び出し（tool.call の Skill）で、そのセッションがどの ship かを mod が知る
   - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
-  - 置き場所: `skills/` は LLM が読むもの（SKILL.md・dashboard.html）、`hooks/` は $ を使うもの（tool の定義と処理・hook）、`logic/` はドメイン。`hooks/register.tsx` は on に1行ずつ登録するだけ。$ を引数にして別ファイルの関数へ渡さない（validate が拒否する）。$.state の鍵も、使うファイルの中に文字列のまま書く（import した const は validate が拒否する）
+### コードの置き場所
+指針
+1. 一緒に変わるものは一緒に置く（機能ごとにフォルダを切り、tool・logic・テストを並べる）
+2. ドメインは純粋に保つ（logic は $・DB・スキーマを知らない）
+3. 名前は中身を言う（utils・tools のような総称は使わない）
+4. 実行環境の都合は境目の 1 ファイルに閉じ込める（$ と $.state の鍵は `hooks/register.tsx` だけ）
+5. 足すより削る
+
+補足
+- 2 つ以上の機能が使うものは `fleet/` に置く
+- ドメインは「fleet を紙で運用しても成り立つ規則」だけ（乗れる者・乗るのは一度だけ・レビューの要否・判断の選択肢は 2〜4 件 など）。文書 ID や skill 名の解析はドメインではない
+
+```
+src/
+├─ hooks/register.tsx   組み立て役。$ を engine（関数の束）にして渡す
+├─ types/fleet.d.ts     plugin の型の契約（PluginState）と Engine の型
+├─ skills/<機能>/        SKILL.md（と dashboard.html）。中身ができたら tool/（LLM が呼ぶ tool、1 tool 1 ファイル）・logic/
+└─ fleet/               2 つ以上の機能が使うもの: tool/・hook/・logic/・fleet-db.ts・json-schema.ts
+```
+
+依存は一方向: `register.tsx → tool・hook → fleet-db・json-schema → logic → 型と result`
+- logic はほかの logic と型だけを読む。fleet/ は skills/ を読まない（機能ごとの tool の一覧は register.tsx が集めて渡す）。skills の機能どうしは読み合わない。register.tsx は誰も読まない
+- テストは対象の隣に置く（`*.test.ts`）
+
+例外（写しを持つもの）
+- dashboard.html はビルドせずに publish するので、レビューの規則（`fleet/logic/review.ts` の required・レビュー待ち）の写しを持つ。review を変えたら dashboard.html も直す
+- DB の置き場所は `fleet/fleet-db.ts` の paths が唯一の定義。mod はダッシュボードの publish のときに、それを DB の `fleet/db-paths` に置く。ページはそれを読むので、ページが知っているのはこの 1 つの置き場所だけ
+
 - 候補（未検証）
   - 他の ship への通知（$.session.send）。相手が動くべき findings のときだけ。更新のたびには送らない
   - 前のターンからの差分を、各 ship の次のターンの最初に注入する（prompt.submit の context）。文書の更新時刻で差分を取る

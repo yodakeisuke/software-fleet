@@ -3,9 +3,8 @@
   "include": [
     ".claude-plugin/types",
     "hooks",
-    "logic",
     "types",
     "skills",
-    "tests"
+    "fleet"
   ]
 }

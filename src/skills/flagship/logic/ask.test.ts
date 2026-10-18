@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Ask as AskDoc, Cell } from '../../../types/fleet'
-import { Ask } from '../../../logic/ask/ask'
+import { Ask } from './ask'
 
 const option = (id: string) => ({ id, label: id, consequence: `${id} になる`, detail: { text: `${id} の詳細` } })
 const ask: AskDoc = { question: 'どちら？', background: { text: '背景', diagram: '<svg/>' }, options: [option('a'), option('b')], recommended: 'a' }
@@ -32,7 +32,4 @@ describe('ask', () => {
     expect(error({ ...ask, evaluation: { axes, cells: cells(2, 1) } })).toBe('evaluation.cells は options と同じ行数で、各行は axes と同じ数')
   })
 
-  test('id は出した時刻から作る', () => {
-    expect(Ask.id(1792314590261)).toBe('ask-1792314590261')
-  })
 })

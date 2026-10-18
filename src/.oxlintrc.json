@@ -2,9 +2,9 @@
   "$schema": "../node_modules/oxlint/configuration_schema.json",
   "jsPlugins": [
     "./lint/logic-layout.js",
-    "./lint/ui-layout.js",
     "./lint/persistence.js",
-    "./lint/mainstream.js"
+    "./lint/mainstream.js",
+    "./lint/structure.js"
   ],
   "rules": {
     "func-style": [
@@ -12,7 +12,12 @@
       "expression"
     ],
     "logic-layout/comment-run": "error",
-    "persistence/settings-only": "error"
+    "logic-layout/result-only": "error",
+    "persistence/settings-only": "error",
+    "structure/import-direction": "error",
+    "structure/engine-in-register": "error",
+    "structure/generic-name": "error",
+    "structure/tool-export": "error"
   },
   "overrides": [
     {
@@ -53,23 +58,6 @@
             "skipComments": true
           }
         ],
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "node:*",
-                  "claude-code",
-                  "claude-code/*",
-                  "**/hooks",
-                  "**/hooks/**"
-                ],
-                "message": "logic は I/O をせず、engine（claude-code）と hooks を読まない"
-              }
-            ]
-          }
-        ],
         "max-depth": [
           "error",
           {
@@ -81,59 +69,30 @@
           {
             "max": 3
           }
-        ],
-        "logic-layout/result-only": "error"
-      }
-    },
-    {
-      "files": [
-        "**/hooks/**"
-      ],
-      "rules": {
-        "logic-layout/result-only": "error",
-        "mainstream/no-context": "error",
-        "mainstream/no-delay": "error",
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "**/logic/*/*-request"
-                ],
-                "message": "hooks は機能のモジュール（logic/X/X.ts）だけを使う。*-request は同じ機能の中で組み立てる"
-              }
-            ]
-          }
         ]
       }
     },
     {
       "files": [
-        "**/logic/primitive/result.ts"
+        "**/hooks/register.tsx",
+        "**/hook/**"
+      ],
+      "rules": {
+        "mainstream/no-context": "error",
+        "mainstream/no-delay": "error"
+      }
+    },
+    {
+      "files": [
+        "**/fleet/logic/result.ts"
       ],
       "rules": {
         "logic-layout/result-only": "off",
         "logic-layout/io-only": "off"
       }
-    },
-    {
-      "files": [
-        "**/hooks/ui/**"
-      ],
-      "rules": {
-        "ui-layout/ui-pure": "error",
-        "ui-layout/theme-color": "error",
-        "ui-layout/button-key": "error",
-        "max-lines-per-function": [
-          "error",
-          {
-            "max": 100,
-            "skipBlankLines": true,
-            "skipComments": true
-          }
-        ]
-      }
     }
+  ],
+  "ignorePatterns": [
+    "**/*.test.ts"
   ]
 }

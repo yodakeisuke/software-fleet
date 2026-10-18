@@ -32,7 +32,10 @@ const hookOf = node => {
   const handler = node.arguments.at(-1)
   const isMain = isFunction(handler) && (['prompt.submit', 'prompt.edit'].includes(name.value) || (name.value === 'ui.render' && !OWN.includes(component)))
   const tool = keyOf('tool') ?? ''
-  const isAllowedTool = name.value === 'tool.call' && (OWN_TOOL.test(tool) || FLEET_TOOLS.includes(tool))
+  // { tool: setBrief.tool } は mod 自身の tool（FleetTool の tool は mcp__software-fleet__<name>）
+  const toolNode = matcher?.type === 'ObjectExpression' ? matcher.properties.find(p => p.key?.name === 'tool')?.value : undefined
+  const isOwnToolRef = toolNode?.type === 'MemberExpression' && !toolNode.computed && toolNode.property.name === 'tool'
+  const isAllowedTool = name.value === 'tool.call' && (OWN_TOOL.test(tool) || FLEET_TOOLS.includes(tool) || isOwnToolRef)
   return { name, handler, isMain, isAllowedTool }
 }
 
