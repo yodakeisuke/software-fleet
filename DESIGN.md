@@ -46,12 +46,16 @@
     - ヘルプガイドを作成し、findingsをFBする
     - ユーザに説明可能な仕様か、テストする。複雑な仕様負債を排除する
     - ユーザにあるいはプロダクト提供者に不利益な内容はないかテストする
+  - セキュリティ
+    - セキュリティ責任者として、すべてのレイヤを横断してセキュリティホールを塞ぐ
+  - ops
+    - 保守運用の責任者として、運用で困らないように指摘を加え、必要なら開発にも加わる
 
 ### escorts
 - 未定。skillを作っていく中で適切な責務を見出していく
 
 ### skill の構成
-- `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs）。skill 名は `software-fleet:<フォルダ名>`
+- `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`
 
 ### 技術的原則
 - 状態はファイルで保存。jsonで構造化されたものを全てのセッションが共有する
