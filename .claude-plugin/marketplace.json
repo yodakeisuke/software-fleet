@@ -1,0 +1,6 @@
+{
+  "name": "software-fleet",
+  "owner": { "name": "Keisuke Yoda" },
+  "description": "flagship と ships のセッション群で、要求から実装・QA までをビジュアライズしながら進める Claude Code の skill と mod",
+  "plugins": [{ "name": "software-fleet", "source": "./src" }]
+}

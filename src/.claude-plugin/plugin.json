@@ -1,0 +1,10 @@
+{
+  "name": "software-fleet",
+  "version": "0.0.0",
+  "description": "flagship と ships のセッション群で、要求から実装・QA までをビジュアライズしながら進める Claude Code の skill と mod",
+  "author": {
+    "name": "Keisuke Yoda"
+  },
+  "license": "MIT",
+  "types": "./engine-protocol/index.d.ts"
+}

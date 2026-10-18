@@ -1,0 +1,139 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": [
+    "./lint/logic-layout.js",
+    "./lint/ui-layout.js",
+    "./lint/persistence.js",
+    "./lint/mainstream.js"
+  ],
+  "rules": {
+    "func-style": [
+      "error",
+      "expression"
+    ],
+    "logic-layout/comment-run": "error",
+    "persistence/settings-only": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/logic/**"
+      ],
+      "rules": {
+        "logic-layout/exports": "error",
+        "logic-layout/sections": "error",
+        "logic-layout/placement": "error",
+        "logic-layout/interface-forward": "error",
+        "logic-layout/io-only": "error",
+        "logic-layout/one-expression": "error",
+        "logic-layout/rule-comment": "error",
+        "no-unused-vars": [
+          "error",
+          {
+            "ignoreRestSiblings": true
+          }
+        ],
+        "complexity": [
+          "error",
+          {
+            "max": 5
+          }
+        ],
+        "max-lines": [
+          "error",
+          {
+            "max": 70
+          }
+        ],
+        "max-lines-per-function": [
+          "error",
+          {
+            "max": 15,
+            "skipBlankLines": true,
+            "skipComments": true
+          }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "claude-code",
+                  "claude-code/*",
+                  "**/hooks",
+                  "**/hooks/**"
+                ],
+                "message": "logic は I/O をせず、engine（claude-code）と hooks を読まない"
+              }
+            ]
+          }
+        ],
+        "max-depth": [
+          "error",
+          {
+            "max": 2
+          }
+        ],
+        "max-params": [
+          "error",
+          {
+            "max": 3
+          }
+        ],
+        "logic-layout/result-only": "error"
+      }
+    },
+    {
+      "files": [
+        "**/hooks/**"
+      ],
+      "rules": {
+        "logic-layout/result-only": "error",
+        "mainstream/no-context": "error",
+        "mainstream/no-delay": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/logic/*/*-request"
+                ],
+                "message": "hooks は機能のモジュール（logic/X/X.ts）だけを使う。*-request は同じ機能の中で組み立てる"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/logic/primitive/result.ts"
+      ],
+      "rules": {
+        "logic-layout/result-only": "off",
+        "logic-layout/io-only": "off"
+      }
+    },
+    {
+      "files": [
+        "**/hooks/ui/**"
+      ],
+      "rules": {
+        "ui-layout/ui-pure": "error",
+        "ui-layout/theme-color": "error",
+        "ui-layout/button-key": "error",
+        "max-lines-per-function": [
+          "error",
+          {
+            "max": 100,
+            "skipBlankLines": true,
+            "skipComments": true
+          }
+        ]
+      }
+    }
+  ]
+}
