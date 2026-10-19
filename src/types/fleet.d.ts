@@ -85,6 +85,8 @@ export type Engine = {
   db: (url: string, call: DbCall) => Promise<DbReply>
   // ファイルを読む（相対パスは作業ディレクトリから）。ないときは拒まれる
   read: (path: string) => Promise<string>
+  // シンボリックリンクをたどった先の絶対パス。ないときは拒まれる
+  realPath: (path: string) => Promise<string | undefined>
   // モデル自身の Read が、許可を求めずに読めるファイルか（権限の判定だけをして、何も読まない）
   readable: (path: string) => Promise<boolean>
 }

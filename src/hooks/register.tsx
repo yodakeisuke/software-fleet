@@ -23,6 +23,7 @@ const engine = ($: EngineInterface): Engine => ({
     return { text: reply.text, deny: reply.deny, ...(reply.isError === true ? { isError: true as const } : {}) }
   },
   read: path => $.fs.read(path),
+  realPath: async path => (await $.fs.stat(path, { resolve: true })).realPath,
   readable: async path => (await $.tool.check({ tool: 'Read', input: { file_path: path } })).decision === 'allow',
 })
 

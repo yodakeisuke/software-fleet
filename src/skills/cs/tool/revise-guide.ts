@@ -25,8 +25,10 @@ const pick = ({ issue, decision, why }: GuideDecision): GuideDecision => ({ issu
 // 前に出したガイドを、読んだファイルの中身で置き換える。読めなければ何も書かない
 const run = async (engine: Engine, input: unknown) => JsonSchema.check<GuideRevision>(spec.inputSchema, input).either(async ({ file, decisions }) => {
   // mod の読み込みは Read の権限（deny・sandbox）を通らない。モデル自身が許可なしに Read できるファイルだけを読み、それ以上のものを DB へ持ち出す道にしない
-  if (!(await engine.readable(file))) return { deny: `${file} は許可なしには Read できない。許可なしに読める場所に置き直す` }
-  return (await Result.given(engine.read(file))).either(
+  // 判定と読み込みは、リンクをたどった先の同じ絶対パスで行う（書き方の違いで判定をすり抜けさせない）
+  const real = (await Result.given(engine.realPath(file))).either(path => path, () => undefined)
+  if (real === undefined || !(await engine.readable(real))) return { deny: `${file} は許可なしには Read できない。許可なしに読める場所に置き直す` }
+  return (await Result.given(engine.read(real))).either(
     html => FleetDb.put(engine, FleetDb.paths().guide, { html, decisions: decisions.map(pick) } satisfies Guide, 'GuideRevised'),
     async error => ({ deny: `ガイドのファイルを読めない（${file}）: ${error}` }))
 }, async error => ({ deny: error }))
