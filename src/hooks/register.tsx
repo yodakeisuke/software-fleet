@@ -7,6 +7,7 @@ import { reportStatus } from '../fleet/tool/report-status'
 import { askUser } from '../skills/flagship/tool/ask-user'
 import { recordDecision } from '../skills/flagship/tool/record-decision'
 import { setBrief } from '../skills/flagship/tool/set-brief'
+import { setRemaining } from '../skills/flagship/tool/set-remaining'
 import { reviseRequirements } from '../skills/requirement/tool/revise-requirements'
 
 // 組み立て役。$ を engine（関数の束）にして tool・hook に渡す。$ と $.state の鍵はこのファイルにだけ書く
@@ -24,7 +25,7 @@ const engine = ($: EngineInterface): Engine => ({
 })
 
 // 機能ごとの tool の一覧。join-fleet への一覧と on の行は同じものを指す
-const flagshipTools = [setBrief, askUser, recordDecision]
+const flagshipTools = [setBrief, askUser, recordDecision, setRemaining]
 // ship は全員 report_status を持ち、成果物の tool はその ship だけが持つ
 const deliverableTools: Partial<Record<ShipName, readonly FleetTool[]>> = { requirement: [reviseRequirements] }
 const shipTools = (ship: ShipName) => [reportStatus, ...(deliverableTools[ship] ?? [])]
@@ -45,6 +46,7 @@ export const register: Register = on => {
   on('tool.call', { tool: setBrief.tool }, ($, e) => setBrief.run(engine($), e))
   on('tool.call', { tool: askUser.tool }, ($, e) => askUser.run(engine($), e))
   on('tool.call', { tool: recordDecision.tool }, ($, e) => recordDecision.run(engine($), e))
+  on('tool.call', { tool: setRemaining.tool }, ($, e) => setRemaining.run(engine($), e))
   on('tool.call', { tool: reportStatus.tool }, ($, e) => reportStatus.run(engine($), e))
   on('tool.call', { tool: reviseRequirements.tool }, ($, e) => reviseRequirements.run(engine($), e))
 }

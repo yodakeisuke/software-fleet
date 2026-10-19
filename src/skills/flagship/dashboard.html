@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
 <style>
-/* 1 列のスマホ画面: 上がスクロールする一覧（ships と決めたこと）、下が親指で操作するドック（あなたの番） */
+/* 1 列のスマホ画面: 上がスクロールする一覧（判断すること・残り・ships・決めたこと）、下が親指で操作するドック（あなたの番） */
 :root{
   --bg:oklch(0.97 0.008 75);--surface:oklch(0.995 0.003 75);--fg:oklch(0.24 0.012 60);--muted:oklch(0.5 0.012 60);
   --line:oklch(0.88 0.01 70);--acc:oklch(0.56 0.14 40);--on-acc:oklch(0.99 0.003 75);
@@ -51,6 +51,22 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:left .15s}
 .sw.on .trk{background:var(--fg)}
 .sw.on .knob{left:19px}
+/* あなたが判断すること・残りの塊: 一覧で見渡し、押すとドックのその件・ship のページへ */
+.yt{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 0;border-top:1px solid var(--line)}
+.ytk{flex:none;width:52px;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px}
+.k-ask{background:var(--acc);color:var(--on-acc)}
+.k-review{background:color-mix(in oklch,var(--review) 35%,transparent);color:var(--fg)}
+.k-wait{box-shadow:inset 0 0 0 1.5px var(--fg)}
+.ytt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.45;font-weight:700}
+.ytt>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ytt small{font-size:11.5px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lf{display:grid;grid-template-columns:22px minmax(0,1fr);column-gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.lfn{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--muted)}
+.lfn.on{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.lfb{display:flex;flex-direction:column;min-width:0}
+.lft{font-size:13px;line-height:1.55;font-weight:700;padding-top:1px;overflow-wrap:anywhere}
+.lfw{display:flex;align-items:center;min-height:36px;max-width:100%;font-size:11.5px;font-weight:700;color:var(--acc)}
+.lfw span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log summary{cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;min-height:44px;gap:8px}
 .log summary::-webkit-details-marker{display:none}
 .log summary::after{content:"›";margin-left:auto;color:var(--muted);font-size:18px}
@@ -162,7 +178,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], problems: [], at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -185,6 +201,13 @@ const items = () => {
   const list = yourTurn().filter(item => !(item.key in S.done))
   Object.values(S.done).sort((a, b) => a.index - b.index).forEach(d => list.splice(Math.min(d.index, list.length), 0, { ...d.item, done: d }))
   return list
+}
+// あなたが判断することの全部。判断とレビュー待ちはドックで答える（at はドックでの位置）。ほかは ship があなたを待っている件
+const toDecide = () => {
+  const list = items()
+  const turn = yourTurn().map(item => ({ ...item, at: list.findIndex(i => i.key === item.key) }))
+  const waiting = SHIPS.filter(ship => S.ships[ship]?.state === 'waiting' && S.ships[ship].on === 'user').map(ship => ({ kind: 'waiting', ship, what: S.ships[ship].what }))
+  return [...turn, ...waiting]
 }
 
 // --- 表示の言葉
@@ -222,8 +245,30 @@ const glance = () => {
       <button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
   }).join('')
   const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')
-  return `${brief}<div class="ships"><div class="shiph"><span class="h2">ships</span><span class="legend">要レビュー</span></div>${ships}</div>
+  return `${brief}${decideView()}${remainingView()}<div class="ships"><div class="shiph"><span class="h2">ships</span><span class="legend">要レビュー</span></div>${ships}</div>
     <details class="log"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
+}
+const head = (title, count) => `<div class="shiph"><span class="h2">${title}</span><span class="cnt">${count}</span></div>`
+const decideRow = item => {
+  const row = (open, kind, label, text, note) => `<${open} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span>`
+  if (item.kind === 'ask') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)}</button>`
+  if (item.kind === 'review') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${item.ship} が収束`, '構造と QA を確かめて承認する')}</button>`
+  return `${row(`a href="#${item.ship}"`, 'k-wait', '返事', item.what, `${item.ship} があなたを待っている`)}</a>`
+}
+const decideView = () => {
+  const list = toDecide()
+  return `<div>${head('あなたが判断すること', list.length || 'なし')}${list.map(decideRow).join('')}</div>`
+}
+// PR マージまでに残っている塊。flagship が書く。止めている判断のうち、まだ答えていないものを添え、押すとドックのその件へ
+const remainingView = () => {
+  if (S.remaining === null) return `<div>${head('PR マージまでの残り', 'flagship がまとめています')}</div>`
+  const asks = toDecide().filter(item => item.kind === 'ask')
+  const chunk = (c, k) => {
+    const blockers = (c.blockedBy ?? []).flatMap(id => asks.filter(item => item.id === id))
+    return `<div class="lf"><span class="lfn${blockers.length ? ' on' : ''}">${k + 1}</span><div class="lfb"><div class="lft">${esc(c.what)}</div>
+      ${blockers.map(item => `<button class="lfw" data-act="go" data-to="${item.at}"><span>判断待ち: ${esc(item.ask.question)} ›</span></button>`).join('')}</div></div>`
+  }
+  return `<div>${head('PR マージまでの残り', S.remaining.length || 'なし')}${S.remaining.map(chunk).join('')}</div>`
 }
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
@@ -454,6 +499,7 @@ const start = async () => {
   listen(S.paths.ships, docs => { S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]])) })
   listen(S.paths.asks, docs => { S.asks = docs })
   listen(S.paths.decisions, docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
+  S.db.doc(S.paths.remaining).onSnapshot(snap => { S.remaining = snap.data()?.chunks ?? null; render() }, () => {})
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
   S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
