@@ -54,8 +54,14 @@ export type Which = { who: string; can: string }
 export type RequirementChange = { op: 'add'; to: Requirement } | { op: 'replace'; which: Which; to: Requirement } | { op: 'remove'; which: Which }
 export type Requirements = { requirements: Requirement[] }
 
+// cs ship が書く。公開できる形のヘルプガイド（1 つの HTML 文書。ページは iframe にそのまま入れる）と、cs が聞かずに決めた仕様
+export type GuideDecision = { issue: string; decision: string; why: string }
+export type Guide = { html: Html; decisions: GuideDecision[] }
+// revise_guide の入力。ガイドは HTML のファイルで渡し、mod が読む
+export type GuideRevision = { file: string; decisions: GuideDecision[] }
+
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
-export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; answers: string; reviews: string; requirements: string; self: string }
+export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; answers: string; reviews: string; requirements: string; guide: string; self: string }
 
 // セッションが属する fleet（mod が $.state に持つ）
 export type Role = 'flagship' | ShipName
@@ -77,7 +83,8 @@ export type Engine = {
   offer: (tool: ToolDeclaration) => Promise<void>
   // ArtifactData で fleet の DB を読み書きする
   db: (url: string, call: DbCall) => Promise<DbReply>
-  // plugin の中のファイルを読む
+  // ファイルを読む（相対パスは作業ディレクトリから）。ないときは拒まれる
+  read: (path: string) => Promise<string>
 }
 // LLM が呼ぶ専用 tool。宣言（spec）と処理（run）を 1 つにしたもの。tool は mcp__software-fleet__<spec.name>
 export type FleetTool = { tool: string; spec: ToolDeclaration; run: (engine: Engine, input: unknown) => Promise<ToolReply> }
@@ -93,5 +100,6 @@ declare module 'claude-code' {
     'mcp__software-fleet__record_decision': Decision
     'mcp__software-fleet__report_status': { status: Status }
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
+    'mcp__software-fleet__revise_guide': GuideRevision
   }
 }

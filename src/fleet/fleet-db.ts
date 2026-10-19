@@ -25,6 +25,7 @@ const paths: DbPaths = {
   reviews: 'fleet/user/reviews',
   // ship の成果物は fleet/<ship>/deliverables/<名前>
   requirements: 'fleet/requirement/deliverables/requirements',
+  guide: 'fleet/cs/deliverables/guide',
   self: 'fleet/db-paths',
 }
 // "collection/id" を、collection と文書 id に分ける

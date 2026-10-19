@@ -148,6 +148,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
 .seg a{min-height:40px;border-radius:9px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .seg a[aria-current]{background:var(--fg);color:var(--bg)}
+/* cs: ガイドはドックの上までを埋め、iframe の中でスクロールする。画面の端まで広げる */
+.glance:has(> .guide){overflow:hidden}
+.guide{flex:1;min-height:0;border:0;margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+.cis{font-size:11px;font-weight:700;color:var(--acc)}
 @media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
 </style>
 
@@ -162,7 +166,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], problems: [], at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], problems: [], guide: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -206,7 +210,8 @@ const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ..
 const render = () => {
   const [hash, sub] = location.hash.slice(1).split('.')
   const ship = SHIPS.includes(hash) ? hash : ''
-  $('glance').innerHTML = ship === 'requirement' ? requirementPage(sub) : ship ? shipPage(ship) : glance()
+  if (ship === 'cs') renderCs(sub)
+  else $('glance').innerHTML = ship === 'requirement' ? requirementPage(sub) : ship ? shipPage(ship) : glance()
   renderDock(ship, sub)
   renderSheet()
 }
@@ -244,17 +249,36 @@ const requirementPage = sub => {
     <tbody>${S.problems.map(p => `<tr><td>${esc(p.problem)}</td><td>${esc(p.solution)}</td></tr>`).join('')}</tbody></table>`
   return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
-const requirementDock = sub => {
-  const status = S.ships.requirement
-  const approve = status && awaiting('requirement', status, S.reviews.requirement) ? '<button class="act pri" data-act="approve" data-ship="requirement"><span class="al">承認する</span></button>' : ''
-  const tab = (href, label, on) => `<a href="${href}"${on ? ' aria-current="page"' : ''}>${label}</a>`
-  return `<div class="rdock gut"><nav class="seg" aria-label="要求とテスト">${tab('#requirement', '要求', sub !== 'test')}${tab('#requirement.test', 'テスト', sub === 'test')}</nav>${approve}</div>`
+// cs: 公開する形のヘルプガイドと、cs が聞かずに決めた仕様の 2 枚
+// ガイドは iframe（script は動かない）に入れ、描き直しでは作り直さない（作り直すと、読んでいた位置が先頭に戻る）
+const renderCs = sub => {
+  const main = $('glance'), head = '<a class="rhead" href="#"><span aria-hidden="true">‹</span>cs</a>'
+  if (unready() || !S.guide) { main.innerHTML = head + (unready() || '<p class="req wait">まだガイドがありません</p>'); return }
+  if (sub === 'decisions') {
+    const row = d => `<div class="logi"><div class="cis">${esc(d.issue)}</div><div class="lt">${esc(d.decision)}</div><div class="lw">${esc(d.why)}</div></div>`
+    main.innerHTML = head + (S.guide.decisions.length === 0 ? '<p class="req wait">聞かずに決めた仕様はありません</p>' : `<div>${S.guide.decisions.map(row).join('')}</div>`)
+    return
+  }
+  if (!main.querySelector('.guide')) main.innerHTML = `${head}<iframe class="guide" sandbox title="ヘルプガイド"></iframe>`
+  const frame = main.querySelector('.guide')
+  if (frame.srcdoc !== S.guide.html) frame.srcdoc = S.guide.html
+}
+// ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
+const pageDock = (ship, label, tabs, sub = '') => {
+  const status = S.ships[ship]
+  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">承認する</span></button>` : ''
+  const tab = ([page, name]) => `<a href="#${ship}${page ? `.${page}` : ''}"${page === sub ? ' aria-current="page"' : ''}>${name}</a>`
+  return `<div class="rdock gut"><nav class="seg" aria-label="${label}">${tabs.map(tab).join('')}</nav>${approve}</div>`
+}
+const docks = {
+  requirement: sub => pageDock('requirement', '要求とテスト', [['', '要求'], ['test', 'テスト']], sub),
+  cs: sub => pageDock('cs', 'ガイドと決めたこと', [['', 'ガイド'], ['decisions', `決めたこと ${S.guide?.decisions.length ?? 0}`]], sub),
 }
 const renderDock = (ship, sub) => {
   const dock = $('dock')
-  dock.hidden = (ship !== '' && ship !== 'requirement') || !S.db || !S.loaded
+  dock.hidden = (ship !== '' && !docks[ship]) || !S.db || !S.loaded
   if (dock.hidden) return
-  if (ship === 'requirement') { dock.innerHTML = requirementDock(sub); return }
+  if (ship) { dock.innerHTML = docks[ship](sub); return }
   const typing = document.activeElement?.dataset?.free
   const caret = typing && document.activeElement.selectionStart
   const list = items()
@@ -457,6 +481,7 @@ const start = async () => {
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
   S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
+  S.db.doc(S.paths.guide).onSnapshot(snap => { S.guide = snap.data() ?? null; render() }, () => {})
 }
 render()
 start()

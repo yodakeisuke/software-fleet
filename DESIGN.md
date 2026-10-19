@@ -55,6 +55,7 @@
 
 ### skill の構成
 - `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
+- cs はヘルプガイドを skill `help-guide-driven-dev` で書く。前提: その skill がユーザの環境に入っていること（`npx skills add yodakeisuke/help-guide-driven-dev`）
 
 ## ui指針
 - 例えば Tinder UI のような、スマフォでの楽で直感的な体験をファーストに考える
@@ -66,6 +67,7 @@
   - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答）はページが、別の文書に書く
   - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
 - html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
+  - 例外: cs のヘルプガイドは、公開する HTML そのものが成果物。cs が書いた HTML ファイルを revise_guide が読んで DB に置き、ページは script の動かない iframe に入れる（HTML を tool の入力に書き写させない）
   - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える
   - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
 - 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
