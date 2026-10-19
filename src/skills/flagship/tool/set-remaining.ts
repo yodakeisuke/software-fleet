@@ -9,7 +9,7 @@ const limits = Remaining.limits()
 // PR マージまでに残っている大きな塊。ダッシュボードの「あなたが判断すること」の下に出る。件数は logic の Remaining が見る
 const spec = {
   name: 'set_remaining',
-  description: 'PR マージまでに残っている大きな塊を、今の全体で置き換える。終わった塊は外す',
+  description: 'PR マージまでに残っている大きな塊を、今の全体で置き換える。塊はユーザに届く振る舞いの単位で切る（ship や工程では切らない）。終わった塊は外す',
   inputSchema: object({
     chunks: {
       type: 'array',
