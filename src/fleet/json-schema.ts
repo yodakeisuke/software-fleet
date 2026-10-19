@@ -2,14 +2,29 @@ import type { JsonSchemaNode, Result as Data } from '../types/fleet'
 import { Result } from './logic/result'
 
 // tool の入力の形（型・必須・空でない・enum）を、LLM に渡したのと同じ JSON Schema で検査する。意味の検査は logic がする
+// 通した値はスキーマにある項目だけにする（tool の呼び出しの付帯情報や、LLM が足した項目を持ち込まない）
 export const JsonSchema = {
-  check: <T>(schema: JsonSchemaNode, value: unknown) => verdict<T>(value, problems(schema, value, '入力')),
+  check: <T>(schema: JsonSchemaNode, value: unknown) => checked<T>(resolved(schema, schema.$defs ?? {}), value),
+  // 一番外側の $defs の定義を指す
+  ref: (name: string): JsonSchemaNode => ({ $ref: `#/$defs/${name}` }),
   // 空でない文字列
   text: (description?: string): JsonSchemaNode => ({ type: 'string', minLength: 1, ...(description ? { description } : {}) }),
   object: (properties: Record<string, JsonSchemaNode>, required: string[], description?: string): JsonSchemaNode =>
     ({ type: 'object', properties, required, ...(description ? { description } : {}) }),
 }
 
+const checked = <T>(schema: JsonSchemaNode, value: unknown) => verdict<T>(picked(schema, value), problems(schema, value, '入力'))
+// $ref を $defs の定義に置き換える（LLM には $defs のまま渡し、検査は置き換えたもので行う）
+const resolved = (schema: JsonSchemaNode, defs: Readonly<Record<string, JsonSchemaNode>>): JsonSchemaNode => {
+  if (schema.$ref) return resolved(defs[schema.$ref.replace('#/$defs/', '')] as JsonSchemaNode, defs)
+  const each = (nodes: Readonly<Record<string, JsonSchemaNode>>) => Object.fromEntries(Object.entries(nodes).map(([key, node]) => [key, resolved(node, defs)]))
+  return {
+    ...schema,
+    ...(schema.properties ? { properties: each(schema.properties) } : {}),
+    ...(schema.items ? { items: resolved(schema.items, defs) } : {}),
+    ...(schema.oneOf ? { oneOf: schema.oneOf.map(branch => resolved(branch, defs)) } : {}),
+  }
+}
 // 問題がなければ値をそのまま通し、あれば全部を 1 つの文にして失敗にする
 const verdict = <T>(value: unknown, found: string[]) =>
   Result.given<Data<T, string>>(found.length === 0 ? { ok: true, value: value as T } : { ok: false, error: found.join(' / ') })
@@ -32,11 +47,24 @@ const text = (schema: JsonSchemaNode, value: unknown, at: string) => typeof valu
 // 配列は要素ごとに items を満たす
 const list = (schema: JsonSchemaNode, value: unknown, at: string) =>
   !Array.isArray(value) || !schema.items ? [] : value.flatMap((item, index) => problems(schema.items as JsonSchemaNode, item, `${at}[${index}]`))
-// オブジェクトは required が揃い、ある項目はそれぞれのスキーマを満たす
+// オブジェクトは required が揃い、ある項目はそれぞれのスキーマを満たす（properties の順に。properties にない項目は additionalProperties を満たす）
 const fields = (schema: JsonSchemaNode, value: unknown, at: string) => schema.type !== 'object' ? [] : [
   ...(schema.required ?? []).filter(key => field(value, key) === undefined).map(key => `${at}.${key} がない`),
   ...Object.entries(schema.properties ?? {}).flatMap(([key, inner]) => (field(value, key) === undefined ? [] : problems(inner, field(value, key), `${at}.${key}`))),
+  ...Object.entries(value as object).filter(([key]) => !(key in (schema.properties ?? {}))).flatMap(([key, inner]) => (schema.additionalProperties ? problems(schema.additionalProperties, inner, `${at}.${key}`) : [])),
 ]
+// 項目のスキーマ。properties になければ additionalProperties、それもなければ undefined
+const propertyOf = (schema: JsonSchemaNode, key: string) => schema.properties?.[key] ?? schema.additionalProperties
+// スキーマにある項目だけを残す。oneOf は問題のない形で残す
+const picked = (schema: JsonSchemaNode, value: unknown): unknown => {
+  if (schema.oneOf) return picked(schema.oneOf.find(branch => problems(branch, value, '').length === 0) ?? {}, value)
+  if (Array.isArray(value)) return schema.items ? value.map(item => picked(schema.items as JsonSchemaNode, item)) : value
+  if (schema.type !== 'object' || !fits(schema, value)) return value
+  return Object.fromEntries(Object.entries(value as object).flatMap(([key, inner]) => {
+    const own = propertyOf(schema, key)
+    return own === undefined ? [] : [[key, picked(own, inner)]]
+  }))
+}
 // oneOf は 1 値の enum（state など）で形を選び、その形の問題を返す。どの形も選べなければ、選べる値を挙げる
 const oneOf = (branches: readonly JsonSchemaNode[], value: unknown, at: string) => {
   const chosen = branches.filter(branch => tags(branch).every(([key, tag]) => field(value, key) === tag))

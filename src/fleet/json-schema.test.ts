@@ -32,4 +32,29 @@ describe('json-schema', () => {
   test('印のない oneOf は、問題がいちばん少ない形の問題を返す', () => {
     expect(error({ oneOf: [{ type: 'object', required: ['a'] }, { type: 'object', required: ['b', 'c'] }] }, { b: 1 })).toBe('入力.a がない')
   })
+
+  test('鍵が自由なオブジェクトは、どの項目も additionalProperties を満たす', () => {
+    const values: JsonSchemaNode = { type: 'object', additionalProperties: { type: 'string' } }
+    expect(error(values, { 金額: '3万円', 用途: '交通費' })).toBe('')
+    expect(error(values, { 金額: 30000 })).toBe('入力.金額 は string でなければならない')
+  })
+
+  test('$ref は一番外側の $defs の定義として検査する', () => {
+    const schema: JsonSchemaNode = { type: 'object', required: ['a'], properties: { a: JsonSchema.ref('word') }, $defs: { word: { type: 'string', minLength: 1 } } }
+    expect(error(schema, { a: 'x' })).toBe('')
+    expect(error(schema, { a: '' })).toBe('入力.a が空')
+    expect(JsonSchema.check(schema, { a: 'x', b: 1 }).either<unknown>(v => v, e => e)).toEqual({ a: 'x' })
+  })
+
+  test('通した値は、スキーマにある項目だけにする。oneOf は合う形の項目を残す', () => {
+    const kept = (schema: JsonSchemaNode, value: unknown) => JsonSchema.check(schema, value).either<unknown>(v => v, e => e)
+    expect(kept(shape, { name: 'x', tags: ['a'], extra: 1 })).toEqual({ name: 'x', tags: ['a'] })
+    expect(kept({ type: 'array', items: { type: 'object', properties: { a: { type: 'string' } } } }, [{ a: 'x', b: 'y' }])).toEqual([{ a: 'x' }])
+    expect(kept({ type: 'object', additionalProperties: { type: 'string' } }, { 金額: '3万円' })).toEqual({ 金額: '3万円' })
+    const either: JsonSchemaNode = { oneOf: [
+      { type: 'object', required: ['kind'], properties: { kind: { type: 'string', enum: ['a'] }, x: { type: 'string' } } },
+      { type: 'object', required: ['kind'], properties: { kind: { type: 'string', enum: ['b'] }, y: { type: 'string' } } },
+    ] }
+    expect(kept(either, { kind: 'b', x: '1', y: '2' })).toEqual({ kind: 'b', y: '2' })
+  })
 })

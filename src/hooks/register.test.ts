@@ -2,6 +2,11 @@ import type { CommandRunInput, On } from 'claude-code'
 import { describe, expect, mock, test } from 'claude-code/testing'
 
 const fleet = 'https://claude.ai/artifact/abc'
+const moment = {
+  change: '新', by: { kind: 'screen', actor: '申請者', screen: '申請フォーム', sketch: '金額 [____]\n[申請する]' }, reads: [],
+  command: { name: '経費を申請する', params: ['金額'] }, aggregate: '経費', events: [{ name: '経費が申請された', attrs: ['金額'] }], otherwise: [],
+  tests: [{ name: '申請される', given: [], when: { 金額: '3万円' }, expect: [{ event: '経費が申請された', values: { 金額: '3万円' } }] }],
+}
 // plugin の下の世界: 時計・セッションの状態・tool の登録・Skill・ArtifactData をメモリで答える
 const world = (on: On) => {
   mock.clock(on, { now: 1000 })
@@ -28,5 +33,23 @@ describe('register', () => {
     const chunks = [{ what: '承認経路の実装', blockedBy: ['ask-1'] }]
     expect(await $.tool.call({ tool: 'mcp__software-fleet__set_remaining', chunks })).toEqual({ result: 'RemainingSet' })
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/flagship/deliverables', doc_id: 'remaining', data: { chunks } })
+  })
+
+  test('behavior の ship になったセッションは revise_behavior を持ち、それで fleet の DB の event model に書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:behavior', args: fleet })
+    expect(registered).toEqual(['report_status', 'revise_behavior'])
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_behavior', note: '申請を足す', moments: [{ op: 'add', to: moment }] })).toEqual({ result: 'BehaviorRevised' })
+    expect(writes.find(call => call.doc_id === 'event-model' && call.action === 'set')).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/deliverables', data: { moments: [moment], views: [], readModels: [], flows: [], hotspots: [] } })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/journal', data: { note: '申請を足す', changed: '時点 +1 ~0 -0' } })
+  })
+
+  test('ほかの ship は revise_behavior を持たない。LLM が生の ArtifactData で fleet の DB に書くことは拒む', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:requirement', args: fleet })
+    expect(registered).toEqual(['report_status', 'revise_requirements'])
+    const raw = await $.tool.call({ tool: 'ArtifactData', url: fleet, action: 'set', collection: 'fleet/behavior/deliverables', doc_id: 'event-model', data: {} })
+    expect(raw).toEqual({ deny: 'fleet の DB は専用の tool（mcp__software-fleet__*）で書く。生の ArtifactData では書かない' })
+    expect(writes).toEqual([])
   })
 })
