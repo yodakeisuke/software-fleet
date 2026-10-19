@@ -31,6 +31,9 @@ export type Problem = { problem: string; solution: string }
 export type Fleet = { brief: string; problems?: Problem[] }
 export type Ask = { question: string; background: Explain; options: Option[]; recommended: OptionId; evaluation?: Evaluation }
 export type Decision = { what: string; why: string; closes?: AskId }
+// PR マージまでに残っている大きな塊。終わった塊は外す。blockedBy はその塊を止めている判断
+export type Chunk = { what: string; blockedBy?: AskId[] }
+export type Remaining = { chunks: Chunk[] }
 
 // 各 ship が書く（since は mod が付ける）
 export type Status =
@@ -61,7 +64,7 @@ export type Guide = { html: Html; decisions: GuideDecision[] }
 export type GuideRevision = { file: string; decisions: GuideDecision[] }
 
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
-export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; answers: string; reviews: string; requirements: string; guide: string; self: string }
+export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string; requirements: string; guide: string; self: string }
 
 // セッションが属する fleet（mod が $.state に持つ）
 export type Role = 'flagship' | ShipName
@@ -102,6 +105,7 @@ declare module 'claude-code' {
     'mcp__software-fleet__set_brief': Fleet
     'mcp__software-fleet__ask_user': Ask
     'mcp__software-fleet__record_decision': Decision
+    'mcp__software-fleet__set_remaining': Remaining
     'mcp__software-fleet__report_status': { status: Status }
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
     'mcp__software-fleet__revise_guide': GuideRevision

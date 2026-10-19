@@ -21,8 +21,10 @@ const paths: DbPaths = {
   ships: 'fleet',
   asks: 'fleet/flagship/asks',
   decisions: 'fleet/flagship/decisions',
+  remaining: 'fleet/flagship/deliverables/remaining',
   answers: 'fleet/user/answers',
   reviews: 'fleet/user/reviews',
+  comments: 'fleet/user/comments',
   // ship の成果物は fleet/<ship>/deliverables/<名前>
   requirements: 'fleet/requirement/deliverables/requirements',
   guide: 'fleet/cs/deliverables/guide',
