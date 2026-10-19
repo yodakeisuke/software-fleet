@@ -21,7 +21,7 @@ const run = async (engine: Engine, input: unknown) => {
   return JsonSchema.check<Fleet>(spec.inputSchema, input)
     .either(({ brief, problems }) => FleetDb.revise(engine, where.brief, doc => Result.given({
       brief,
-      problems: problems?.map(({ problem, solution }) => ({ problem, solution })) ?? (doc as Fleet | undefined)?.problems ?? [],
+      problems: problems ?? (doc as Fleet | undefined)?.problems ?? [],
     }), 'BriefSet'), async error => ({ deny: error }))
 }
 

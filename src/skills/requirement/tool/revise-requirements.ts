@@ -1,4 +1,4 @@
-import type { Engine, FleetTool, JsonSchemaNode, Requirement, RequirementChange, Requirements as RequirementsDoc, Which } from '../../../types/fleet'
+import type { Engine, FleetTool, JsonSchemaNode, RequirementChange, Requirements as RequirementsDoc } from '../../../types/fleet'
 import { FleetDb } from '../../../fleet/fleet-db'
 import { JsonSchema } from '../../../fleet/json-schema'
 import { Requirements } from '../logic/requirements'
@@ -32,18 +32,10 @@ const spec = {
   isDeferred: false,
 }
 
-// tool の呼び出しの付帯情報を持ち込まないよう、型にある項目だけを残す
-const pickWhich = ({ who, can }: Which): Which => ({ who, can })
-const pickRequirement = ({ kind, change, who, can, tests }: Requirement): Requirement => ({ kind, change, who, can, tests: tests.map(({ act, evidence }) => ({ act, evidence })) })
-const pick = (change: RequirementChange): RequirementChange =>
-  change.op === 'add' ? { op: 'add', to: pickRequirement(change.to) }
-    : change.op === 'replace' ? { op: 'replace', which: pickWhich(change.which), to: pickRequirement(change.to) }
-      : { op: 'remove', which: pickWhich(change.which) }
-
 // 今の要求リストに変更を当てて、読んだ版に固定して書き直す。1 件でも問題があれば何も書かない
 const run = async (engine: Engine, input: unknown) => JsonSchema.check<{ changes: RequirementChange[] }>(spec.inputSchema, input).either(
   ({ changes }) => FleetDb.revise(engine, FleetDb.paths().requirements, doc =>
-    Requirements.revise((doc as RequirementsDoc | undefined)?.requirements ?? [], changes.map(pick)).and(requirements => ({ requirements })), 'RequirementsRevised'),
+    Requirements.revise((doc as RequirementsDoc | undefined)?.requirements ?? [], changes).and(requirements => ({ requirements })), 'RequirementsRevised'),
   async error => ({ deny: error }))
 
 export const reviseRequirements = { tool: 'mcp__software-fleet__revise_requirements' as const, spec, run } satisfies FleetTool

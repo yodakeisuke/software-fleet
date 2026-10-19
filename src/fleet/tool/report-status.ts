@@ -27,9 +27,6 @@ const spec = {
   isDeferred: false,
 }
 
-// tool の呼び出しの付帯情報を持ち込まないよう、Status の項目だけを残す
-const pick = (status: Status) => Object.fromEntries(Object.entries(status).filter(([key]) => ['state', 'doing', 'reason', 'on', 'what'].includes(key))) as Status
-
 // 収束してレビュー待ちになったら、そう返す
 const run = async (engine: Engine, input: unknown) => {
   const session = await engine.fleet()
@@ -38,7 +35,7 @@ const run = async (engine: Engine, input: unknown) => {
   const now = new Date(await engine.now()).toISOString()
   const where = FleetDb.paths()
   return JsonSchema.check<{ status: Status }>(spec.inputSchema, input).either(async ({ status }) => {
-    const doc = Review.since(pick(status), now)
+    const doc = Review.since(status, now)
     const wrote = await FleetDb.put(engine, `${where.ships}/${ship}`, doc, 'StatusReported')
     const review = (await FleetDb.read(engine, `${where.reviews}/${ship}`)) as ReviewDoc | undefined
     return 'result' in wrote && Review.awaiting(ship as ShipName, doc, review) ? { result: 'StatusReported, awaiting review' } : wrote

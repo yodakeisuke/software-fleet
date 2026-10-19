@@ -8,18 +8,27 @@
   --line:oklch(0.88 0.01 70);--acc:oklch(0.56 0.14 40);--on-acc:oklch(0.99 0.003 75);
   --work:oklch(0.55 0.13 250);--review:oklch(0.62 0.14 75);--done:oklch(0.56 0.13 150);--stuck:oklch(0.55 0.17 25);--wait:oklch(0.78 0.01 60);
   --shadow:oklch(0 0 0 / .08);--scrim:oklch(0 0 0 / .35);
+  --em-rm:oklch(0.58 0.13 150);--em-cmd:oklch(0.55 0.13 250);--em-ev:oklch(0.68 0.15 55);--em-pol:oklch(0.55 0.15 305);
+  --em-rm-bg:oklch(0.87 0.09 145);--em-cmd-bg:oklch(0.85 0.07 240);--em-ev-bg:oklch(0.84 0.12 68);--em-pol-bg:oklch(0.94 0.035 305);
+  --em-hot:oklch(0.6 0.16 355);--em-hot-bg:oklch(0.91 0.06 355);
   --font:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);
   --line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);
   --work:oklch(0.72 0.12 250);--review:oklch(0.8 0.13 75);--done:oklch(0.74 0.13 150);--stuck:oklch(0.7 0.16 25);--wait:oklch(0.42 0.01 60);
-  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark}}
+  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
+  --em-rm:oklch(0.74 0.13 150);--em-cmd:oklch(0.72 0.12 250);--em-ev:oklch(0.78 0.13 60);--em-pol:oklch(0.74 0.13 305);
+  --em-rm-bg:oklch(0.42 0.08 148);--em-cmd-bg:oklch(0.41 0.07 245);--em-ev-bg:oklch(0.5 0.1 62);--em-pol-bg:oklch(0.33 0.05 305);
+  --em-hot:oklch(0.76 0.12 355);--em-hot-bg:oklch(0.38 0.07 355)}}
 :root[data-theme="dark"]{
   --bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);
   --line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);
   --work:oklch(0.72 0.12 250);--review:oklch(0.8 0.13 75);--done:oklch(0.74 0.13 150);--stuck:oklch(0.7 0.16 25);--wait:oklch(0.42 0.01 60);
-  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark}
+  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
+  --em-rm:oklch(0.74 0.13 150);--em-cmd:oklch(0.72 0.12 250);--em-ev:oklch(0.78 0.13 60);--em-pol:oklch(0.74 0.13 305);
+  --em-rm-bg:oklch(0.42 0.08 148);--em-cmd-bg:oklch(0.41 0.07 245);--em-ev-bg:oklch(0.5 0.1 62);--em-pol-bg:oklch(0.33 0.05 305);
+  --em-hot:oklch(0.76 0.12 355);--em-hot-bg:oklch(0.38 0.07 355)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -51,12 +60,13 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:left .15s}
 .sw.on .trk{background:var(--fg)}
 .sw.on .knob{left:19px}
-/* あなたが判断すること・残りの塊: 一覧で見渡し、押すとドックのその件・ship のページへ */
+/* あなたが判断すること・残りの塊: 一覧で見渡し、押すとドックのその件・ship のページ・付箋へ */
 .yt{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 0;border-top:1px solid var(--line)}
 .ytk{flex:none;width:52px;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px}
 .k-ask{background:var(--acc);color:var(--on-acc)}
 .k-review{background:color-mix(in oklch,var(--review) 35%,transparent);color:var(--fg)}
 .k-wait{box-shadow:inset 0 0 0 1.5px var(--fg)}
+.k-hot{background:var(--em-hot-bg);box-shadow:inset 0 0 0 1px var(--em-hot)}
 .ytt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.45;font-weight:700}
 .ytt>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .ytt small{font-size:11.5px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -167,6 +177,73 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 /* cs: ガイドはドックの上までを埋め、iframe の中でスクロールする。画面の端まで広げる */
 .glance:has(> .guide){overflow:hidden}
 .guide{flex:1;min-height:0;border:0;margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+.rmk.old{box-shadow:inset 0 0 0 1.5px var(--line);color:var(--muted)}
+/* behavior の盤面（event modeling の図）: 時間は左から右へ。上から 役者のレーン → コマンド・リードモデル → 時間軸 → 集約のレーン。色は event modeling の慣例 */
+.bleg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:11px;color:var(--muted)}
+.bleg span{display:flex;align-items:center;gap:5px}
+.bleg i{width:11px;height:11px;border-radius:3px}
+.i-rm{background:var(--em-rm-bg)}.i-cmd{background:var(--em-cmd-bg)}.i-ev{background:var(--em-ev-bg)}.i-pol{background:var(--em-pol-bg);box-shadow:inset 0 0 0 1px var(--em-pol)}
+.emwrap{position:relative;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+.emscroll{overflow-x:auto;overscroll-behavior-x:contain}
+.emboard{position:relative}
+.emsvg{position:absolute;left:0;top:0;pointer-events:none}
+.emsep{position:absolute;left:0;height:1px;background:var(--line)}
+.emlabs{position:absolute;left:0;top:0;z-index:2;width:66px;pointer-events:none}
+.emlab{position:absolute;left:0;width:66px;padding:6px 6px 0 0;background:var(--bg);font-size:10.5px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.emlab small{display:block;font-size:9.5px;font-weight:400;color:var(--muted)}
+.emc,.ems{position:absolute;z-index:1;display:flex;flex-direction:column;gap:3px;padding:6px 7px;border-radius:6px;font-size:11px;line-height:1.3;overflow:hidden}
+.emc{background:var(--surface);box-shadow:0 0 0 1px var(--line),0 2px 6px var(--shadow)}
+.emc.pol{background:var(--em-pol-bg);box-shadow:0 0 0 1px color-mix(in oklch,var(--em-pol) 45%,transparent)}
+.emk{font-size:9.5px;color:var(--muted)}
+.emt{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;padding-right:16px}
+.emsk{margin:0;flex:1;min-height:0;overflow:hidden;font:6px/1.25 ui-monospace,"SFMono-Regular",Menlo,monospace;color:var(--muted);white-space:pre}
+.ems{font-weight:700;box-shadow:0 1px 2px var(--shadow)}
+.ems span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ems.cmd{background:var(--em-cmd-bg)}.ems.rm{background:var(--em-rm-bg)}.ems.ev{background:var(--em-ev-bg)}
+.ems.alt{background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--em-ev);font-weight:400}
+.emold{opacity:.45}
+.emtag{position:absolute;top:5px;right:5px;font-size:9px;font-style:normal;font-weight:700;line-height:14px;padding:0 4px;border-radius:4px;background:var(--acc);color:var(--on-acc)}
+.emtag.mod{background:var(--surface);color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.emaxis{position:absolute;height:2px;background:var(--fg)}
+.emno{position:absolute;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.emtc{position:absolute;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.emtc b{color:var(--fg)}
+.ea{fill:none;stroke-width:1.4}
+.ea.cmd{stroke:var(--em-cmd)}.ea.src{stroke:var(--em-rm)}.ea.rd{stroke:var(--em-rm);stroke-dasharray:4 3}.ea.pol{stroke:var(--em-pol);stroke-dasharray:4 3}
+.mh.cmd{fill:var(--em-cmd)}.mh.rd{fill:var(--em-rm)}.mh.pol{fill:var(--em-pol)}
+.ems.hot{background:var(--em-hot-bg);box-shadow:inset 0 0 0 1px var(--em-hot)}
+.ems.hot small{font-weight:400;font-size:10px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.embub{position:absolute;right:5px;bottom:4px;font-size:9px;font-style:normal;font-weight:700;line-height:14px;padding:0 5px;border-radius:7px;background:var(--fg);color:var(--bg)}
+.embub::before{content:"💬 "}
+.emid{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
+.emid b{color:var(--fg)}
+.emhot{padding:1px 8px;border-radius:999px;background:var(--em-hot-bg);color:var(--fg);box-shadow:inset 0 0 0 1px var(--em-hot)}
+.emfh{margin:18px 0 0;font-size:13px;font-weight:700}
+.emfh small{font-weight:400;color:var(--muted)}
+.cmt{display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:12px;background:var(--surface);box-shadow:0 0 0 1px var(--line)}
+.cmt.done{opacity:.55}
+.ct{font-size:13px;line-height:1.55;white-space:pre-wrap}
+.cr{font-size:12.5px;line-height:1.55;font-weight:700;white-space:pre-wrap}
+.cw{font-size:11.5px;color:var(--muted)}
+.cdone{align-self:flex-end;font-size:12px;font-weight:700;color:var(--acc);min-height:32px}
+.sk{margin:0;padding:8px 10px;border-radius:10px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
+.sk.txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.tk{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.th{display:flex;align-items:flex-start;gap:8px;font-size:14px;font-weight:700;line-height:20px}
+.th .rmk{margin-top:1px;flex:none}
+.tt{min-width:0;overflow-wrap:anywhere}
+.th .cnt{margin-left:auto;flex:none;white-space:nowrap;font-weight:400}
+.ex{display:flex;flex-direction:column;gap:3px;padding:9px 11px;border-radius:12px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
+.en{margin:0 0 2px;font-size:13px;font-weight:700;line-height:1.45;text-wrap:pretty}
+.g{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:6px;font-size:12px;line-height:1.6}
+.g>span:first-child{color:var(--muted);font-weight:700}
+.g>span+span{min-width:0;overflow-wrap:break-word}
+.fx{font-weight:700}
+.kv i{font-style:normal;color:var(--muted)}
+.no{color:var(--stuck);font-weight:700}
+.rows{border-collapse:collapse;font-size:11.5px;line-height:1.5}
+.rows th,.rows td{padding:2px 10px 2px 0;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.rows th{color:var(--muted);font-weight:700}
 @media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
 </style>
 
@@ -177,11 +254,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 </div>
 
 <script>
-// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答・ship への返事）だけを answers・reviews・comments に書く
+// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答・付箋へのコメント・ship への返事）だけを answers・reviews・comments に書く
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], threads: {}, problems: [], guide: null, remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], guide: null, remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -211,10 +288,11 @@ const items = () => {
   Object.values(S.done).sort((a, b) => a.index - b.index).forEach(d => list.splice(Math.min(d.index, list.length), 0, { ...d.item, done: d }))
   return list
 }
-// あなたが判断することの全部。判断・レビュー待ち・ship への返事はドックで答える（at はドックでの位置）
+// あなたが判断することの全部。判断・レビュー待ち・ship への返事はドックで答える（at はドックでの位置）。ほかは behavior が仮定で進めている未決定の問い
 const toDecide = () => {
   const list = items()
-  return yourTurn().map(item => ({ ...item, at: list.findIndex(i => i.key === item.key) }))
+  const turn = yourTurn().map(item => ({ ...item, at: list.findIndex(i => i.key === item.key) }))
+  return [...turn, ...S.behavior.hotspots.map(h => ({ kind: 'hotspot', h }))]
 }
 const KIND = { ask: '判断', review: 'レビュー', waiting: '返事' }
 
@@ -238,7 +316,7 @@ const render = () => {
   const [hash, sub] = location.hash.slice(1).split('.')
   const ship = SHIPS.includes(hash) ? hash : ''
   if (ship === 'cs') renderCs(sub)
-  else $('glance').innerHTML = ship === 'requirement' ? requirementPage(sub) : ship ? shipPage(ship) : glance()
+  else $('glance').innerHTML = PAGES[ship]?.body ? PAGES[ship].body(sub) : ship ? shipPage(ship) : glance()
   renderDock(ship, sub)
   renderSheet()
 }
@@ -262,7 +340,8 @@ const decideRow = item => {
   const row = (open, kind, label, text, note) => `<${open} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span>`
   if (item.kind === 'ask') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)}</button>`
   if (item.kind === 'review') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${item.ship} が収束`, '構造と QA を確かめて承認する')}</button>`
-  return `${row(`button data-act="go" data-to="${item.at}"`, 'k-wait', '返事', item.status.what, `${item.ship} があなたを待っている`)}</button>`
+  if (item.kind === 'waiting') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-wait', '返事', item.status.what, `${item.ship} があなたを待っている`)}</button>`
+  return `${row(`button data-act="peek" data-peek="h:${esc(item.h.question)}"`, 'k-hot', '仮定', item.h.question, `behavior の仮定: ${item.h.assumption}`)}</button>`
 }
 const decideView = () => {
   const list = toDecide()
@@ -312,22 +391,215 @@ const renderCs = sub => {
   const frame = main.querySelector('.guide')
   if (frame.srcdoc !== S.guide.html) frame.srcdoc = S.guide.html
 }
-// ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
-const pageDock = (ship, label, tabs, sub = '') => {
-  const status = S.ships[ship]
-  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">承認する</span></button>` : ''
-  const tab = ([page, name]) => `<a href="#${ship}${page ? `.${page}` : ''}"${page === sub ? ' aria-current="page"' : ''}>${name}</a>`
-  return `<div class="rdock gut"><nav class="seg" aria-label="${label}">${tabs.map(tab).join('')}</nav>${approve}</div>`
+// behavior: event modeling の盤面（流れ）と、その例（テスト）の 2 枚。DB の時点の並びが時間の順
+const mark = change => `<span class="rmk${change === '新' ? ' new' : change === '既' ? ' old' : ''}">${esc(change)}</span>`
+const joined = words => esc(words.join('・'))
+// 盤面の寸法（px）。時点の左に、その時点で読むリードモデルの列と、読むだけの画面の列を立てる
+const EM = { label: 66, card: 112, gap: 18, sticky: 50, step: 58, actor: 100, top: 8 }
+const actorOf = by => (by.kind === 'policy' ? '⚙ 規則' : by.kind === 'agent' ? by.agent : by.actor)
+const tag = change => (change === '既' ? '' : `<i class="emtag${change === '改' ? ' mod' : ''}">${esc(change)}</i>`)
+// その付箋に付いた、まだ下ろしていないコメントの数
+const opened = key => Object.values(S.threads).filter(t => t.ship === 'behavior' && t.on === key && !t.resolved).length
+const bubble = key => (opened(key) ? `<i class="embub">${opened(key)}</i>` : '')
+// 1 本の軸の盤面。main は本流（関わる事実のない問いを載せる）
+const board = (moments, main) => {
+  const { views, readModels, hotspots } = S.behavior
+  const cols = moments.flatMap((m, at) => [
+    ...views.filter(v => v.at === m.command.name).map(v => ({ kind: 'view', m, at, v, reads: v.reads })),
+    ...(m.reads.length ? [{ kind: 'reads', m, at, reads: m.reads }] : []),
+    { kind: 'act', m, at, reads: [] },
+  ])
+  const x = i => EM.label + i * (EM.card + EM.gap)
+  const colOf = at => cols.findIndex(c => c.kind === 'act' && c.at === at)
+  const where = {}
+  moments.forEach((m, at) => [...m.events, ...m.otherwise].forEach((e, k) => { where[e.name] = { col: colOf(at), agg: m.aggregate, k } }))
+  // 未決定の問いは、関わる事実の時点の列に置く。関わる事実のない問いは本流の先頭に
+  const pins = hotspots.filter(h => (h.at === undefined ? main : h.at in where)).map(h => ({ h, col: h.at === undefined ? 0 : where[h.at].col }))
+  const depth = Math.max(1, ...cols.map((_, i) => pins.filter(p => p.col === i).length))
+  // 縦: 未決定の問い、役者のレーン、コマンド・リードモデル、時間軸、集約のレーン、例の数。段の高さは積む付箋の数で決まる
+  const lanes = []
+  let y = EM.top
+  const lane = (key, label, sub, h) => { lanes.push({ key, label, sub, y, h }); y += h }
+  if (pins.length) lane('h', '未決定', '問いと仮定', depth * EM.step + 8)
+  const actorCols = cols.filter(c => c.kind !== 'reads').map(c => (c.kind === 'view' ? { a: c.v.actor, kind: 'screen' } : { a: actorOf(c.m.by), kind: c.m.by.kind }))
+  ;[...new Map(actorCols.map(c => [c.a, c.kind])).entries()].forEach(([a, kind]) => lane(`a:${a}`, a, { screen: '画面', agent: 'AI agent', policy: '' }[kind], EM.actor))
+  lane('io', 'コマンド', 'リードモデル', Math.max(1, ...cols.map(c => c.reads.length)) * EM.step + 8)
+  const axis = y
+  y += 26
+  ;[...new Set(moments.map(m => m.aggregate))].forEach(g => lane(`g:${g}`, g, '集約', Math.max(...moments.filter(m => m.aggregate === g).map(m => m.events.length + m.otherwise.length)) * EM.step + 8))
+  const testsY = y
+  y += 30
+  const top = key => lanes.find(l => l.key === key).y + 4
+  const width = x(cols.length)
+  const cards = [], paths = [], marks = [], first = {}, last = {}
+  // コメントの印は、時点ならカードにだけ付ける（quiet: コマンドと事実）
+  const box = (cls, left, t, h, inner, key, old, quiet) => cards.push(`<button class="${cls}${old ? ' emold' : ''}" style="left:${left}px;top:${t}px;width:${EM.card}px;height:${h}px" data-act="peek" data-peek="${esc(key)}">${inner}${quiet ? '' : bubble(key)}</button>`)
+  const path = (cls, d) => paths.push(`<path class="ea ${cls}" d="${d}"${cls === 'src' ? '' : ` marker-end="url(#em-${cls})"`}/>`)
+  const at = name => ({ x: x(where[name].col), y: top(`g:${where[name].agg}`) + where[name].k * EM.step, col: where[name].col })
+  const card = (kind, title, sketch, change, key, laneKey, i) => {
+    const t = top(laneKey)
+    box(`emc${kind === 'policy' ? ' pol' : ''}`, x(i), t, EM.actor - 12, `${tag(change)}<span class="emk">${{ screen: '人', view: '画面（読むだけ）', agent: 'AI', policy: '規則' }[kind]}</span><span class="emt">${esc(title)}</span>${sketch ? `<pre class="emsk">${esc(sketch)}</pre>` : ''}`, key, change === '既')
+    return t
+  }
+  // リードモデルの付箋を積み、出どころの事実から線を引き、読む者（同じ列の画面か、右隣の時点のカード）へ点線を引く
+  const reads = (names, i, reader) => {
+    let n = 0
+    names.forEach((name, k) => {
+      const rm = readModels.find(r => r.name === name), ry = top('io') + k * EM.step
+      if (!rm) return
+      box('ems rm', x(i), ry, EM.sticky, `${tag(rm.change)}<span>${esc(name)}</span>`, `r:${name}`, rm.change === '既')
+      // 前にこの投影を読んだ列より後に起きた事実だけ（それより前の分は、前の付箋が受けている）
+      rm.sources.filter(s => s in where).map(at).filter(s => s.col < i && s.col > (last[name] ?? -1)).forEach(s => path('src', `M${s.x + EM.card} ${s.y + EM.sticky / 2}H${x(i) + EM.card / 2}V${ry + EM.sticky}`))
+      path('rd', reader.same ? `M${x(i) + EM.card / 2 + 14} ${ry}V${reader.y + EM.actor - 12}` : `M${x(i) + EM.card} ${ry + EM.sticky / 2}H${x(i + 1) - 8}V${reader.y + 44}H${x(i + 1)}`)
+      if (!(name in first)) { first[name] = i; n += rm.tests.length }
+      last[name] = i
+    })
+    if (n) marks.push(`<a class="emtc" href="#behavior.test" style="left:${x(i)}px;top:${testsY + 8}px">例 <b>${n}</b></a>`)
+  }
+  cols.forEach((c, i) => {
+    const m = c.m, old = m.change === '既'
+    if (c.kind === 'view') {
+      const vy = card('view', c.v.screen, c.v.sketch, c.v.change, `v:${c.v.screen}`, `a:${c.v.actor}`, i)
+      return reads(c.reads, i, { same: true, y: vy })
+    }
+    if (c.kind === 'reads') return reads(c.reads, i, { same: false, y: top(`a:${actorOf(m.by)}`) })
+    const key = `m:${m.command.name}`
+    const title = m.by.kind === 'screen' ? m.by.screen : m.by.kind === 'agent' ? m.by.task : m.by.rule
+    const ay = card(m.by.kind, title, m.by.kind === 'screen' ? m.by.sketch : '', m.change, key, `a:${actorOf(m.by)}`, i)
+    const io = top('io'), g = top(`g:${m.aggregate}`), cx = x(i)
+    box('ems cmd', cx, io, EM.sticky, `<span>${esc(m.command.name)}</span>`, key, old, true)
+    m.events.forEach((e, k) => box('ems ev', cx, g + k * EM.step, EM.sticky, `<span>${esc(e.name)}</span>`, key, old, true))
+    m.otherwise.forEach((e, k) => box('ems alt', cx, g + (m.events.length + k) * EM.step, EM.sticky, `<span>↳ ${esc(e.name)}</span>`, key, old, true))
+    path('cmd', `M${cx + EM.card / 2} ${ay + EM.actor - 12}V${io}`)
+    path('cmd', `M${cx + EM.card / 2} ${io + EM.sticky}V${g}`)
+    // 規則と、事実に起こされる agent は、聴く事実から線を引く
+    if (m.by.kind !== 'screen' && m.by.on in where) {
+      const heard = at(m.by.on)
+      path('pol', `M${heard.x + EM.card} ${heard.y + EM.sticky / 2 + 6}H${cx - 12}V${ay + 60}H${cx}`)
+    }
+    marks.push(`<span class="emno" style="left:${cx}px;top:${axis + 10}px">${c.at + 1}</span>`, `<a class="emtc" href="#behavior.test" style="left:${cx}px;top:${testsY + 8}px">例 <b>${m.tests.length}</b></a>`)
+  })
+  cols.forEach((_, i) => pins.filter(p => p.col === i).forEach((p, k) => box('ems hot', x(i), top('h') + k * EM.step, EM.sticky, `<span>${esc(p.h.question)}</span><small>仮定: ${esc(p.h.assumption)}</small>`, `h:${p.h.question}`, false)))
+  const heads = ['cmd', 'rd', 'pol'].map(cls => `<marker id="em-${cls}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mh ${cls}" d="M0 0L8 4L0 8z"/></marker>`).join('')
+  const seps = lanes.map(l => `<div class="emsep" style="top:${l.y}px;width:${width}px"></div>`).join('')
+  const labels = lanes.map(l => `<div class="emlab" style="top:${l.y}px;height:${l.h}px">${esc(l.label)}${l.sub ? `<small>${l.sub}</small>` : ''}</div>`).join('')
+  return `<div class="emwrap"><div class="emscroll"><div class="emboard" style="width:${width}px;height:${y}px">
+    <svg class="emsvg" width="${width}" height="${y}" aria-hidden="true"><defs>${heads}</defs>${paths.join('')}</svg>${seps}
+    <div class="emaxis" style="left:${EM.label}px;top:${axis + 4}px;width:${width - EM.label}px"></div>${cards.join('')}${marks.join('')}</div></div>
+    <div class="emlabs" style="height:${y}px">${labels}<div class="emlab" style="top:${axis}px;height:26px">時間 →</div><div class="emlab" style="top:${testsY}px;height:30px">例</div></div></div>`
 }
-const docks = {
-  requirement: sub => pageDock('requirement', '要求とテスト', [['', '要求'], ['test', 'テスト']], sub),
-  cs: sub => pageDock('cs', 'ガイドと決めたこと', [['', 'ガイド'], ['decisions', `決めたこと ${S.guide?.decisions.length ?? 0}`]], sub),
+const when = iso => (iso ? new Date(iso).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')
+// 盤面（本流と、別の流れ）・1 件分の名乗り・未決定の問いの数・変更の記録
+const boardView = () => {
+  const { moments, flows, identity, hotspots } = S.behavior
+  if (moments.length === 0) return `${strays()}<p class="req wait">まだ時点がありません</p>`
+  const head = identity ? `<p class="emid">1 件分: <b>${esc(identity.unit)}</b> ／ 束ねる識別子: <b>${esc(identity.key)}</b></p>` : ''
+  const legend = `<div class="bleg"><span><i class="i-cmd"></i>コマンド</span><span><i class="i-rm"></i>リードモデル</span><span><i class="i-ev"></i>事実</span><span><i class="i-pol"></i>規則</span>${hotspots.length ? `<span class="emhot">未決定 ${hotspots.length} 件</span>` : ''}<span>付箋を押すと中身が出る</span></div>`
+  const branches = flows.map(flow => `<h2 class="emfh">↪ ${esc(flow.name)} <small>「${esc(flow.from)}」から分かれる流れ</small></h2>${flow.moments.length ? board(flow.moments, false) : '<p class="req wait">まだ時点がありません</p>'}`).join('')
+  const log = S.journal.length === 0 ? '' : `<details class="log"><summary>変更の記録 <span class="cnt">${S.journal.length}</span></summary>${S.journal.map(j => `<div class="logi"><div class="lt">${esc(j.note)}</div><div class="lw">${esc(when(j.at))}　${esc(j.changed)}</div></div>`).join('')}</details>`
+  return head + legend + strays() + board(moments, true) + branches + log
+}
+// 名前が変わったか消えた付箋への、まだ下ろしていないコメント。どの付箋にも出なくなるので、返信を読んで下ろせるよう盤面の上に並べる
+const strays = () => {
+  const { readModels, views, hotspots } = S.behavior
+  const keys = new Set([...allMoments().map(m => `m:${m.command.name}`), ...readModels.map(r => `r:${r.name}`), ...views.map(v => `v:${v.screen}`), ...hotspots.map(h => `h:${h.question}`)])
+  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && /^[mrvh]:/.test(t.on) && !keys.has(t.on) && !t.resolved)
+  return list.length === 0 ? '' : sec('付箋が変わったコメント', list.map(([id, t]) => comment(id, t, t.on.slice(2))).join(''))
+}
+// 付箋の中身とコメント。付箋は m: 時点（コマンド名）・r: リードモデル・v: 読むだけの画面・h: 問い。消えていたら閉じる
+const peekSheet = () => {
+  const cut = S.peek.indexOf(':'), kind = S.peek.slice(0, cut), name = S.peek.slice(cut + 1)
+  const { views, readModels, hotspots } = S.behavior
+  const found = { m: () => allMoments().find(m => m.command.name === name), r: () => readModels.find(r => r.name === name), v: () => views.find(v => v.screen === name), h: () => hotspots.find(h => h.question === name) }[kind]?.()
+  if (!found) { S.peek = null; return '' }
+  const body = { m: momentPeek, r: readPeek, v: viewPeek, h: hotspotPeek }[kind](found)
+  return `<div class="sheet" role="dialog" aria-modal="true" aria-label="付箋の中身"><div class="sbody gut">${body}${threadsView(S.peek)}</div>
+    <div class="sfoot gut"><button class="close" data-act="close">閉じる</button></div></div>`
+}
+const sec = (h, body) => `<div class="sec2"><div class="sh">${h}</div>${body}</div>`
+const momentPeek = m => {
+  const by = m.by
+  const who = by.kind === 'screen' ? `${esc(by.actor)} ▸ ${esc(by.screen)}` : by.kind === 'agent' ? `${esc(by.agent)} ▸ ${esc(by.task)}` : esc(by.rule)
+  return `<div class="sq">${mark(m.change)} ${who}</div>${by.on ? `<div class="stxt">← 「${esc(by.on)}」が起きたら</div>` : ''}
+    ${by.sketch ? sec(by.kind === 'screen' ? '画面' : 'コンテキスト', `<pre class="sk${by.kind === 'agent' ? ' txt' : ''}">${esc(by.sketch)}</pre>`) : ''}
+    ${m.reads.length ? sec('読む', `<div class="stxt">${joined(m.reads)}</div>`) : ''}${sec('コマンド', `<div class="stxt"><b>${esc(m.command.name)}</b>　${joined(m.command.params)}</div>`)}
+    ${sec(`事実（集約: ${esc(m.aggregate)}）`, `<div class="stxt">${[...m.events.map(e => `<b>${esc(e.name)}</b>　${joined(e.attrs)}`), ...m.otherwise.map(e => `↳ ${esc(e.name)}　${joined(e.attrs)}`)].join('\n')}</div>`)}
+    <a class="more" href="#behavior.test">例 ${m.tests.length} 件を見る ›</a>`
+}
+const readPeek = r => `<div class="sq">${mark(r.change)} ${esc(r.name)}</div>${sec('見せる項目', `<div class="stxt">${joined(r.fields)}</div>`)}
+  ${sec('出どころ（これを更新する事実）', `<div class="stxt">${joined(r.sources)}</div>`)}<a class="more" href="#behavior.test">例 ${r.tests.length} 件を見る ›</a>`
+const viewPeek = v => `<div class="sq">${mark(v.change)} ${esc(v.actor)} ▸ ${esc(v.screen)}</div><div class="stxt">読むだけの画面。「${esc(v.at)}」の時点で見る</div>
+  ${sec('画面', `<pre class="sk">${esc(v.sketch)}</pre>`)}${v.reads.length ? sec('読む', `<div class="stxt">${joined(v.reads)}</div>`) : ''}`
+const hotspotPeek = h => `<div class="sq">未決定: ${esc(h.question)}</div>${sec('当面の仮定', `<div class="stxt">${esc(h.assumption)}</div>`)}${h.at ? sec('関わる事実', `<div class="stxt">${esc(h.at)}</div>`) : ''}`
+// 付箋へのコメントと返信。返信は behavior ship が書く。下ろすと薄くなる。sticky は、付箋が変わったコメントの元の付箋の名前
+const comment = (id, t, sticky) => `<div class="cmt${t.resolved ? ' done' : ''}">${sticky ? `<div class="cw">「${esc(sticky)}」へ</div>` : ''}<div class="ct">${esc(t.text)}</div>
+    ${S.replies[id] ? `<div class="cr">↳ ${esc(S.replies[id].reply)}</div>` : '<div class="cw">behavior の返信を待っている</div>'}
+    ${t.resolved ? '' : `<button class="cdone" data-act="resolve" data-id="${esc(id)}">下ろす</button>`}</div>`
+const threadsView = key => {
+  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && t.on === key).sort(([, a], [, b]) => String(a.at).localeCompare(String(b.at)))
+  const items = list.map(([id, t]) => comment(id, t)).join('')
+  return sec('コメント', `${items}${S.remarked ? `<p class="warn">${esc(S.remarked)}</p>` : ''}<textarea class="ft" data-free="c:${esc(key)}" maxlength="1000" aria-label="コメント" placeholder="この付箋にコメントする">${esc(S.drafts[`c:${key}`])}</textarea>
+    <button class="fb pri" data-act="remark" data-key="${esc(key)}">behavior に送る</button>`)
+}
+// コメントを DB に書き、flagship に送る（送れるのはタップの直後だけ）。flagship が behavior に回す
+const remark = async (key, button) => {
+  const text = (S.drafts[`c:${key}`] ?? '').trim()
+  if (!text) return document.querySelector(`[data-free="${CSS.escape(`c:${key}`)}"]`)?.focus()
+  const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
+  const id = `comment-${Date.now()}`
+  S.drafts[`c:${key}`] = ''
+  S.remarked = ''
+  document.activeElement?.blur()
+  S.db.doc(`${S.paths.comments}/${id}`).set({ ship: 'behavior', on: key, text, at: new Date().toISOString() }).catch(fail)
+  const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `behavior の付箋「${key}」へのコメント（id: ${id}）。behavior に回してください:\n${text}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
+  if (!sent.threadId) { S.remarked = `flagship に届いていません（${sent.error?.code ?? 'unknown'}）。コメントは残りました`; renderSheet() }
+}
+const resolveThread = id => { const t = S.threads[id]; if (t) S.db.doc(`${S.paths.comments}/${id}`).set({ ...t, resolved: true }).catch(fail) }
+// 値は盤面の語の順（コマンドの入力・事実の属性）に並べる
+const kv = (values, words) => Object.entries(values).sort(([a], [b]) => rank(words, a) - rank(words, b)).map(([key, value]) => `<span class="kv"><i>${esc(key)}</i> ${esc(value)}</span>`).join(' · ')
+const rank = (words, key) => (words.includes(key) ? words.indexOf(key) : words.length)
+const allMoments = () => [...S.behavior.moments, ...S.behavior.flows.flatMap(flow => flow.moments)]
+const attrsOf = event => allMoments().flatMap(m => [...m.events, ...m.otherwise]).find(e => e.name === event)?.attrs ?? []
+const facts = list => (list.length === 0 ? 'なし' : list.map(o => `<span class="fx">${esc(o.event)}</span> ${kv(o.values, attrsOf(o.event))}`).join('<br>'))
+const gwt = (label, body) => `<div class="g"><span>${label}</span><span>${body}</span></div>`
+const commandExample = (m, t) => `<div class="ex"><p class="en">${esc(t.name)}</p>${gwt('前提', facts(t.given))}${gwt('操作', Object.keys(t.when).length ? kv(t.when, [...m.command.params, '時刻']) : 'なし')}
+  ${gwt('結果', t.expect === 'error' ? '<span class="no">拒否される</span>' : t.expect.length === 0 ? '何も起きない' : facts(t.expect))}</div>`
+const readExample = (r, t) => {
+  const rows = t.rows.length === 0 ? '何も出ない' : `<table class="rows"><tr>${r.fields.map(f => `<th>${esc(f)}</th>`).join('')}</tr>${t.rows.map(row => `<tr>${r.fields.map(f => `<td>${esc(row[f])}</td>`).join('')}</tr>`).join('')}</table>`
+  return `<div class="ex"><p class="en">${esc(t.name)}</p>${gwt('前提', facts(t.given))}${gwt('表示', rows)}</div>`
+}
+const testCount = () => [...allMoments(), ...S.behavior.readModels].reduce((n, x) => n + x.tests.length, 0)
+const testsView = () => {
+  const { moments, flows, readModels } = S.behavior
+  const block = (change, title, note, examples) => `<div class="tk"><div class="th">${mark(change)}<span class="tt">${esc(title)}</span><span class="cnt">${note}</span></div>${examples}</div>`
+  const commands = (list, prefix) => list.filter(m => m.tests.length).map(m => block(m.change, `${prefix}${m.command.name}`, `例 ${m.tests.length}`, m.tests.map(t => commandExample(m, t)).join('')))
+  const blocks = [
+    ...commands(moments, ''), ...flows.flatMap(flow => commands(flow.moments, `↪ ${flow.name} · `)),
+    ...readModels.filter(r => r.tests.length).map(r => block(r.change, r.name, `リードモデル · 例 ${r.tests.length}`, r.tests.map(t => readExample(r, t)).join(''))),
+  ]
+  return blocks.length ? blocks.join('') : '<p class="req wait">まだ例がありません</p>'
+}
+const behaviorPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>behavior</a>${unready() || (sub === 'test' ? testsView() : boardView())}`
+// 自分のページを持つ ship。ページの本体と、ドックの 2 枚のタブ
+const PAGES = {
+  requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
+  behavior: { body: behaviorPage, label: '流れとテスト', tabs: () => [['', '流れ'], ['test', `テスト ${testCount()}`]] },
+  // cs のページは renderCs が描く（ガイドの iframe を描き直しで作り直さない）
+  cs: { label: 'ガイドと決めたこと', tabs: () => [['', 'ガイド'], ['decisions', `決めたこと ${S.guide?.decisions.length ?? 0}`]] },
+}
+// ページのドック: タブと、レビュー待ちなら承認
+// ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
+const pageDock = (ship, sub = '') => {
+  const status = S.ships[ship], page = PAGES[ship]
+  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">承認する</span></button>` : ''
+  const tab = ([to, label]) => `<a href="#${ship}${to ? `.${to}` : ''}"${to === sub ? ' aria-current="page"' : ''}>${esc(label)}</a>`
+  return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${approve}</div>`
 }
 const renderDock = (ship, sub) => {
   const dock = $('dock')
-  dock.hidden = (ship !== '' && !docks[ship]) || !S.db || !S.loaded
+  dock.hidden = (ship !== '' && !PAGES[ship]) || !S.db || !S.loaded
   if (dock.hidden) return
-  if (ship) { dock.innerHTML = docks[ship](sub); return }
+  if (PAGES[ship]) { dock.innerHTML = pageDock(ship, sub); return }
   const typing = document.activeElement?.dataset?.free
   const caret = typing && document.activeElement.selectionStart
   const list = items()
@@ -382,7 +654,12 @@ const slide = item => {
   return `<div class="slide">${question}<div class="acts"><button class="act free" data-act="free" data-ask="${esc(item.id)}"><span>自由記述で答える</span></button>${opts}</div></div>`
 }
 const renderSheet = () => {
-  const sheet = $('sheet'), ask = S.asks[S.open]
+  const sheet = $('sheet')
+  // コメントを打っている間は描き直さない（打った字が消えないように）
+  if (S.peek && document.activeElement?.dataset?.free?.startsWith('c:') && !sheet.hidden) return
+  const peek = S.peek && peekSheet()
+  if (peek) { sheet.hidden = false; sheet.innerHTML = peek; return }
+  const ask = S.asks[S.open]
   sheet.hidden = !ask
   if (!ask) return
   const opts = ask.options.map(o => `<div class="opt2"><div class="ot">${esc(o.label)}${o.id === ask.recommended ? '<span class="otag">推奨</span>' : ''}</div>
@@ -554,10 +831,13 @@ document.addEventListener('click', event => {
   if (act === 'undo') undo(key)
   if (act === 'go') go(Number(to))
   if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
-  if (act === 'close') { S.open = null; renderSheet() }
+  if (act === 'close') { S.open = null; S.peek = null; renderSheet() }
+  if (act === 'peek') { S.peek = el.dataset.peek; S.remarked = ''; renderSheet() }
+  if (act === 'remark') remark(el.dataset.key, el)
+  if (act === 'resolve') resolveThread(el.dataset.id)
 })
 document.addEventListener('input', event => { if (event.target.dataset.free) S.drafts[event.target.dataset.free] = event.target.value })
-addEventListener('hashchange', render)
+addEventListener('hashchange', () => { $('glance').scrollTop = 0; S.peek = null; render() })
 
 // --- DB を読む
 const listen = (path, apply) => S.db.collection(path).onSnapshot(snap => {
@@ -583,6 +863,9 @@ const start = async () => {
   listen(S.paths.reviews, docs => { S.reviews = docs })
   S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
   S.db.doc(S.paths.guide).onSnapshot(snap => { S.guide = snap.data() ?? null; render() }, () => {})
+  S.db.doc(S.paths.behavior).onSnapshot(snap => { S.behavior = { moments: [], views: [], readModels: [], flows: [], hotspots: [], ...snap.data() }; render() }, () => {})
+  listen(S.paths.behaviorJournal, docs => { S.journal = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
+  listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
 }
 render()

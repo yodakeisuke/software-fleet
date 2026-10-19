@@ -1,4 +1,4 @@
-import type { DbPaths, Engine, Result as Data, ToolReply } from '../types/fleet'
+import type { DbPaths, DbReply, Engine, Result as Data, ToolReply } from '../types/fleet'
 import { Result } from './logic/result'
 
 // fleet の DB（claude.ai の artifact の DB を ArtifactData で読み書きする）。文書の置き場所はここが唯一の定義で、ページには DB の fleet/db-paths 経由で渡す
@@ -28,6 +28,9 @@ const paths: DbPaths = {
   // ship の成果物は fleet/<ship>/deliverables/<名前>
   requirements: 'fleet/requirement/deliverables/requirements',
   guide: 'fleet/cs/deliverables/guide',
+  behavior: 'fleet/behavior/deliverables/event-model',
+  behaviorJournal: 'fleet/behavior/journal',
+  behaviorReplies: 'fleet/behavior/replies',
   self: 'fleet/db-paths',
 }
 // "collection/id" を、collection と文書 id に分ける
@@ -50,7 +53,7 @@ const revise = async (engine: Engine, path: string, next: Next, done: string): P
   const doc = (await stored(got.text ?? '')).either(found => found, () => undefined)
   return next(doc?.data).either(async data => {
     const wrote = await engine.db(session.url, { action: 'set', ...split(path), data, ...(doc === undefined ? {} : { if_version: doc.version }) })
-    return wrote.isError === true || wrote.deny !== undefined ? refused(wrote, path) : { result: done }
+    return (await landed(engine, path, data, wrote)) ? { result: done } : refused(wrote, path)
   }, async error => ({ deny: error }))
 }
 
@@ -59,8 +62,14 @@ const create = async (engine: Engine, path: string, data: object, done: string):
   const session = await engine.fleet()
   if (session === undefined) return { deny: 'このセッションは fleet に乗っていない' }
   const wrote = await engine.db(session.url, { action: 'set', ...split(path), data })
-  return wrote.isError === true || wrote.deny !== undefined ? refused(wrote, path) : { result: done }
+  return (await landed(engine, path, data, wrote)) ? { result: done } : refused(wrote, path)
 }
+
+// 書き込みが届いたか。失敗と返っても届いていることがある（network error）ので、読み直して、書こうとした中身になっていれば届いたとみなす
+const landed = async (engine: Engine, path: string, data: object, wrote: DbReply) =>
+  (wrote.isError !== true && wrote.deny === undefined) || canonical(await read(engine, path)) === canonical(data)
+// 鍵の並びによらない JSON（DB は鍵を並べ替えて返す）
+const canonical = (value: unknown) => JSON.stringify(value, (_, inner: unknown) => (inner !== null && typeof inner === 'object' && !Array.isArray(inner) ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => (a < b ? -1 : 1))) : inner))
 
 // 文書を 1 つ読む。なければ undefined
 const read = async (engine: Engine, path: string) => {
