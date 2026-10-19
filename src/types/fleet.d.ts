@@ -26,7 +26,9 @@ export type Cell = { rating: Rating; note: string }
 export type Evaluation = { axes: { name: string; weight: string }[]; cells: Cell[][] }
 
 // flagship が書く（at は mod が付ける）
-export type Fleet = { brief: string }
+// 課題と、それをどう解くかの対。requirement のページの先頭に表で出る
+export type Problem = { problem: string; solution: string }
+export type Fleet = { brief: string; problems?: Problem[] }
 export type Ask = { question: string; background: Explain; options: Option[]; recommended: OptionId; evaluation?: Evaluation }
 export type Decision = { what: string; why: string; closes?: AskId }
 

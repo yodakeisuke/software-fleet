@@ -30,10 +30,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .app{position:relative;height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden}
 .gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .glance{flex:1;min-height:0;overflow-y:auto;padding-block:18px 12px;display:flex;flex-direction:column;gap:10px}
-.req{margin:0;font-size:15px;line-height:1.5;font-weight:700;text-wrap:balance}
+.req{margin:0;font-size:14px;line-height:1.5;font-weight:700;text-wrap:balance}
 .req.wait{color:var(--muted);font-weight:400}
-.h2{font-size:15px;font-weight:700}
-.cnt{font-size:13px;color:var(--muted)}
+.h2{font-size:14px;font-weight:700}
+.cnt{font-size:12px;color:var(--muted)}
 .ships{display:flex;flex-direction:column}
 .shiph{display:flex;align-items:baseline;gap:8px;padding-bottom:6px}
 .legend{margin-left:auto;font-size:11px;color:var(--muted)}
@@ -42,21 +42,21 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .sr{display:flex;align-items:center;gap:8px}
 .dot{width:10px;height:10px;border-radius:3px;flex:none;background:var(--wait)}
 .s-working{background:var(--work)}.s-review{background:var(--review)}.s-converged{background:var(--done)}.s-stuck{background:var(--stuck)}.s-waiting,.s-none{background:var(--wait)}
-.sname{font-size:14px;font-weight:700}
-.st{font-size:12px;color:var(--muted)}
+.sname{font-size:13px;font-weight:700}
+.st{font-size:11.5px;color:var(--muted)}
 .go{margin-left:auto;font-size:18px;line-height:1;color:var(--muted)}
-.snote{font-size:12px;line-height:1.5;color:var(--muted);padding-left:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.snote{font-size:11.5px;line-height:1.5;color:var(--muted);padding-left:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sw{flex:none;width:52px;height:44px;display:flex;align-items:center;justify-content:center}
 .trk{position:relative;width:40px;height:24px;border-radius:999px;background:var(--line)}
 .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:left .15s}
 .sw.on .trk{background:var(--fg)}
 .sw.on .knob{left:19px}
-.log summary{cursor:pointer;font-size:14px;font-weight:700;list-style:none;display:flex;align-items:center;min-height:44px;gap:8px}
+.log summary{cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;min-height:44px;gap:8px}
 .log summary::-webkit-details-marker{display:none}
 .log summary::after{content:"›";margin-left:auto;color:var(--muted);font-size:18px}
 .logi{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
-.lt{font-size:14px;font-weight:700}
-.lw{font-size:13px;color:var(--muted)}
+.lt{font-size:13px;font-weight:700}
+.lw{font-size:12px;color:var(--muted)}
 .dock{flex:none;display:flex;flex-direction:column;gap:6px;padding-top:8px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -10px 24px var(--shadow)}
 .nav{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:0 8px}
 .arrow{width:48px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center}
@@ -72,47 +72,47 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rail::-webkit-scrollbar{display:none}
 .slide{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;padding:0 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .qbtn{display:flex;flex-direction:column;gap:2px;width:100%;min-height:44px}
-.dq{font-size:16px;line-height:1.45;font-weight:700;text-wrap:pretty}
+.dq{font-size:15px;line-height:1.45;font-weight:700;text-wrap:pretty}
 .more{font-size:12px;font-weight:700;color:var(--acc)}
 .dw{font-size:12px;line-height:1.6;color:var(--muted)}
 .acts{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:2px}
 .act{display:flex;flex-direction:column;justify-content:center;gap:1px;width:100%;min-height:48px;padding:5px 14px;border-radius:12px;box-shadow:inset 0 0 0 1.5px var(--line);transition:opacity .12s;min-width:0}
 .act.pri{background:var(--acc);color:var(--on-acc);box-shadow:none}
-.act.free{min-height:44px;flex-direction:row;align-items:center;gap:8px;color:var(--muted);font-size:14px;font-weight:700}
+.act.free{min-height:44px;flex-direction:row;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:700}
 .act.free span{border-bottom:1px dashed currentColor}
 .locked .act,.locked .qbtn{pointer-events:none}
 .locked .act{opacity:.55}
-.al{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;line-height:1.3;min-width:0}
-.ae{font-size:11.5px;line-height:1.35;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;line-height:1.3;min-width:0}
+.ae{font-size:11px;line-height:1.35;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .atag{flex:none;font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--on-acc);color:var(--acc)}
 .ft{width:100%;min-height:96px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:16px;line-height:1.5;resize:none}
 .ft:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent}
 .ftrow{display:grid;grid-template-columns:96px 1fr;gap:8px}
-.fb{min-height:48px;border-radius:12px;font-size:15px;font-weight:700;text-align:center;box-shadow:inset 0 0 0 1.5px var(--line)}
+.fb{min-height:48px;border-radius:12px;font-size:14px;font-weight:700;text-align:center;box-shadow:inset 0 0 0 1.5px var(--line)}
 .fb.pri{background:var(--acc);color:var(--on-acc);box-shadow:none}
-.rship{font-size:24px;font-weight:700}
-.dmsg{font-size:16px;font-weight:700;line-height:1.5;word-break:break-all}
+.rship{font-size:20px;font-weight:700}
+.dmsg{font-size:15px;font-weight:700;line-height:1.5;word-break:break-all}
 .dsub{font-size:12px;color:var(--muted)}
 .warn{font-size:12px;line-height:1.5;color:var(--stuck)}
-.undo{min-height:52px;border-radius:14px;box-shadow:inset 0 0 0 2px var(--fg);font-size:16px;font-weight:700;text-align:center;margin-top:auto}
+.undo{min-height:52px;border-radius:14px;box-shadow:inset 0 0 0 2px var(--fg);font-size:15px;font-weight:700;text-align:center;margin-top:auto}
 .tbar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
 .tfill{height:100%;background:var(--fg);transform-origin:left;animation:shrink 5s linear forwards}
 @keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-.dnone{display:flex;align-items:center;gap:8px;min-height:44px;font-size:15px}
+.dnone{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px}
 .dnone .cnt{margin-left:auto}
 .scrim{position:absolute;inset:0;background:var(--scrim);z-index:20;display:flex;flex-direction:column;justify-content:flex-end}
 .sheet{height:90%;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;overflow:hidden}
 .sbody{flex:1;min-height:0;overflow-y:auto;padding-block:18px 12px;display:flex;flex-direction:column;gap:14px}
-.sq{font-size:17px;line-height:1.5;font-weight:700}
+.sq{font-size:16px;line-height:1.5;font-weight:700}
 .sec2{display:flex;flex-direction:column;gap:8px}
 .sh{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--acc)}
-.stxt{font-size:14px;line-height:1.7;text-wrap:pretty;white-space:pre-wrap}
+.stxt{font-size:13px;line-height:1.7;text-wrap:pretty;white-space:pre-wrap}
 .fig{max-width:100%;overflow-x:auto;border-radius:12px}
 .fig svg{max-width:100%;height:auto}
 .opt2{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
-.ot{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.ot{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
 .otag{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--acc);color:var(--on-acc)}
-.oc{font-size:13px;color:var(--muted)}
+.oc{font-size:12px;color:var(--muted)}
 .evw{overflow-x:auto}
 .ev{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
 .ev th,.ev td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;line-height:1.35;word-break:break-all}
@@ -122,11 +122,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .mk{display:block;font-size:15px;font-weight:700;line-height:1.2}
 .nt{display:block;color:var(--muted);font-size:10.5px}
 .sfoot{flex:none;padding-block:10px calc(22px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--bg)}
-.close{width:100%;min-height:52px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:15px;font-weight:700;text-align:center}
-.back{font-size:14px;font-weight:700;color:var(--acc);min-height:44px;display:flex;align-items:center}
-.big{font-size:24px;font-weight:700}
+.close{width:100%;min-height:52px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:14px;font-weight:700;text-align:center}
+.back{font-size:13px;font-weight:700;color:var(--acc);min-height:44px;display:flex;align-items:center}
+.big{font-size:20px;font-weight:700}
 /* requirement: 要求を 1 文で読む。印は別の列に置き、折り返しても文の左端をそろえる。文節で折り返す（lang="ja" が要る） */
-.rhead{display:flex;align-items:center;gap:6px;min-height:44px;font-size:17px;font-weight:700}
+.rhead{display:flex;align-items:center;gap:6px;min-height:44px;font-size:16px;font-weight:700}
 .rhead span{font-size:20px;font-weight:400;color:var(--muted)}
 .rkh{position:sticky;top:-18px;z-index:1;background:var(--bg);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--acc);padding:12px 0 5px;border-bottom:1px solid var(--line)}
 .rrow{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:9px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -134,15 +134,19 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rmk.new{background:var(--acc);color:var(--on-acc);box-shadow:none}
 .rbody{display:flex;flex-direction:column;gap:6px;min-width:0}
 .rsen,.ract,.rev{margin:0;text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
-.rsen{font-size:15px;line-height:1.65}
+.rsen{font-size:14px;line-height:1.65}
 .rflow{display:flex;flex-direction:column;gap:1px;padding-top:6px;border-top:1px dashed var(--line)}
 .rflow:first-of-type{border-top:0;padding-top:0}
-.ract{font-size:13px;line-height:1.55;color:var(--muted)}
-.rev{display:grid;grid-template-columns:16px minmax(0,1fr);font-size:14px;line-height:1.55;font-weight:700}
+.ract{font-size:12.5px;line-height:1.55;color:var(--muted)}
+.rev{display:grid;grid-template-columns:16px minmax(0,1fr);font-size:13px;line-height:1.55;font-weight:700}
 .rev span:first-child{color:var(--acc)}
 .rdock{display:flex;flex-direction:column;gap:8px}
+.rgist{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;line-height:1.55;margin-bottom:4px}
+.rgist th{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-align:left;padding:0 0 4px}
+.rgist td{vertical-align:top;padding:7px 10px 7px 0;border-top:1px solid var(--line);text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
+.rgist td+td{padding-right:0;font-weight:700}
 .seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
-.seg a{min-height:40px;border-radius:9px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.seg a{min-height:40px;border-radius:9px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .seg a[aria-current]{background:var(--fg);color:var(--bg)}
 @media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
 </style>
@@ -158,7 +162,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], problems: [], at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -236,7 +240,9 @@ const requirementPage = sub => {
   const row = r => `<div class="rrow"><span class="rmk${r.change === '新' ? ' new' : ''}">${esc(r.change)}</span>
     <div class="rbody"><p class="rsen">${esc(`${r.who}、${r.can}`)}</p>${test ? r.tests.map(flow).join('') : ''}</div></div>`
   const body = S.requirements.map((r, at) => (S.requirements[at - 1]?.kind === r.kind ? '' : `<h2 class="rkh">${esc(r.kind)}</h2>`) + row(r)).join('')
-  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
+  const gist = S.problems.length === 0 ? '' : `<table class="rgist"><thead><tr><th>課題</th><th>解決</th></tr></thead>
+    <tbody>${S.problems.map(p => `<tr><td>${esc(p.problem)}</td><td>${esc(p.solution)}</td></tr>`).join('')}</tbody></table>`
+  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
 const requirementDock = sub => {
   const status = S.ships.requirement
@@ -444,7 +450,7 @@ const start = async () => {
   const where = await S.db.doc('fleet/db-paths').get().catch(() => null)
   if (!where?.exists) { S.failed = 'DB の置き場所（fleet/db-paths）がまだありません。flagship がこのページを publish し直すと置かれます'; S.db = null; return render() }
   S.paths = where.data()
-  S.db.doc(S.paths.brief).onSnapshot(snap => { S.brief = snap.data()?.brief; render() }, () => {})
+  S.db.doc(S.paths.brief).onSnapshot(snap => { S.brief = snap.data()?.brief; S.problems = snap.data()?.problems ?? []; render() }, () => {})
   listen(S.paths.ships, docs => { S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]])) })
   listen(S.paths.asks, docs => { S.asks = docs })
   listen(S.paths.decisions, docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
