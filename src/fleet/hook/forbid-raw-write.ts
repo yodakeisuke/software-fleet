@@ -7,6 +7,6 @@ export const forbidRawWrite = async (engine: Engine, call: { action: string; url
   if (origin !== 'engine' || FleetDb.isRead(call.action)) return undefined
   const session = await engine.fleet()
   return session !== undefined && FleetDb.isFleet(call.url, session.url)
-    ? 'fleet の DB は専用の tool（set_brief / ask_user / record_decision / report_status）で書く。生の ArtifactData では書かない'
+    ? 'fleet の DB は専用の tool（mcp__software-fleet__*）で書く。生の ArtifactData では書かない'
     : undefined
 }
