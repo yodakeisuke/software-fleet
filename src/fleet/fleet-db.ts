@@ -10,6 +10,7 @@ export const FleetDb = {
   read: (engine: Engine, path: string) => read(engine, path),
   urlOf: (text: string) => urlOf(text),
   isFleet: (url: unknown, fleetUrl: string) => isFleet(url, fleetUrl),
+  isSameArtifact: (url: unknown, fleetUrl: string) => isSameArtifact(url, fleetUrl),
   isRead: (action: string) => isRead(action),
   stored: (text: string) => stored(text),
 }
@@ -74,6 +75,11 @@ const urlOf = (text: string) => {
 const isFleet = (url: unknown, fleetUrl: string) => {
   const id = idOf(url)
   return id === undefined || id === idOf(fleetUrl)
+}
+// 宛先が fleet の artifact そのものかを id で比べる。id が取れない宛先は違うとみなす（許す側で使うので、止める側の isFleet とは逆に倒す）
+const isSameArtifact = (url: unknown, fleetUrl: string) => {
+  const id = idOf(url)
+  return id !== undefined && id === idOf(fleetUrl)
 }
 // URL の pathname が /artifact/<id> か /code/artifact/<id> そのものなら id を取る。../ などを含む別の形は取らない（fleet とみなして止める）
 const idOf = (url: unknown) => {

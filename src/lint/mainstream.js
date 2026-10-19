@@ -6,6 +6,8 @@ const EVENTS = ['session.start', 'command.run', 'prompt.submit', 'prompt.edit', 
 const OWN_TOOL = /^mcp__software-fleet__/
 // fleet が tool.call で扱う本体のツール。Skill は合図（ship の専用ツールを登録する）、ArtifactData は fleet の DB への生の書き込みを拒否する、Artifact は flagship のダッシュボードの publish を合図にする
 const FLEET_TOOLS = ['Skill', 'ArtifactData', 'Artifact']
+// fleet が tool.check で扱う本体のツール。ArtifactData は mod 自身の fleet の DB への書き込みにだけ許可を返す（auto mode の classifier が、ほかのセッションの連絡で始まったターンで判定を付けないため）
+const CHECKED_TOOLS = ['ArtifactData']
 // 本体のコンテキスト（モデルが読むもの）や会話の流れ・入力欄の提案を変える呼び出し。session.send は fleet の ship 同士の通知に使うので外す
 const CONTEXT_CALLS = ['prompt.submit', 'prompt.compose', 'prompt.suggest', 'session.append', 'session.compact', 'turn.abort']
 // 待つと本流が目に見えて止まる呼び出し（名詞ごと、または名詞.動詞）。数 ms の読み書きは気にしない
@@ -35,7 +37,8 @@ const hookOf = node => {
   // { tool: setBrief.tool } は mod 自身の tool（FleetTool の tool は mcp__software-fleet__<name>）
   const toolNode = matcher?.type === 'ObjectExpression' ? matcher.properties.find(p => p.key?.name === 'tool')?.value : undefined
   const isOwnToolRef = toolNode?.type === 'MemberExpression' && !toolNode.computed && toolNode.property.name === 'tool'
-  const isAllowedTool = name.value === 'tool.call' && (OWN_TOOL.test(tool) || FLEET_TOOLS.includes(tool) || isOwnToolRef)
+  const isAllowedTool = (name.value === 'tool.call' && (OWN_TOOL.test(tool) || FLEET_TOOLS.includes(tool) || isOwnToolRef))
+    || (name.value === 'tool.check' && CHECKED_TOOLS.includes(tool))
   return { name, handler, isMain, isAllowedTool }
 }
 

@@ -28,6 +28,15 @@ describe('fleet-db', () => {
     expect(FleetDb.isFleet('https://claude.ai/chat/abc', fleet)).toBe(true)
   })
 
+  test('fleet の artifact そのものかは id で比べ、id が取れない宛先は違うとみなす', () => {
+    expect(FleetDb.isSameArtifact('https://claude.ai/artifact/abc', fleet)).toBe(true)
+    expect(FleetDb.isSameArtifact('https://claude.ai/code/artifact/abc/', fleet)).toBe(true)
+    expect(FleetDb.isSameArtifact('https://claude.ai/artifact/other', fleet)).toBe(false)
+    expect(FleetDb.isSameArtifact('https://claude.ai/artifact/other/../abc', fleet)).toBe(false)
+    expect(FleetDb.isSameArtifact(undefined, fleet)).toBe(false)
+    expect(FleetDb.isSameArtifact('abc', fleet)).toBe(false)
+  })
+
   test('読み取りは get・list・query・profiles だけ。ほかは知らない action も書き込みとみなす', () => {
     expect(['get', 'list', 'query', 'profiles'].every(FleetDb.isRead)).toBe(true)
     expect(['set', 'update', 'delete', 'str_replace', 'batch', 'something_new'].some(FleetDb.isRead)).toBe(false)

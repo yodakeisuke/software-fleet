@@ -20,6 +20,7 @@ run('no-context', [
   "on('tool.call', { tool: 'Skill' }, ($, e, next) => next(e))",
   "on('tool.call', { tool: setBrief.tool }, ($, e) => setBrief.run(engine($), e))",
   "on('tool.call', { tool: 'ArtifactData' }, () => ({ deny: 'fleet の DB は専用ツールで書く' }))",
+  "on('tool.check', { tool: 'ArtifactData' }, ($, e, next) => next(e))",
   "$.session.send({ to: { sessionId: 's' }, text: 'a' })",
 ], [
   "on('prompt.context', ($, e, next) => next(e))",
@@ -32,6 +33,8 @@ run('no-context', [
   "on('tool.call', { tool: 'Edit' }, () => ({ deny: 'no' }))",
   "on('tool.call', () => ({ deny: 'no' }))",
   "on('tool.call', { tool: other.name }, () => ({ deny: 'no' }))",
+  "on('tool.check', { tool: 'Bash' }, () => ({ decision: 'allow' }))",
+  "on('tool.check', () => ({ decision: 'allow' }))",
 ])
 
 run('no-delay', [

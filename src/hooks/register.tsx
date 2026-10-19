@@ -1,5 +1,6 @@
 import type { EngineInterface, Register } from 'claude-code'
 import type { Engine, FleetTool, ShipName } from '../types/fleet'
+import { allowOwnWrite } from '../fleet/hook/allow-own-write'
 import { forbidRawWrite } from '../fleet/hook/forbid-raw-write'
 import { joinFleet } from '../fleet/hook/join-fleet'
 import { reportStatus } from '../fleet/tool/report-status'
@@ -40,6 +41,7 @@ export const register: Register = on => {
     const deny = await forbidRawWrite(engine($), e, next.origin.plugin)
     return deny === undefined ? next(e) : { deny }
   })
+  on('tool.check', { tool: 'ArtifactData' }, async ($, e, next) => (await allowOwnWrite(engine($), e.input, next.origin.plugin, $.plugin.name)) ?? next(e))
   on('tool.call', { tool: setBrief.tool }, ($, e) => setBrief.run(engine($), e))
   on('tool.call', { tool: askUser.tool }, ($, e) => askUser.run(engine($), e))
   on('tool.call', { tool: recordDecision.tool }, ($, e) => recordDecision.run(engine($), e))
