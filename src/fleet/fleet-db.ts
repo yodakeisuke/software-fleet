@@ -24,6 +24,7 @@ const paths: DbPaths = {
   remaining: 'fleet/flagship/deliverables/remaining',
   answers: 'fleet/user/answers',
   reviews: 'fleet/user/reviews',
+  comments: 'fleet/user/comments',
   // ship の成果物は fleet/<ship>/deliverables/<名前>
   requirements: 'fleet/requirement/deliverables/requirements',
   self: 'fleet/db-paths',

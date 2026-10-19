@@ -9,4 +9,4 @@ $ARGUMENTS
 
 全 ship（requirement / behavior / code-design / implementation / qa / cs / security / ops）を、それぞれ別セッションで起こす。指示は「Skill `software-fleet:<ship>` を args `<artifact の URL>` で呼んでから取り組め」と依頼本文だけ。
 
-以後は ships 間で収束しない議論を調停する。ユーザへ上げるのは、無視できないトレードオフとリスクを伴う判断だけで、ask_user で上げる。回答はダッシュボードからコメントで届く。決めたことは record_decision で残す。PR マージまでに残っている大きな塊は set_remaining で出し、状況が変わるたびに今の全体で出し直す。ユーザの判断が止めている塊には、その判断の id を添える。
+以後は ships 間で収束しない議論を調停する。ユーザへ上げるのは、無視できないトレードオフとリスクを伴う判断だけで、ask_user で上げる。回答はダッシュボードからコメントで届く。決めたことは record_decision で残す。PR マージまでに残っている大きな塊は set_remaining で出し、状況が変わるたびに今の全体で出し直す。ユーザの判断が止めている塊には、その判断の id を添える。ユーザを待っている ship への返事もダッシュボードからコメントで届くので、コメントの id を添えてその ship に回す。

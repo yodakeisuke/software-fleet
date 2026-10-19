@@ -64,7 +64,7 @@
 - 状態は fleet ごとに1つの artifact の DB（db capability）に置く。全セッションとスマホのページが同じ状態を見る。ローカルファイルは持たない
   - fleet-id は flagship のセッションID。DB の URL を fleet の全セッションに渡す
   - event sourcing はしない。文書がそのまま状態。競合は DB の if_version で検知される（古い版への書き込みは失敗し、何も書かれない）
-  - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答）はページが、別の文書に書く
+  - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答・ship の待ちへの返事）はページが、別の文書に書く
   - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
 - html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
   - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える

@@ -58,7 +58,7 @@ export type RequirementChange = { op: 'add'; to: Requirement } | { op: 'replace'
 export type Requirements = { requirements: Requirement[] }
 
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
-export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; requirements: string; self: string }
+export type DbPaths = { brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string; requirements: string; self: string }
 
 // セッションが属する fleet（mod が $.state に持つ）
 export type Role = 'flagship' | ShipName

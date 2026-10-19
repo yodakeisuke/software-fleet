@@ -174,11 +174,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 </div>
 
 <script>
-// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答）だけを answers・reviews に書く
+// 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答・ship への返事）だけを answers・reviews・comments に書く
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], threads: {}, problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -194,21 +194,26 @@ const yourTurn = () => {
     .sort(([, a], [, b]) => String(a.at).localeCompare(String(b.at))).map(([id, ask]) => ({ kind: 'ask', key: `ask:${id}`, id, ask }))
   const reviews = SHIPS.filter(ship => S.ships[ship] && awaiting(ship, S.ships[ship], S.reviews[ship]))
     .map(ship => ({ kind: 'review', key: `review:${ship}:${S.ships[ship].since}`, ship, status: S.ships[ship] }))
-  return [...asks, ...reviews]
+  // あなたを待っている ship。返事が flagship に届くまで残す
+  const waits = SHIPS.filter(ship => S.ships[ship]?.state === 'waiting' && S.ships[ship].on === 'user' && !replied(ship))
+    .map(ship => ({ kind: 'waiting', key: `waiting:${ship}:${S.ships[ship].since}`, ship, status: S.ships[ship] }))
+  return [...asks, ...reviews, ...waits]
 }
+// 今の待ちへの返事（コメントの [id, 中身]）。待ちは報告した時刻で見分ける
+const replyOf = ship => Object.entries(S.threads).find(([, t]) => t.ship === ship && t.on === `w:${S.ships[ship].since}`)
+const replied = ship => { const reply = replyOf(ship); return reply !== undefined && !reply[1].undelivered }
 // 決めた直後の件は、5 秒間その場に「取り消す」として残す
 const items = () => {
   const list = yourTurn().filter(item => !(item.key in S.done))
   Object.values(S.done).sort((a, b) => a.index - b.index).forEach(d => list.splice(Math.min(d.index, list.length), 0, { ...d.item, done: d }))
   return list
 }
-// あなたが判断することの全部。判断とレビュー待ちはドックで答える（at はドックでの位置）。ほかは ship があなたを待っている件
+// あなたが判断することの全部。判断・レビュー待ち・ship への返事はドックで答える（at はドックでの位置）
 const toDecide = () => {
   const list = items()
-  const turn = yourTurn().map(item => ({ ...item, at: list.findIndex(i => i.key === item.key) }))
-  const waiting = SHIPS.filter(ship => S.ships[ship]?.state === 'waiting' && S.ships[ship].on === 'user').map(ship => ({ kind: 'waiting', ship, what: S.ships[ship].what }))
-  return [...turn, ...waiting]
+  return yourTurn().map(item => ({ ...item, at: list.findIndex(i => i.key === item.key) }))
 }
+const KIND = { ask: '判断', review: 'レビュー', waiting: '返事' }
 
 // --- 表示の言葉
 const view = ship => {
@@ -253,7 +258,7 @@ const decideRow = item => {
   const row = (open, kind, label, text, note) => `<${open} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span>`
   if (item.kind === 'ask') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)}</button>`
   if (item.kind === 'review') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${item.ship} が収束`, '構造と QA を確かめて承認する')}</button>`
-  return `${row(`a href="#${item.ship}"`, 'k-wait', '返事', item.what, `${item.ship} があなたを待っている`)}</a>`
+  return `${row(`button data-act="go" data-to="${item.at}"`, 'k-wait', '返事', item.status.what, `${item.ship} があなたを待っている`)}</button>`
 }
 const decideView = () => {
   const list = toDecide()
@@ -308,7 +313,7 @@ const renderDock = (ship, sub) => {
   const cur = list[S.at]
   const dots = list.map((_, k) => `<button class="dotb${k === S.at ? ' on' : ''}" data-act="go" data-to="${k}" aria-label="${k + 1} 件目へ"><span></span></button>`).join('')
   dock.innerHTML = `<div class="nav"><button class="arrow${S.at <= 0 ? ' off' : ''}" data-act="go" data-to="${S.at - 1}" aria-label="前の件">‹</button>
-    <div class="navc"><span class="navt"><b>${cur.kind === 'ask' ? '判断' : 'レビュー'}</b> · ${S.at + 1} / ${list.length}</span><span class="dots">${dots}</span></div>
+    <div class="navc"><span class="navt"><b>${KIND[cur.kind]}</b> · ${S.at + 1} / ${list.length}</span><span class="dots">${dots}</span></div>
     <button class="arrow${S.at >= list.length - 1 ? ' off' : ''}" data-act="go" data-to="${S.at + 1}" aria-label="次の件">›</button></div>
     <div class="rail${S.locked ? ' locked' : ''}" id="rail">${list.map(slide).join('')}</div>`
   const rail = $('rail')
@@ -326,6 +331,16 @@ const slide = item => {
   if (item.kind === 'review') {
     return `<div class="slide"><div class="rship">${item.ship}</div><div class="dw">${hhmm(item.status.since)} に収束。構造と QA を確かめて承認する</div>
       <div class="acts"><a class="act" href="#${item.ship}"><span class="al">ページで見る ›</span></a><button class="act pri" data-act="approve" data-ship="${item.ship}"><span class="al">承認する</span></button></div></div>`
+  }
+  if (item.kind === 'waiting') {
+    const head = `<div class="rship">${item.ship}</div><div class="dq">${esc(item.status.what)}</div><a class="more" href="#${item.ship}">ページで見る ›</a>`
+    const sentBefore = replyOf(item.ship)?.[1]
+    if (sentBefore?.undelivered) {
+      return `<div class="slide">${head}<div class="dw">返事「${esc(sentBefore.text)}」は flagship に届いていません（${esc(sentBefore.undelivered)}）</div>
+        <div class="acts"><button class="act pri" data-act="rereply" data-ship="${item.ship}"><span class="al">flagship に送り直す</span></button></div></div>`
+    }
+    return `<div class="slide">${head}<div class="acts"><textarea class="ft" data-free="${esc(item.key)}" maxlength="1000" aria-label="返事" placeholder="${item.ship} への返事を書く">${esc(S.drafts[item.key])}</textarea>
+      <button class="fb pri" data-act="reply" data-ship="${item.ship}">${item.ship} に送る</button></div></div>`
   }
   const ask = item.ask
   const question = `<button class="qbtn" data-act="open" data-ask="${esc(item.id)}"><span class="dq">${esc(ask.question)}</span>
@@ -377,7 +392,7 @@ const onScroll = event => {
   S.at = at
   document.querySelectorAll('.dotb').forEach((dot, k) => dot.classList.toggle('on', k === at))
   const list = items()
-  document.querySelector('.navt').innerHTML = `<b>${list[at]?.kind === 'ask' ? '判断' : 'レビュー'}</b> · ${at + 1} / ${list.length}`
+  document.querySelector('.navt').innerHTML = `<b>${KIND[list[at]?.kind] ?? ''}</b> · ${at + 1} / ${list.length}`
   document.querySelectorAll('.arrow')[0].classList.toggle('off', at <= 0)
   document.querySelectorAll('.arrow')[1].classList.toggle('off', at >= list.length - 1)
 }
@@ -453,6 +468,45 @@ const resend = async (askId, button) => {
   S.failed = `判断の回答を flagship に送れませんでした（${sent.error?.code ?? 'unknown'}）。ページを再読み込みすると、送信の許可をもう一度聞かれます`
   render()
 }
+// ship への返事: コメントとして DB に書き、flagship に送る（送れるのはタップの直後だけ）。flagship がその ship に回す
+const commentDoc = id => S.db.doc(`${S.paths.comments}/${id}`)
+const anchorOf = button => (S.comments ? S.comments.anchorFor(button).catch(() => null) : Promise.resolve(null))
+const toFlagship = (anchor, text) => (anchor ? S.comments.sendToClaude({ anchor, text }).catch(error => ({ error })) : Promise.resolve({ error: { code: 'not_granted' } }))
+const relay = (ship, id, reply) => `${ship} の待ち「${S.ships[ship].what}」へのユーザの返事（id: ${id}）。${ship} に回してください:\n${reply.text}`
+const replyTo = async (ship, button) => {
+  if (S.locked) return
+  const item = yourTurn().find(i => i.kind === 'waiting' && i.ship === ship)
+  if (!item) return
+  const text = (S.drafts[item.key] ?? '').trim()
+  if (!text) return document.querySelector(`[data-free="${CSS.escape(item.key)}"]`)?.focus()
+  const anchor = await anchorOf(button)
+  const id = `comment-${Date.now()}`, reply = { ship, on: `w:${item.status.since}`, text, at: new Date().toISOString() }
+  const done = { item, msg: `${ship} に返事を送りました`, warn: '', thread: null }
+  done.undo = () => {
+    commentDoc(id).delete().catch(fail)
+    if (done.thread) S.comments.sendToClaude({ threadId: done.thread, text: `${ship} への返事（id: ${id}）を取り消します` }).catch(() => {})
+  }
+  document.activeElement?.blur()
+  finish(item.key, done)
+  commentDoc(id).set(reply).catch(fail)
+  const sent = await toFlagship(anchor, relay(ship, id, reply))
+  if (sent.threadId) { done.thread = sent.threadId; return }
+  const code = sent.error?.code ?? 'unknown'
+  done.warn = `flagship には届いていません（${code}）。返事は記録しました`
+  S.failed = `${ship} への返事を flagship に送れませんでした（${code}）`
+  commentDoc(id).set({ ...reply, undelivered: code }).catch(fail)
+  render()
+}
+// 届かなかった返事を送り直す
+const rereply = async (ship, button) => {
+  const found = replyOf(ship)
+  if (!found) return
+  const [id, { undelivered, ...reply }] = found
+  const sent = await toFlagship(await anchorOf(button), relay(ship, id, reply))
+  if (sent.threadId) { S.failed = ''; commentDoc(id).set(reply).catch(fail); return }
+  S.failed = `${ship} への返事を flagship に送れませんでした（${sent.error?.code ?? 'unknown'}）。ページを再読み込みすると、送信の許可をもう一度聞かれます`
+  render()
+}
 const undo = key => {
   const done = S.done[key]
   if (!done) return
@@ -472,6 +526,8 @@ document.addEventListener('click', event => {
   if (act === 'freeback') { S.free = null; render() }
   if (act === 'freesend') sendFree(ask, el)
   if (act === 'resend') resend(ask, el)
+  if (act === 'reply') replyTo(ship, el)
+  if (act === 'rereply') rereply(ship, el)
   if (act === 'undo') undo(key)
   if (act === 'go') go(Number(to))
   if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
@@ -503,6 +559,7 @@ const start = async () => {
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
   S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
+  listen(S.paths.comments, docs => { S.threads = docs })
 }
 render()
 start()
