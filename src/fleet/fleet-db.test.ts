@@ -50,7 +50,7 @@ describe('fleet-db', () => {
   test('書く前に今の版を読み、その版に固定して書く。なければ版を付けずに作る', async () => {
     const calls: DbCall[] = []
     const engine = (found: string): Engine => ({
-      root: '/p', now: async () => 0, fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'qa' }), board: async () => {}, offer: async () => {}, read: async () => '',
+      root: '/p', now: async () => 0, fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'qa' }), board: async () => {}, offer: async () => {}, read: async () => '', readable: async () => false,
       db: async (_url, call) => { calls.push(call); return { text: call.action === 'get' ? found : 'ok' } },
     })
     expect(await FleetDb.put(engine(got), 'fleet/qa', { state: 'converged' }, 'done')).toEqual({ result: 'done' })

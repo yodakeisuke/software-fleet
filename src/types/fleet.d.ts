@@ -85,6 +85,8 @@ export type Engine = {
   db: (url: string, call: DbCall) => Promise<DbReply>
   // ファイルを読む（相対パスは作業ディレクトリから）。ないときは拒まれる
   read: (path: string) => Promise<string>
+  // モデル自身の Read が、許可を求めずに読めるファイルか（権限の判定だけをして、何も読まない）
+  readable: (path: string) => Promise<boolean>
 }
 // LLM が呼ぶ専用 tool。宣言（spec）と処理（run）を 1 つにしたもの。tool は mcp__software-fleet__<spec.name>
 export type FleetTool = { tool: string; spec: ToolDeclaration; run: (engine: Engine, input: unknown) => Promise<ToolReply> }

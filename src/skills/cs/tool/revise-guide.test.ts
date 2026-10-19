@@ -6,11 +6,12 @@ import { reviseGuide } from './revise-guide'
 
 const decision = { issue: '取り込める件数', decision: '1 回 1 万行まで', why: '依頼に上限がなく、簡単な側に倒した' }
 const shape = (input: unknown) => JsonSchema.check(reviseGuide.spec.inputSchema, input).either<unknown>(() => '', e => e)
-// ファイルを files の中身で読み、DB への呼び出しを calls に残す
+// files にあるファイルだけを許可なしに読め、DB への呼び出しを calls に残す
 const engineWith = (files: Record<string, string>, calls: DbCall[], reads: string[] = []) => ({
   fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'cs' }),
   db: async (_url: string, call: DbCall) => { calls.push(call); return { text: '' } },
-  read: async (path: string) => { reads.push(path); if (path in files) return files[path]; throw new Error(`ENOENT: ${path}`) },
+  read: async (path: string) => { reads.push(path); return files[path] },
+  readable: async (path: string) => path in files,
 }) as unknown as Engine
 
 describe('revise-guide', () => {
@@ -27,17 +28,10 @@ describe('revise-guide', () => {
     expect(calls.at(-1)).toEqual({ action: 'set', collection: 'fleet/cs/deliverables', doc_id: 'guide', data: { html: '<h1>実績データのインポート</h1>', decisions: [decision] } })
   })
 
-  test('HTML でないファイルは読まない（Read の権限を通らない読み込みで、ほかのファイルを持ち出さない）', async () => {
+  test('モデル自身が許可なしに Read できないファイルは読まない（mod の読み込みで、それ以上のものを持ち出さない）', async () => {
     const calls: DbCall[] = [], reads: string[] = []
-    const engine = engineWith({ '.env': 'SECRET=1' }, calls, reads)
-    expect(await reviseGuide.run(engine, { file: '.env', decisions: [] })).toEqual({ deny: 'ガイドは .html のファイルで渡す: .env' })
+    const engine = engineWith({}, calls, reads)
+    expect(await reviseGuide.run(engine, { file: '/Users/me/.ssh/id_rsa.html', decisions: [] })).toEqual({ deny: '/Users/me/.ssh/id_rsa.html は許可なしには Read できない。許可なしに読める場所に置き直す' })
     expect([reads, calls]).toEqual([[], []])
-  })
-
-  test('ファイルを読めなければ、何も書かずに理由を返す', async () => {
-    const calls: DbCall[] = []
-    const reply = await reviseGuide.run(engineWith({}, calls), { file: '/tmp/none.html', decisions: [] })
-    expect(reply).toEqual({ deny: 'ガイドのファイルを読めない（/tmp/none.html）: ENOENT: /tmp/none.html' })
-    expect(calls).toEqual([])
   })
 })

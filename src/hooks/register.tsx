@@ -23,6 +23,7 @@ const engine = ($: EngineInterface): Engine => ({
     return { text: reply.text, deny: reply.deny, ...(reply.isError === true ? { isError: true as const } : {}) }
   },
   read: path => $.fs.read(path),
+  readable: async path => (await $.tool.check({ tool: 'Read', input: { file_path: path } })).decision === 'allow',
 })
 
 // 機能ごとの tool の一覧。join-fleet への一覧と on の行は同じものを指す
