@@ -178,7 +178,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: null, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], threads: {}, problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], threads: {}, problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -238,8 +238,8 @@ const render = () => {
   renderDock(ship, sub)
   renderSheet()
 }
-// DB を読めるまでの表示。読めたら空
-const unready = () => (!S.db ? `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
+// DB を読めるまでの表示。読めたら空。db は claude.use が答えるまで undefined で、答えが null ならこの表示では読めない
+const unready = () => (S.db === null ? `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
   : !S.loaded ? '<p class="req wait">読み込み中</p>' : '')
 const glance = () => {
   if (unready()) return unready()
@@ -543,9 +543,9 @@ const listen = (path, apply) => S.db.collection(path).onSnapshot(snap => {
   render()
 }, error => { S.failed = `fleet のデータを読めません（${error.code}）`; S.db = null; render() })
 const start = async () => {
-  S.db = await claude.use('db')
-  S.comments = await claude.use('comments')
+  S.db = (await window.claude?.use('db')) ?? null
   if (!S.db) return render()
+  S.comments = await claude.use('comments')
   const canSend = S.comments ? await S.comments.canSendToClaude().catch(error => error?.code ?? 'error') : 'comments なし'
   if (canSend !== 'available') S.failed = `このビューからは判断の回答を flagship に送れません（${canSend}）`
   const where = await S.db.doc('fleet/db-paths').get().catch(() => null)
