@@ -19,7 +19,8 @@
 - shipsの起動
 - ships間で議論が収束しなかった場合の調停
 - 無視できないトレードオフや、リスクを伴う判断のみユーザへエスカレーションする
-- PR マージまでに残っている大きな塊を示す。ダッシュボードはそれと、ユーザが判断することの一覧（判断・レビュー待ち・ship からの返事待ち・behavior の仮定）を最初に見せる
+- PR マージまでに残っている大きな塊を示す。ダッシュボードはそれと、ユーザが判断することの一覧（判断・レビュー待ち。ドックと同じもの）と、behavior が仮定で進めていることを分けて最初に見せる
+- ユーザへの問いは flagship の ask_user だけ（背景・選択肢・推奨が必ず付く）。ship はユーザを直接待たず、flagship を待つ
 ### ships
 - requirement
   誰が何をできるようになるのか。要求ごとに端的に１行ずつ書く。
@@ -66,7 +67,7 @@
 - 状態は fleet ごとに1つの artifact の DB（db capability）に置く。全セッションとスマホのページが同じ状態を見る。ローカルファイルは持たない
   - fleet-id は flagship のセッションID。DB の URL を fleet の全セッションに渡す
   - event sourcing はしない。文書がそのまま状態。競合は DB の if_version で検知される（古い版への書き込みは失敗し、何も書かれない）
-  - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答・付箋へのコメント・ship の待ちへの返事）はページが、別の文書に書く
+  - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答・付箋へのコメント）はページが、別の文書に書く
   - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
 - html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
   - 例外: cs のヘルプガイドは、公開する HTML そのものが成果物。cs が fleet の artifact に `cs/guide.html`（と決定ログの `cs/decisions.html`）として Artifact で出し、ページは script の動かない iframe に入れる

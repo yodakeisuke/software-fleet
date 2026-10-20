@@ -16,8 +16,8 @@ const spec = {
   name: 'ask_user',
   description: '無視できないトレードオフやリスクを伴う判断を、ユーザのダッシュボードに上げる。回答はコメントで届く。返る id は record_decision の closes に使う',
   inputSchema: object({
-    question: text('ユーザに決めてほしい問い。1 文'),
-    background: explain('なぜユーザが決めるのか。図があれば diagram に'),
+    question: text('ユーザに決めてほしい問い。fleet の中の略語を知らない人が初見で分かる 1 文'),
+    background: explain('何の話で、なぜユーザが決めるのか。図があれば diagram に'),
     options: {
       type: 'array',
       description: `選択肢。${limits.options.min}〜${limits.options.max} 件`,
