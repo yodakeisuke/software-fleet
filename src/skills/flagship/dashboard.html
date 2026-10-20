@@ -258,7 +258,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], guide: null, remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], csFiles: {}, remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -377,19 +377,13 @@ const requirementPage = sub => {
     <tbody>${S.problems.map(p => `<tr><td>${esc(p.problem)}</td><td>${esc(p.solution)}</td></tr>`).join('')}</tbody></table>`
   return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
-// cs: 公開する形のヘルプガイドと、cs が聞かずに決めた仕様の 2 枚
+// cs: cs が fleet の artifact に出した、公開する形のヘルプガイドと、聞かずに決めた仕様の 2 枚
 // ガイドは iframe（script は動かない）に入れ、描き直しでは作り直さない（作り直すと、読んでいた位置が先頭に戻る）
 const renderCs = sub => {
-  const main = $('glance'), head = '<a class="rhead" href="#"><span aria-hidden="true">‹</span>cs</a>'
-  if (unready() || !S.guide) { main.innerHTML = head + (unready() || '<p class="req wait">まだガイドがありません</p>'); return }
-  if (sub === 'decisions') {
-    const row = d => `<div class="logi"><div class="sh">${esc(d.issue)}</div><div class="lt">${esc(d.decision)}</div><div class="lw">${esc(d.why)}</div></div>`
-    main.innerHTML = head + (S.guide.decisions.length === 0 ? '<p class="req wait">聞かずに決めた仕様はありません</p>' : `<div>${S.guide.decisions.map(row).join('')}</div>`)
-    return
-  }
-  if (!main.querySelector('.guide')) main.innerHTML = `${head}<iframe class="guide" sandbox title="ヘルプガイド"></iframe>`
-  const frame = main.querySelector('.guide')
-  if (frame.srcdoc !== S.guide.html) frame.srcdoc = S.guide.html
+  const main = $('glance'), src = sub === 'decisions' ? 'cs/decisions.html' : 'cs/guide.html'
+  const head = '<a class="rhead" href="#"><span aria-hidden="true">‹</span>cs</a>'
+  if (!S.csFiles[src]) { main.innerHTML = `${head}<p class="req wait">まだありません。cs が出すと、ここに表示されます</p>`; return }
+  if (main.querySelector('.guide')?.getAttribute('src') !== src) main.innerHTML = `${head}<iframe class="guide" sandbox title="ヘルプガイド" src="${src}"></iframe>`
 }
 // behavior: event modeling の盤面（流れ）と、その例（テスト）の 2 枚。DB の時点の並びが時間の順
 const mark = change => `<span class="rmk${change === '新' ? ' new' : change === '既' ? ' old' : ''}">${esc(change)}</span>`
@@ -585,7 +579,7 @@ const PAGES = {
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
   behavior: { body: behaviorPage, label: '流れとテスト', tabs: () => [['', '流れ'], ['test', `テスト ${testCount()}`]] },
   // cs のページは renderCs が描く（ガイドの iframe を描き直しで作り直さない）
-  cs: { label: 'ガイドと決めたこと', tabs: () => [['', 'ガイド'], ['decisions', `決めたこと ${S.guide?.decisions.length ?? 0}`]] },
+  cs: { label: 'ガイドと決めたこと', tabs: () => [['', 'ガイド'], ['decisions', '決めたこと']] },
 }
 // ページのドック: タブと、レビュー待ちなら承認
 // ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
@@ -862,12 +856,14 @@ const start = async () => {
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
   S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
-  S.db.doc(S.paths.guide).onSnapshot(snap => { S.guide = snap.data() ?? null; render() }, () => {})
   S.db.doc(S.paths.behavior).onSnapshot(snap => { S.behavior = { moments: [], views: [], readModels: [], flows: [], hotspots: [], ...snap.data() }; render() }, () => {})
   listen(S.paths.behaviorJournal, docs => { S.journal = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
   listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
 }
+// cs のファイルがあるか。cs が出し直すと新しい版としてページごと読み直されるので、開いたときに 1 回だけ見る
+Promise.all(['cs/guide.html', 'cs/decisions.html'].map(async src => [src, await fetch(src).then(r => r.ok, () => false)]))
+  .then(found => { S.csFiles = Object.fromEntries(found); render() })
 render()
 start()
 </script>

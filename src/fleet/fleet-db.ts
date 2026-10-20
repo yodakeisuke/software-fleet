@@ -27,7 +27,6 @@ const paths: DbPaths = {
   comments: 'fleet/user/comments',
   // ship の成果物は fleet/<ship>/deliverables/<名前>
   requirements: 'fleet/requirement/deliverables/requirements',
-  guide: 'fleet/cs/deliverables/guide',
   behavior: 'fleet/behavior/deliverables/event-model',
   behaviorJournal: 'fleet/behavior/journal',
   behaviorReplies: 'fleet/behavior/replies',

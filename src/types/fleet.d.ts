@@ -62,12 +62,6 @@ export type Which = { who: string; can: string }
 export type RequirementChange = { op: 'add'; to: Requirement } | { op: 'replace'; which: Which; to: Requirement } | { op: 'remove'; which: Which }
 export type Requirements = { requirements: Requirement[] }
 
-// cs ship が書く。公開できる形のヘルプガイド（1 つの HTML 文書。ページは iframe にそのまま入れる）と、cs が聞かずに決めた仕様
-export type GuideDecision = { issue: string; decision: string; why: string }
-export type Guide = { html: Html; decisions: GuideDecision[] }
-// revise_guide の入力。ガイドは HTML のファイルで渡し、mod が読む
-export type GuideRevision = { file: string; decisions: GuideDecision[] }
-
 // behavior ship が書く。対象システムの振る舞い（event model）と、結合レベルのテスト。moments の順が時間の順
 // 新規か、既存の修正か、既存（変えない）か。既存は文脈として描く
 export type Novelty = '新' | '改' | '既'
@@ -117,7 +111,7 @@ export type BehaviorInput = BehaviorChanges & { note: string; replies?: { commen
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
   brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
-  requirements: string; guide: string; behavior: string; behaviorJournal: string; behaviorReplies: string; self: string
+  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; self: string
 }
 
 // セッションが属する fleet（mod が $.state に持つ）
@@ -140,12 +134,6 @@ export type Engine = {
   offer: (tool: ToolDeclaration) => Promise<void>
   // ArtifactData で fleet の DB を読み書きする
   db: (url: string, call: DbCall) => Promise<DbReply>
-  // ファイルを読む（相対パスは作業ディレクトリから）。ないときは拒まれる
-  read: (path: string) => Promise<string>
-  // シンボリックリンクをたどった先の絶対パス。ないときは拒まれる
-  realPath: (path: string) => Promise<string | undefined>
-  // モデル自身の Read が、許可を求めずに読めるファイルか（権限の判定だけをして、何も読まない）
-  readable: (path: string) => Promise<boolean>
 }
 // LLM が呼ぶ専用 tool。宣言（spec）と処理（run）を 1 つにしたもの。tool は mcp__software-fleet__<spec.name>
 export type FleetTool = { tool: string; spec: ToolDeclaration; run: (engine: Engine, input: unknown) => Promise<ToolReply> }
@@ -162,7 +150,6 @@ declare module 'claude-code' {
     'mcp__software-fleet__set_remaining': Remaining
     'mcp__software-fleet__report_status': { status: Status }
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
-    'mcp__software-fleet__revise_guide': GuideRevision
     'mcp__software-fleet__revise_behavior': BehaviorInput
   }
 }
