@@ -258,7 +258,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], csFiles: {}, remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -381,9 +381,7 @@ const requirementPage = sub => {
 // ガイドは iframe（script は動かない）に入れ、描き直しでは作り直さない（作り直すと、読んでいた位置が先頭に戻る）
 const renderCs = sub => {
   const main = $('glance'), src = sub === 'decisions' ? 'cs/decisions.html' : 'cs/guide.html'
-  const head = '<a class="rhead" href="#"><span aria-hidden="true">‹</span>cs</a>'
-  if (!S.csFiles[src]) { main.innerHTML = `${head}<p class="req wait">まだありません。cs が出すと、ここに表示されます</p>`; return }
-  if (main.querySelector('.guide')?.getAttribute('src') !== src) main.innerHTML = `${head}<iframe class="guide" sandbox title="ヘルプガイド" src="${src}"></iframe>`
+  if (main.querySelector('.guide')?.getAttribute('src') !== src) main.innerHTML = `<a class="rhead" href="#"><span aria-hidden="true">‹</span>cs</a><iframe class="guide" sandbox title="ヘルプガイド" src="${src}"></iframe>`
 }
 // behavior: event modeling の盤面（流れ）と、その例（テスト）の 2 枚。DB の時点の並びが時間の順
 const mark = change => `<span class="rmk${change === '新' ? ' new' : change === '既' ? ' old' : ''}">${esc(change)}</span>`
@@ -861,9 +859,6 @@ const start = async () => {
   listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
 }
-// cs のファイルがあるか。cs が出し直すと新しい版としてページごと読み直されるので、開いたときに 1 回だけ見る
-Promise.all(['cs/guide.html', 'cs/decisions.html'].map(async src => [src, await fetch(src).then(r => r.ok, () => false)]))
-  .then(found => { S.csFiles = Object.fromEntries(found); render() })
 render()
 start()
 </script>
