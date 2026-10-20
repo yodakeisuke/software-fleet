@@ -1,5 +1,5 @@
-import type { DbPaths, DbReply, Engine, Result as Data, ToolReply } from '../types/fleet'
-import { Result } from './logic/result'
+import type { DbPaths, DbReply, Engine, Result as Data, ToolReply } from '../../types/fleet'
+import { Result } from '../logic/result'
 
 // fleet の DB（claude.ai の artifact の DB を ArtifactData で読み書きする）。文書の置き場所はここが唯一の定義で、ページには DB の fleet/db-paths 経由で渡す
 export const FleetDb = {

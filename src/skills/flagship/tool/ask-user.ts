@@ -1,6 +1,6 @@
 import type { Ask as AskDoc, Engine, FleetTool, JsonSchemaNode } from '../../../types/fleet'
-import { FleetDb } from '../../../fleet/fleet-db'
-import { JsonSchema } from '../../../fleet/json-schema'
+import { FleetDb } from '../../../fleet/db/fleet-db'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { Ask } from '../logic/ask'
 
 const { text, object } = JsonSchema

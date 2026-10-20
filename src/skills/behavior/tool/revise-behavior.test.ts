@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { DbCall, Engine } from '../../../types/fleet'
-import { JsonSchema } from '../../../fleet/json-schema'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { reviseBehavior } from './revise-behavior'
 
 const moment = {

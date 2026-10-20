@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import type { JsonSchemaNode } from '../types/fleet'
+import type { JsonSchemaNode } from '../../types/fleet'
 import { JsonSchema } from './json-schema'
 
 const error = (schema: JsonSchemaNode, value: unknown) => JsonSchema.check(schema, value).either(() => '', e => e)

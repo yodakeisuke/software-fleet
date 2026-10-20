@@ -1,6 +1,6 @@
 # ダッシュボード: コードに書けないこと
 
-型・tool の入出力・DB の置き場所はコードが正（`src/types/fleet.d.ts`・各 tool・`src/fleet/fleet-db.ts`）。ここには、コードの 1 か所に収まらないことだけを書く。
+型・tool の入出力・DB の置き場所はコードが正（`src/types/fleet.d.ts`・各 tool・`src/fleet/db/fleet-db.ts`）。ここには、コードの 1 か所に収まらないことだけを書く。
 
 ## 導出（保存しない）
 

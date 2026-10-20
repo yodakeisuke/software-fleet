@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Engine } from '../../types/fleet'
-import { JsonSchema } from '../json-schema'
+import { JsonSchema } from '../schema/json-schema'
 import { reportStatus } from './report-status'
 
 const status = (value: unknown) => JsonSchema.check(reportStatus.spec.inputSchema, { status: value }).either<unknown>(() => '', e => e)

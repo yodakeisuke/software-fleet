@@ -1,6 +1,6 @@
 import type { Behavior, BehaviorInput, Engine, FleetTool, JournalEntry, JsonSchemaNode, Reply, ToolReply } from '../../../types/fleet'
-import { FleetDb } from '../../../fleet/fleet-db'
-import { JsonSchema } from '../../../fleet/json-schema'
+import { FleetDb } from '../../../fleet/db/fleet-db'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { EventModel } from '../logic/event-model'
 
 const { text, object } = JsonSchema

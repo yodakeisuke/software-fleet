@@ -13,3 +13,5 @@ description: software-fleet の ship。システムの振る舞いを event mode
 迷ったら、その局面の手引きを読む（`${CLAUDE_PLUGIN_ROOT}/skills/behavior/` の events.md 事実と軸、screens.md 画面・agent・規則、io.md コマンドとリードモデル、aggregates.md 集約、examples.md 例・別の流れ・未決定の問い）。plugin のコードは読まない。盤面の決まりは、tool の説明と、拒否されたときに返る文が教える。
 
 event model と例は revise_behavior で出し、直すたびに理由を note に残す。ユーザはそれをスマホで読み、振る舞いの構造とテストで十分かを判断する。付箋へのユーザのコメントは flagship から届くので、直すかを判断し、replies で返す。他の ship の findings を受けて磨き続け、状態は report_status で出す。
+
+最初に、fleet 共通の方針 `${CLAUDE_PLUGIN_ROOT}/fleet/prompt/roa.md` を読み、それに従う。

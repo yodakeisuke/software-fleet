@@ -1,7 +1,7 @@
 import type { Engine, Fleet, FleetTool } from '../../../types/fleet'
 import { Result } from '../../../fleet/logic/result'
-import { FleetDb } from '../../../fleet/fleet-db'
-import { JsonSchema } from '../../../fleet/json-schema'
+import { FleetDb } from '../../../fleet/db/fleet-db'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 
 const { text, object } = JsonSchema
 

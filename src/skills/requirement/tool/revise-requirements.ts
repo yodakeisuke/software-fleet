@@ -1,6 +1,6 @@
 import type { Engine, FleetTool, JsonSchemaNode, RequirementChange, Requirements as RequirementsDoc } from '../../../types/fleet'
-import { FleetDb } from '../../../fleet/fleet-db'
-import { JsonSchema } from '../../../fleet/json-schema'
+import { FleetDb } from '../../../fleet/db/fleet-db'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { Requirements } from '../logic/requirements'
 
 const { text, object } = JsonSchema

@@ -12,12 +12,12 @@ run('import-direction', [
   at('fleet/logic/boarding.ts', "import { Result } from './result'"),
   at('fleet/logic/boarding.ts', "import type { Role } from '../../types/fleet'"),
   at('skills/flagship/logic/ask.ts', "import { Result } from '../../../fleet/logic/result'"),
-  at('fleet/tool/report-status.ts', "import { FleetDb } from '../fleet-db'"),
+  at('fleet/tool/report-status.ts', "import { FleetDb } from '../db/fleet-db'"),
   at('skills/flagship/tool/ask-user.ts', "import { Ask } from '../logic/ask'"),
-  at('skills/flagship/tool/ask-user.ts', "import { FleetDb } from '../../../fleet/fleet-db'"),
+  at('skills/flagship/tool/ask-user.ts', "import { FleetDb } from '../../../fleet/db/fleet-db'"),
   at('hooks/register.tsx', "import { askUser } from '../skills/flagship/tool/ask-user'"),
 ], [
-  at('fleet/logic/boarding.ts', "import { FleetDb } from '../fleet-db'"),
+  at('fleet/logic/boarding.ts', "import { FleetDb } from '../db/fleet-db'"),
   at('fleet/logic/boarding.ts', "import { readFileSync } from 'node:fs'"),
   at('fleet/hook/join-fleet.ts', "import { askUser } from '../../skills/flagship/tool/ask-user'"),
   at('skills/flagship/tool/ask-user.ts', "import { x } from '../../qa/logic/x'"),
@@ -27,7 +27,7 @@ run('import-direction', [
 run('engine-in-register', [
   at('hooks/register.tsx', "const fleet = { plugin: 'software-fleet', key: 'fleet' } as const\nconst engine = ($: unknown) => $"),
   at('hooks/register.tsx', "import type { Register } from 'claude-code'"),
-  at('fleet/fleet-db.ts', "const call = { action: 'get', key: 'x' }"),
+  at('fleet/db/fleet-db.ts', "const call = { action: 'get', key: 'x' }"),
 ], [
   at('fleet/hook/join-fleet.ts', 'export const f = ($: unknown) => 1'),
   at('fleet/hook/join-fleet.ts', "const fleet = { plugin: 'software-fleet', key: 'fleet' }"),
@@ -35,7 +35,7 @@ run('engine-in-register', [
 ])
 
 run('generic-name', [
-  at('fleet/fleet-db.ts', 'export const x = 1'),
+  at('fleet/db/fleet-db.ts', 'export const x = 1'),
   at('skills/flagship/tool/ask-user.ts', 'export const x = 1'),
 ], [
   at('fleet/utils.ts', 'export const x = 1'),

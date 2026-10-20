@@ -12,6 +12,7 @@
 - green field だけではなく、brown field にも対応。どこが新規で、既存で、既存の修正なのかわかるように
 - リアルタイムに更新する。またこれは mini-waterfallではない。工程は「行き来」するものであり、どの成果物もスパイラルアップに磨いていくものだ。というかそもそも 工程 メンタルモデルで捉えないように
 - 親子セッションで状態を共有する。ファイルを介して共有する
+- 仕様とコードの ROA を最大化する。flagship と全 ship が最初に `fleet/prompt/roa.md` を読む
 
 ## fleet構造
 ### flagship
@@ -95,7 +96,7 @@ src/
 ├─ hooks/register.tsx   組み立て役。$ を engine（関数の束）にして渡す
 ├─ types/fleet.d.ts     plugin の型の契約（PluginState）と Engine の型
 ├─ skills/<機能>/        SKILL.md（と dashboard.html）。中身ができたら tool/（LLM が呼ぶ tool、1 tool 1 ファイル）・logic/
-└─ fleet/               2 つ以上の機能が使うもの: tool/・hook/・logic/・fleet-db.ts・json-schema.ts
+└─ fleet/               2 つ以上の機能が使うもの: tool/・hook/・logic/・db/（fleet-db.ts）・schema/（json-schema.ts）・prompt/（全 ship が読む roa.md）
 ```
 
 依存は一方向: `register.tsx → tool・hook → fleet-db・json-schema → logic → 型と result`
@@ -104,7 +105,7 @@ src/
 
 例外（写しを持つもの）
 - dashboard.html はビルドせずに publish するので、レビューの規則（`fleet/logic/review.ts` の required・レビュー待ち）の写しを持つ。review を変えたら dashboard.html も直す
-- DB の置き場所は `fleet/fleet-db.ts` の paths が唯一の定義。mod はダッシュボードの publish のときに、それを DB の `fleet/db-paths` に置く。ページはそれを読むので、ページが知っているのはこの 1 つの置き場所だけ
+- DB の置き場所は `fleet/db/fleet-db.ts` の paths が唯一の定義。mod はダッシュボードの publish のときに、それを DB の `fleet/db-paths` に置く。ページはそれを読むので、ページが知っているのはこの 1 つの置き場所だけ
 
 - 候補（未検証）
   - 他の ship への通知（$.session.send）。相手が動くべき findings のときだけ。更新のたびには送らない

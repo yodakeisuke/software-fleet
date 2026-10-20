@@ -1,6 +1,6 @@
 import type { Engine, FleetTool, JsonSchemaNode, Review as ReviewDoc, ShipName, Status } from '../../types/fleet'
-import { FleetDb } from '../fleet-db'
-import { JsonSchema } from '../json-schema'
+import { FleetDb } from '../db/fleet-db'
+import { JsonSchema } from '../schema/json-schema'
 import { Boarding } from '../logic/boarding'
 import { Review } from '../logic/review'
 

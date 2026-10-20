@@ -1,5 +1,5 @@
 import type { Engine } from '../../types/fleet'
-import { FleetDb } from '../fleet-db'
+import { FleetDb } from '../db/fleet-db'
 
 // mod 自身が専用 tool から fleet の DB に書くときだけ、permission の判定に許可を返す。許可しないなら undefined（判定は engine に任せる）
 // auto mode の classifier はターンの依頼から書き込みを裏付けるので、ほかのセッションの連絡で始まったターンでは判定が付かず止まるため

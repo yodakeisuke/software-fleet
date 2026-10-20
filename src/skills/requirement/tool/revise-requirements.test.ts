@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { DbCall, Engine } from '../../../types/fleet'
-import { JsonSchema } from '../../../fleet/json-schema'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { reviseRequirements } from './revise-requirements'
 
 const to = { kind: '機能', change: '新', who: '経理担当は', can: '予算を承認できる', tests: [{ act: '予算を承認する', evidence: '承認後の一覧に載る' }] }

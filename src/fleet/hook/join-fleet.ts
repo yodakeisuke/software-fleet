@@ -1,5 +1,5 @@
 import type { Engine, FleetSession, FleetTool, ShipName } from '../../types/fleet'
-import { FleetDb } from '../fleet-db'
+import { FleetDb } from '../db/fleet-db'
 import { Boarding } from '../logic/boarding'
 
 // セッションが fleet に乗る入口。flagship は /set-afloat とダッシュボードの publish、ship は同梱 skill の呼び出し（Skill）で乗る

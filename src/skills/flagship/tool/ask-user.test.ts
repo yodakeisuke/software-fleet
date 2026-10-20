@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { JsonSchema } from '../../../fleet/json-schema'
+import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { askUser } from './ask-user'
 
 describe('ask-user', () => {
