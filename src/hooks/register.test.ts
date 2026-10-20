@@ -44,6 +44,15 @@ describe('register', () => {
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/journal', data: { note: '申請を足す', changed: '時点 +1 ~0 -0' } })
   })
 
+  test('qa の ship になったセッションは revise_quality を持ち、それで fleet の DB の品質ダッシュボードに書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:qa', args: fleet })
+    expect(registered).toEqual(['report_status', 'revise_quality'])
+    const charter = { aim: '締め後の修正の境界を突く', learned: '締め後でも申請を消せた' }
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_quality', charters: [charter] })).toEqual({ result: 'QualityRevised' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/qa/deliverables', doc_id: 'quality', data: { checks: [], findings: [], charters: [charter] } })
+  })
+
   test('ほかの ship は revise_behavior を持たない。LLM が生の ArtifactData で fleet の DB に書くことは拒む', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes } = world(on)
     await $.tool.call({ tool: 'Skill', skill: 'software-fleet:requirement', args: fleet })

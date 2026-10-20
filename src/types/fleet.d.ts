@@ -108,10 +108,25 @@ export type Reply = { reply: string; at: string }
 export type JournalEntry = { note: string; changed: string; at: string }
 export type BehaviorInput = BehaviorChanges & { note: string; replies?: { comment: string; reply: string }[] }
 
+// qa ship が書く。テストを実行した結果と証跡、探索で見つけたこと、マージしてよいかの判定（品質ダッシュボード）
+// ケースは持ち主の ship の成果物を指す。requirement は of が「who、can」の 1 文で name がテストの act、behavior は of がコマンドかリードモデルの名前で name が例の名前
+export type CaseRef = { ship: 'requirement' | 'behavior'; of: string; name: string }
+export type Outcome = '合格' | '不合格' | '実行できない'
+// shots は証跡の画像（fleet の artifact の assets の URL）。at は mod が付ける
+export type Check = CaseRef & { outcome: Outcome; saw: string; shots?: string[]; at: string }
+// 探索などで見つけたこと。title が鍵。to は直す（決める）ship
+export type Finding = { title: string; kind: 'バグ' | '曖昧な仕様'; detail: string; to: ShipName; state: '未解決' | '片づいた'; shots?: string[] }
+// 探索の狙いと、そこで分かったこと。aim が鍵
+export type Charter = { aim: string; learned: string }
+export type Verdict = { merge: '可' | '条件つき' | '不可'; why: string; at: string }
+export type Quality = { verdict?: Verdict; checks: Check[]; findings: Finding[]; charters: Charter[] }
+// 渡した分だけ鍵で上書きする（verdict は丸ごと）
+export type QualityInput = { verdict?: Omit<Verdict, 'at'>; checks?: Omit<Check, 'at'>[]; findings?: Finding[]; charters?: Charter[] }
+
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
   brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
-  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; self: string
+  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; self: string
 }
 
 // セッションが属する fleet（mod が $.state に持つ）
@@ -151,5 +166,6 @@ declare module 'claude-code' {
     'mcp__software-fleet__report_status': { status: Status }
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
     'mcp__software-fleet__revise_behavior': BehaviorInput
+    'mcp__software-fleet__revise_quality': QualityInput
   }
 }

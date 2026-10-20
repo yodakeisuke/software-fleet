@@ -244,6 +244,24 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rows{border-collapse:collapse;font-size:11.5px;line-height:1.5}
 .rows th,.rows td{padding:2px 10px 2px 0;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
 .rows th{color:var(--muted);font-weight:700}
+/* qa: 品質ダッシュボード。判定 → ケースの消化（棒）→ 見てほしいケースの順に、上から読めば QA が十分かが分かる */
+.qv{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--surface);box-shadow:inset 4px 0 0 var(--wait),0 0 0 1px var(--line)}
+.qv.ok{box-shadow:inset 4px 0 0 var(--done),0 0 0 1px var(--line)}.qv.mid{box-shadow:inset 4px 0 0 var(--review),0 0 0 1px var(--line)}.qv.ng{box-shadow:inset 4px 0 0 var(--stuck),0 0 0 1px var(--line)}
+.qvm{font-size:18px;font-weight:700}
+.qbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
+.qbar i{display:block}
+.o-pass{background:var(--done)}.o-fail{background:var(--stuck)}.o-block{background:var(--review)}.o-none{background:var(--wait)}
+.qleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.qleg span{display:flex;align-items:center;gap:5px}
+.qleg i{width:8px;height:8px;border-radius:2px}
+.qrow{display:grid;grid-template-columns:76px minmax(0,1fr);column-gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.qk{align-self:start;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px;color:var(--fg);background:color-mix(in oklch,var(--wait) 60%,transparent)}
+.qk.o-pass{background:var(--done)}.qk.o-fail{background:var(--stuck)}.qk.o-block{background:var(--review)}
+.qk.o-pass,.qk.o-fail,.qk.o-block{color:var(--on-acc)}
+.qb{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.qb small{font-size:11.5px;color:var(--muted)}
+.qshots{display:flex;gap:6px;overflow-x:auto;padding-top:4px}
+.qshots img{height:96px;border-radius:8px;box-shadow:0 0 0 1px var(--line);background:var(--surface)}
 @media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
 </style>
 
@@ -258,7 +276,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -307,6 +325,8 @@ const view = ship => {
     ? { cls: 's-review', label: 'レビュー待ち', note: `${hhmm(status.since)} に収束` }
     : { cls: 's-converged', label: '収束', note: `${hhmm(status.since)} に収束` }
 }
+// 承認ボタンの文言。何を認めるのかを言う
+const approveLabel = ship => (ship === 'qa' ? 'QA は十分と認める' : '承認する')
 const fig = html => (html ? `<div class="fig">${html}</div>` : '')
 const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
 
@@ -360,7 +380,7 @@ const remainingView = () => {
 }
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
-  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">承認する</span></button>` : ''
+  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
   return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${ship}</div>
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
@@ -572,10 +592,58 @@ const testsView = () => {
   return blocks.length ? blocks.join('') : '<p class="req wait">まだ例がありません</p>'
 }
 const behaviorPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>behavior</a>${unready() || (sub === 'test' ? testsView() : boardView())}`
+// qa: 品質ダッシュボード（判定とケースの消化）と、見つけたこと（バグ・曖昧な仕様・探索の狙い）の 2 枚
+// 写しの例外: ケースの集め方は src/skills/qa/logic/quality.ts の cases の写し。変えたらここも直す
+const qaCases = () => [
+  ...S.requirements.flatMap(r => r.tests.map(t => ({ ship: 'requirement', of: `${r.who}、${r.can}`, name: t.act }))),
+  ...[...allMoments().map(m => ({ of: m.command.name, tests: m.tests })), ...S.behavior.readModels.map(r => ({ of: r.name, tests: r.tests }))]
+    .flatMap(({ of, tests }) => tests.map(t => ({ ship: 'behavior', of, name: t.name }))),
+]
+const OUTCOME = { 合格: 'o-pass', 不合格: 'o-fail', 実行できない: 'o-block', 未実行: 'o-none' }
+const checkOf = c => S.quality.checks.find(k => k.ship === c.ship && k.of === c.of && k.name === c.name)
+// 証跡の画像は https か、この artifact の assets だけを出す
+const shots = list => (list ?? []).filter(u => /^(https:\/\/|\/_blob\/)/.test(u)).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="証跡" loading="lazy"></a>`).join('')
+const shotRow = list => (shots(list) ? `<div class="qshots">${shots(list)}</div>` : '')
+const meter = (title, list) => {
+  const count = o => list.filter(x => x.outcome === o).length
+  const parts = Object.keys(OUTCOME).map(o => [o, count(o)]).filter(([, n]) => n > 0)
+  return `<div class="sec2"><div class="shiph"><span class="h2">${title}</span><span class="cnt">${count('合格')} / ${list.length} 合格</span></div>
+    <div class="qbar">${parts.map(([o, n]) => `<i class="${OUTCOME[o]}" style="flex:${n}"></i>`).join('')}</div>
+    <div class="qleg">${parts.map(([o, n]) => `<span><i class="${OUTCOME[o]}"></i>${o} ${n}</span>`).join('')}</div></div>`
+}
+const caseRow = x => `<div class="qrow"><span class="qk ${OUTCOME[x.outcome] ?? ''}">${esc(x.outcome)}</span><div class="qb"><small>${esc(x.of)}</small><b>${esc(x.name)}</b>
+  ${x.saw ? `<span>${esc(x.saw)}</span><small>${hhmm(x.at)} に確認</small>` : ''}${shotRow(x.shots)}</div></div>`
+const qaVerdict = list => {
+  const v = S.quality.verdict
+  if (!v) return '<div class="qv"><span class="qvm">判定はまだ</span><span class="cnt">qa がケースを消化しています</span></div>'
+  const drift = v.merge === '可' && list.some(x => x.outcome !== '合格') ? '<p class="warn">判定のあとでケースが増えたか、結果が変わった</p>' : ''
+  return `<div class="qv ${{ 可: 'ok', 条件つき: 'mid', 不可: 'ng' }[v.merge]}"><span class="cnt">マージしてよいか · ${hhmm(v.at)}</span><span class="qvm">${esc(v.merge)}</span><p class="stxt">${esc(v.why)}</p>${drift}</div>`
+}
+const qualityView = () => {
+  const list = qaCases().map(c => ({ ...c, outcome: '未実行', ...checkOf(c) }))
+  const look = list.filter(x => x.outcome !== '合格').sort((a, b) => Object.keys(OUTCOME).indexOf(a.outcome) - Object.keys(OUTCOME).indexOf(b.outcome))
+  const passed = list.filter(x => x.outcome === '合格')
+  return `${qaVerdict(list)}${meter('要求のテスト', list.filter(x => x.ship === 'requirement'))}${meter('振る舞いの例', list.filter(x => x.ship === 'behavior'))}
+    <div>${head('合格していないケース', look.length || 'なし')}${look.map(caseRow).join('')}</div>
+    <details class="log"><summary>合格したケース <span class="cnt">${passed.length}</span></summary>${passed.map(caseRow).join('')}</details>`
+}
+const openFindings = () => S.quality.findings.filter(f => f.state === '未解決')
+const findingRow = f => `<div class="qrow"><span class="qk ${f.kind === 'バグ' ? 'o-fail' : 'o-block'}">${esc(f.kind)}</span><div class="qb"><b>${esc(f.title)}</b>
+  <small>${esc(f.to)} が${f.kind === 'バグ' ? '直す' : '決める'}</small><span class="stxt">${esc(f.detail)}</span>${shotRow(f.shots)}</div></div>`
+const foundView = () => {
+  const closed = S.quality.findings.filter(f => f.state !== '未解決')
+  const bugsFirst = [...openFindings()].sort((a, b) => (a.kind === 'バグ' ? 0 : 1) - (b.kind === 'バグ' ? 0 : 1))
+  const charters = S.quality.charters.map(c => `<div class="logi"><div class="lt">${esc(c.aim)}</div><div class="lw">${esc(c.learned)}</div></div>`).join('')
+  return `<div>${head('未解決', bugsFirst.length || 'なし')}${bugsFirst.map(findingRow).join('')}</div>
+    <div>${head('探索の狙いと分かったこと', S.quality.charters.length || 'なし')}${charters}</div>
+    <details class="log"><summary>片づいた <span class="cnt">${closed.length}</span></summary>${closed.map(findingRow).join('')}</details>`
+}
+const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>qa</a>${unready() || (sub === 'found' ? foundView() : qualityView())}`
 // 自分のページを持つ ship。ページの本体と、ドックの 2 枚のタブ
 const PAGES = {
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
   behavior: { body: behaviorPage, label: '流れとテスト', tabs: () => [['', '流れ'], ['test', `テスト ${testCount()}`]] },
+  qa: { body: qaPage, label: '品質と発見', tabs: () => [['', '品質'], ['found', `発見 ${openFindings().length}`]] },
   // cs のページは renderCs が描く（ガイドの iframe を描き直しで作り直さない）
   cs: { label: 'ガイドと決めたこと', tabs: () => [['', 'ガイド'], ['decisions', '決めたこと']] },
 }
@@ -583,7 +651,7 @@ const PAGES = {
 // ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
 const pageDock = (ship, sub = '') => {
   const status = S.ships[ship], page = PAGES[ship]
-  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">承認する</span></button>` : ''
+  const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
   const tab = ([to, label]) => `<a href="#${ship}${to ? `.${to}` : ''}"${to === sub ? ' aria-current="page"' : ''}>${esc(label)}</a>`
   return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${approve}</div>`
 }
@@ -617,7 +685,7 @@ const slide = item => {
   }
   if (item.kind === 'review') {
     return `<div class="slide"><div class="rship">${item.ship}</div><div class="dw">${hhmm(item.status.since)} に収束。構造と QA を確かめて承認する</div>
-      <div class="acts"><a class="act" href="#${item.ship}"><span class="al">ページで見る ›</span></a><button class="act pri" data-act="approve" data-ship="${item.ship}"><span class="al">承認する</span></button></div></div>`
+      <div class="acts"><a class="act" href="#${item.ship}"><span class="al">ページで見る ›</span></a><button class="act pri" data-act="approve" data-ship="${item.ship}"><span class="al">${approveLabel(item.ship)}</span></button></div></div>`
   }
   if (item.kind === 'waiting') {
     const head = `<div class="rship">${item.ship}</div><div class="dq">${esc(item.status.what)}</div><a class="more" href="#${item.ship}">ページで見る ›</a>`
@@ -858,6 +926,7 @@ const start = async () => {
   listen(S.paths.behaviorJournal, docs => { S.journal = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
   listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
+  S.db.doc(S.paths.quality).onSnapshot(snap => { S.quality = { checks: [], findings: [], charters: [], ...snap.data() }; render() }, () => {})
 }
 render()
 start()

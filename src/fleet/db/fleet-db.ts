@@ -30,6 +30,7 @@ const paths: DbPaths = {
   behavior: 'fleet/behavior/deliverables/event-model',
   behaviorJournal: 'fleet/behavior/journal',
   behaviorReplies: 'fleet/behavior/replies',
+  quality: 'fleet/qa/deliverables/quality',
   self: 'fleet/db-paths',
 }
 // "collection/id" を、collection と文書 id に分ける
