@@ -1,0 +1,101 @@
+<!doctype html>
+<!--
+運用設計書の雛形。<…> を埋め、例の図と表の行は差し替える。
+- 各章の問いに答える。文で説明する前に、図で一目で分かるかを考える
+- 章は案件に合わせて足し・削り・組み替えてよい。答えることがない章は消す
+- 既存の仕組みに乗るところは、その場所へのリンクで済ませる
+- ダッシュボードの iframe（script は動かない）で読まれる。図は inline SVG で描き、色は下の変数を style 属性で使う（fill="var(…)" は効かない）
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title><システム名> 運用設計書</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* 色と文字はダッシュボードと同じ */
+:root{--bg:oklch(0.97 0.008 75);--surface:oklch(0.995 0.003 75);--fg:oklch(0.24 0.012 60);--muted:oklch(0.5 0.012 60);--line:oklch(0.88 0.01 70);--acc:oklch(0.56 0.14 40);--on-acc:oklch(0.99 0.003 75);--ok:oklch(0.56 0.13 150);--ng:oklch(0.55 0.17 25);
+  --font:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);--line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);--ok:oklch(0.74 0.13 150);--ng:oklch(0.7 0.16 25);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);--line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);--ok:oklch(0.74 0.13 150);--ng:oklch(0.7 0.16 25);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.65}
+main{max-width:520px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:22px}
+h1{margin:0;font-size:20px;line-height:1.4}
+.meta{margin:4px 0 0;font-size:12px;color:var(--muted)}
+h2{margin:0 0 2px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--acc)}
+.q{margin:0 0 10px;font-size:15px;font-weight:700;line-height:1.5;text-wrap:pretty;word-break:auto-phrase}
+p,li{text-wrap:pretty;word-break:auto-phrase;overflow-wrap:break-word}
+p{margin:0}
+ul{margin:0;padding-left:1.2em}
+a{color:var(--acc)}
+.fig{overflow-x:auto;padding:12px;border-radius:12px;background:var(--surface);box-shadow:0 0 0 1px var(--line)}
+.fig svg{display:block;max-width:100%;height:auto;font-family:var(--font)}
+table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;line-height:1.5}
+th{font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-align:left;padding:0 6px 4px 0}
+td{vertical-align:top;padding:7px 6px 7px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+/* 今回の変更の印: 新規 / 変更 / 既存 */
+.mk{display:inline-flex;align-items:center;justify-content:center;width:20px;height:18px;border-radius:5px;font-size:11px;font-weight:700;box-shadow:inset 0 0 0 1.5px var(--fg);vertical-align:1px}
+.mk.new{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.mk.old{color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--line)}
+.ng{color:var(--ng);font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1><システム名> 運用設計書</h1>
+  <p class="meta">持ち主 <チーム> ・ 連絡先 <チャンネル> ・ 更新 <日付></p>
+</header>
+
+<section>
+  <h2>全体図</h2>
+  <p class="q">何が、何に頼って動いているか</p>
+  <div class="fig">
+    <svg viewBox="0 0 320 120" role="img" aria-label="<図の要約>">
+      <rect x="4" y="40" width="88" height="40" rx="8" fill="none" stroke-width="1.5" style="stroke:var(--line)"/>
+      <text x="48" y="65" text-anchor="middle" font-size="12" style="fill:var(--muted)">既存</text>
+      <rect x="116" y="40" width="88" height="40" rx="8" style="fill:var(--acc)"/>
+      <text x="160" y="65" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--on-acc)">新規</text>
+      <rect x="228" y="40" width="88" height="40" rx="8" fill="none" stroke-width="1.5" style="stroke:var(--fg)"/>
+      <text x="272" y="65" text-anchor="middle" font-size="12" style="fill:var(--fg)">変更</text>
+      <path d="M92 60h24M204 60h24" stroke-width="1.5" style="stroke:var(--muted)"/>
+    </svg>
+  </div>
+  <p class="meta"><span class="mk new">新</span> 新規 <span class="mk">変</span> 変更 <span class="mk old">既</span> 既存</p>
+</section>
+
+<section>
+  <h2>目安</h2>
+  <p class="q">どのくらい動いていれば困らないか</p>
+  <ul><li><目安。厳密な数字は要らない></li><li><守らないこと></li></ul>
+</section>
+
+<section>
+  <h2>気づく</h2>
+  <p class="q">壊れたことに、利用者より先に気づけるか</p>
+  <table><thead><tr><th>兆候</th><th>条件</th><th>誰に届くか</th></tr></thead>
+    <tbody><tr><td><兆候></td><td><条件></td><td><届け先></td></tr></tbody></table>
+</section>
+
+<section>
+  <h2>出す・戻す</h2>
+  <p class="q">安全に出し、まずければ戻せるか。戻せないものは何か</p>
+  <ul><li><出し方と戻し方></li><li class="ng"><戻せないもの></li></ul>
+</section>
+
+<section>
+  <h2>壊れたとき</h2>
+  <p class="q">起きたら、まず何を見て、どう止血するか</p>
+  <table><thead><tr><th>症状</th><th>まず見る場所</th><th>止血</th></tr></thead>
+    <tbody><tr><td><症状></td><td><場所></td><td><止血></td></tr></tbody></table>
+</section>
+
+<section>
+  <h2>受け入れたリスク</h2>
+  <p class="q">直さずに出すと決めた不安と、その理由</p>
+  <ul><li><リスクと理由></li></ul>
+</section>
+</main>
+</body>
+</html>

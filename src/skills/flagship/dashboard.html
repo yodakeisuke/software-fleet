@@ -170,10 +170,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rgist th{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-align:left;padding:0 0 4px}
 .rgist td{vertical-align:top;padding:7px 10px 7px 0;border-top:1px solid var(--line);text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
 .rgist td+td{padding-right:0;font-weight:700}
-.seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
 .seg a{min-height:40px;border-radius:9px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .seg a[aria-current]{background:var(--fg);color:var(--bg)}
-/* cs: ガイドはドックの上までを埋め、iframe の中でスクロールする。画面の端まで広げる */
+/* cs・ops: ship が出した HTML はドックの上までを埋め、iframe の中でスクロールする。画面の端まで広げる */
 .glance:has(> .guide){overflow:hidden}
 .guide{flex:1;min-height:0;border:0;margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
 .rmk.old{box-shadow:inset 0 0 0 1.5px var(--line);color:var(--muted)}
@@ -324,7 +324,7 @@ const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ..
 const render = () => {
   const [hash, sub] = location.hash.slice(1).split('.')
   const ship = SHIPS.includes(hash) ? hash : ''
-  if (ship === 'cs') renderCs(sub)
+  if (FILES[ship]) renderFile(ship, sub)
   else $('glance').innerHTML = PAGES[ship]?.body ? PAGES[ship].body(sub) : ship ? shipPage(ship) : glance()
   renderDock(ship, sub)
   renderSheet()
@@ -389,11 +389,21 @@ const requirementPage = sub => {
     <tbody>${S.problems.map(p => `<tr><td>${esc(p.problem)}</td><td>${esc(p.solution)}</td></tr>`).join('')}</tbody></table>`
   return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
-// cs: cs が fleet の artifact に出した、公開する形のヘルプガイドと、聞かずに決めた仕様の 2 枚
-// ガイドは iframe（script は動かない）に入れ、描き直しでは作り直さない（作り直すと、読んでいた位置が先頭に戻る）
-const renderCs = sub => {
-  const main = $('glance'), src = sub === 'decisions' ? 'cs/decisions.html' : 'cs/guide.html'
-  if (main.querySelector('.guide')?.getAttribute('src') !== src) main.innerHTML = `<a class="rhead" href="#"><span aria-hidden="true">‹</span>cs</a><iframe class="guide" sandbox title="ヘルプガイド" src="${src}"></iframe>`
+// ship が fleet の artifact に出した HTML の成果物。cs は公開する形のヘルプガイドと聞かずに決めた仕様の 2 枚、ops は運用設計書
+const FILES = {
+  cs: sub => (sub === 'decisions' ? 'cs/decisions.html' : 'cs/guide.html'),
+  ops: () => 'ops/design.html',
+}
+// iframe（script は動かない）に入れ、描き直しでは作り直さない（作り直すと、読んでいた位置が先頭に戻る）
+// 運用設計書は ops が要ると判断したときだけ作るので、まだ無ければそう出す
+const renderFile = (ship, sub) => {
+  const main = $('glance'), src = FILES[ship](sub)
+  if (main.querySelector('[data-file]')?.dataset.file === src) return
+  main.innerHTML = `<a class="rhead" href="#" data-file="${src}"><span aria-hidden="true">‹</span>${ship}</a>`
+  fetch(src).then(r => r.ok, () => false).then(ok => {
+    if (main.querySelector('[data-file]')?.dataset.file !== src) return
+    main.insertAdjacentHTML('beforeend', ok ? `<iframe class="guide" sandbox title="${PAGES[ship].label}" src="${src}"></iframe>` : '<p class="req wait">まだありません</p>')
+  })
 }
 // behavior: event modeling の盤面（流れ）と、その例（テスト）の 2 枚。DB の時点の並びが時間の順
 const mark = change => `<span class="rmk${change === '新' ? ' new' : change === '既' ? ' old' : ''}">${esc(change)}</span>`
@@ -636,8 +646,9 @@ const PAGES = {
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
   behavior: { body: behaviorPage, label: '流れとテスト', tabs: () => [['', '流れ'], ['test', `テスト ${testCount()}`]] },
   qa: { body: qaPage, label: '品質と発見', tabs: () => [['', '品質'], ['found', `発見 ${openFindings().length}`]] },
-  // cs のページは renderCs が描く（ガイドの iframe を描き直しで作り直さない）
+  // cs と ops のページは renderFile が描く（iframe を描き直しで作り直さない）
   cs: { label: 'ガイドと決めたこと', tabs: () => [['', 'ガイド'], ['decisions', '決めたこと']] },
+  ops: { label: '運用設計書', tabs: () => [['', '運用設計書']] },
 }
 // ページのドック: タブと、レビュー待ちなら承認
 // ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ

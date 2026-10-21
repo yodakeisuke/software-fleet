@@ -55,6 +55,7 @@
     - セキュリティ責任者として、すべてのレイヤを横断してセキュリティホールを塞ぐ
   - ops
     - 保守運用の責任者として、運用で困らないように指摘を加え、必要なら開発にも加わる
+    - 運用設計書（任意）。要るときだけ、雛形（全体図・目安・気づく・出す戻す・壊れたとき・受け入れたリスク）から書く。章は案件ごとに組み替えてよい
 
 ### skill の構成
 - `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
@@ -71,6 +72,7 @@
   - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
 - html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
   - 例外: cs のヘルプガイドは、公開する HTML そのものが成果物。cs が fleet の artifact に `cs/guide.html`（と決定ログの `cs/decisions.html`）として Artifact で出し、ページは script の動かない iframe に入れる
+  - 同じく ops の運用設計書も `ops/design.html` として出す。任意なので、無ければページは「まだありません」と出す
   - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える
   - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
 - 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
