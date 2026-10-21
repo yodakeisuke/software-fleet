@@ -13,7 +13,6 @@ describe('report-status', () => {
     expect(status({ state: 'stuck' })).toBe('入力.status.reason がない')
     expect(status({ state: 'waiting', on: 'flagship', what: '判断' })).toBe('')
     expect(status({ state: 'waiting', on: 'user', what: '判断' })).toContain('入力.status.on は')
-    expect(status({ state: 'waiting', on: 'nobody', what: '判断' })).toContain('入力.status.on は')
     expect(status({ state: 'done' })).toBe('入力.status は state: working | state: converged | state: stuck | state: waiting のどれかの形')
   })
 

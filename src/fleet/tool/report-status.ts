@@ -20,7 +20,7 @@ const spec = {
         state('working', { doing: text('今していること。1 行') }),
         state('converged', {}),
         state('stuck', { reason: text('なぜ進めないか。1 行') }),
-        state('waiting', { on: { type: 'string', enum: [...Boarding.ships(), 'flagship'], description: '誰を待っているか。ユーザの判断が要るときも flagship（ユーザへ上げるかは flagship が決める）' }, what: text('何を待っているか。1 行') }),
+        state('waiting', { on: { type: 'string', enum: [...Boarding.ships(), 'flagship'], description: '誰を待っているか。ユーザの判断が要るときも flagship。ここに書いても相手には届かないので、メッセージで伝える' }, what: text('何を待っているか。1 行') }),
       ],
     },
   }, ['status']),

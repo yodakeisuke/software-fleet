@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
 <style>
-/* 1 列のスマホ画面: 上がスクロールする一覧（判断すること・残り・ships・決めたこと）、下が親指で操作するドック（あなたの番） */
+/* 1 列のスマホ画面: 上がスクロールする一覧（判断すること・残り・仮定・ships・決めたこと）、下が親指で操作するドック（あなたの番） */
 :root{
   --bg:oklch(0.97 0.008 75);--surface:oklch(0.995 0.003 75);--fg:oklch(0.24 0.012 60);--muted:oklch(0.5 0.012 60);
   --line:oklch(0.88 0.01 70);--acc:oklch(0.56 0.14 40);--on-acc:oklch(0.99 0.003 75);
@@ -60,7 +60,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:left .15s}
 .sw.on .trk{background:var(--fg)}
 .sw.on .knob{left:19px}
-/* あなたが判断すること・残りの塊: 一覧で見渡し、押すとドックのその件・ship のページ・付箋へ */
+/* あなたが判断すること・残りの塊・仮定: 一覧で見渡し、押すとドックのその件か付箋へ */
 .yt{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 0;border-top:1px solid var(--line)}
 .ytk{flex:none;width:52px;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px}
 .k-ask{background:var(--acc);color:var(--on-acc)}
@@ -275,7 +275,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: undefined, comments: null, loaded: false, fleet: {}, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -299,11 +299,8 @@ const items = () => {
   Object.values(S.done).sort((a, b) => a.index - b.index).forEach(d => list.splice(Math.min(d.index, list.length), 0, { ...d.item, done: d }))
   return list
 }
-// あなたが判断すること。ドックに出る件と同じもので、ドックで答える（at はドックでの位置）
-const toDecide = () => {
-  const list = items()
-  return yourTurn().map(item => ({ ...item, at: list.findIndex(i => i.key === item.key) }))
-}
+// あなたが判断すること。ドックに出る件（決めた直後のものを除く）で、ドックで答える（at はドックでの位置）
+const toDecide = () => items().flatMap((item, at) => (item.done ? [] : [{ ...item, at }]))
 const KIND = { ask: '判断', review: 'レビュー' }
 
 // --- 表示の言葉
@@ -348,11 +345,10 @@ const glance = () => {
     <details class="log"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
 }
 const head = (title, count) => `<div class="shiph"><span class="h2">${title}</span><span class="cnt">${count}</span></div>`
+const glanceRow = (attrs, kind, label, text, note) => `<button ${attrs} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span></button>`
 const decideRow = item => {
-  const row = (open, kind, label, text, note) => `<${open} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span>`
-  if (item.kind === 'ask') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)}</button>`
-  if (item.kind === 'review') return `${row(`button data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${item.ship} が収束`, '構造と QA を確かめて承認する')}</button>`
-  return `${row(`button data-act="peek" data-peek="h:${esc(item.h.question)}"`, 'k-hot', '仮定', item.h.question, `behavior の仮定: ${item.h.assumption}`)}</button>`
+  if (item.kind === 'ask') return glanceRow(`data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)
+  return glanceRow(`data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${item.ship} が収束`, '構造と QA を確かめて承認する')
 }
 const decideView = () => {
   const list = toDecide()
@@ -360,8 +356,8 @@ const decideView = () => {
 }
 // behavior が仮定で進めている未決定の問い。止まっていないので答えなくてよい。気になれば付箋にコメントする
 const assumedView = () => {
-  const list = S.behavior.hotspots.map(h => ({ kind: 'hotspot', h }))
-  return list.length ? `<div>${head('仮定で進めていること', list.length)}${list.map(decideRow).join('')}</div>` : ''
+  const list = S.behavior.hotspots.map(h => glanceRow(`data-act="peek" data-peek="h:${esc(h.question)}"`, 'k-hot', '仮定', h.question, `behavior の仮定: ${h.assumption}`))
+  return list.length ? `<div>${head('仮定で進めていること', list.length)}${list.join('')}</div>` : ''
 }
 // PR マージまでに残っている塊。flagship が書く。止めている判断のうち、まだ答えていないものを添え、押すとドックのその件へ
 const remainingView = () => {
@@ -511,7 +507,7 @@ const boardView = () => {
 const strays = () => {
   const { readModels, views, hotspots } = S.behavior
   const keys = new Set([...allMoments().map(m => `m:${m.command.name}`), ...readModels.map(r => `r:${r.name}`), ...views.map(v => `v:${v.screen}`), ...hotspots.map(h => `h:${h.question}`)])
-  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && /^[mrvh]:/.test(t.on) && !keys.has(t.on) && !t.resolved)
+  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && !keys.has(t.on) && !t.resolved)
   return list.length === 0 ? '' : sec('付箋が変わったコメント', list.map(([id, t]) => comment(id, t, t.on.slice(2))).join(''))
 }
 // 付箋の中身とコメント。付箋は m: 時点（コマンド名）・r: リードモデル・v: 読むだけの画面・h: 問い。消えていたら閉じる

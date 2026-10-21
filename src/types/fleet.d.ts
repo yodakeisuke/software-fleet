@@ -45,7 +45,7 @@ export type Status =
   | { state: 'working'; doing: string }
   | { state: 'converged' }
   | { state: 'stuck'; reason: string }
-  | { state: 'waiting'; on: ShipName | 'flagship'; what: string }
+  | { state: 'waiting'; on: Role; what: string }
 export type Ship = Status & { since: string }
 
 // ページ（ユーザ）が書く
