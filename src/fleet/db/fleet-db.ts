@@ -33,7 +33,7 @@ const paths: DbPaths = {
   quality: 'fleet/qa/deliverables/quality',
   pullRequest: 'fleet/implementation/deliverables/pull-request',
   guide: 'fleet/cs/deliverables/guide',
-  decisionLog: 'fleet/cs/deliverables/decision-log',
+  unaskedSpecs: 'fleet/cs/deliverables/unasked-specs',
   operationsDesign: 'fleet/ops/deliverables/operations-design',
   self: 'fleet/db-paths',
 }

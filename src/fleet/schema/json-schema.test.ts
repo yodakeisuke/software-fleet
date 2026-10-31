@@ -21,6 +21,11 @@ describe('json-schema', () => {
     expect(error(shape, 'x')).toBe('入力 は object でなければならない')
   })
 
+  test('pattern のある文字列は、それに合うものだけを通す', () => {
+    expect(error({ type: 'string', pattern: '^a' }, 'ab')).toBe('')
+    expect(error({ type: 'string', pattern: '^a' }, 'b')).toBe('入力 は ^a に合わない')
+  })
+
   test('oneOf は 1 値の enum で形を選び、その形の問題を返す。選べなければ選べる値を挙げる', () => {
     const tag = (kind: string, field: string): JsonSchemaNode => ({ type: 'object', required: ['kind', field], properties: { kind: { type: 'string', enum: [kind] } } })
     const either: JsonSchemaNode = { oneOf: [tag('a', 'x'), tag('b', 'y')] }

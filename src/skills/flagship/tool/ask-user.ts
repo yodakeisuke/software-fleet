@@ -5,10 +5,10 @@ import { Ask } from '../logic/ask'
 
 const { text, object } = JsonSchema
 const limits = Ask.limits()
-// 文と、任意の図。図は HTML か SVG の断片で、ページにそのまま埋め込まれる
+// 文と、任意の図
 const explain = (description: string): JsonSchemaNode => object({
   text: text(),
-  diagram: { type: 'string', description: 'HTML か SVG の断片。色はページの変数 var(--fg) var(--muted) var(--bg) var(--surface) var(--line) var(--acc) を使うとライト/ダークに追従する' },
+  diagram: { type: 'string', description: '等幅で描く図か、viewBox のある <svg>…</svg>。等幅の図は文字のまま出るので HTML を書かない。SVG の色は var(--fg) var(--muted) var(--bg) var(--surface) var(--line) var(--acc) を使う' },
 }, ['text'], description)
 
 // ユーザへの判断。入力の形はスキーマ、意味（件数・文字数・推奨・評価表の形）は logic の Ask が見る
