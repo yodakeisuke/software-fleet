@@ -133,7 +133,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .sh{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--acc)}
 .stxt{font-size:13px;line-height:1.7;text-wrap:pretty;white-space:pre-wrap}
 .fig{max-width:100%;overflow-x:auto;border-radius:12px}
-.fig svg{max-width:100%;height:auto}
 .opt2{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
 .ot{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
 .otag{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--acc);color:var(--on-acc)}
@@ -324,7 +323,8 @@ const view = ship => {
 }
 // 承認ボタンの文言。何を認めるのかを言う
 const approveLabel = ship => (ship === 'qa' ? 'QA は十分と認める' : '承認する')
-const fig = html => (html ? `<div class="fig">${html}</div>` : '')
+// 図は DB の文字列なので HTML として埋めない。SVG は画像で、それ以外は文字のまま出す
+const fig = diagram => (diagram ? `<div class="fig">${/^\s*<svg\b/.test(diagram) ? svgImage(diagram) : `<pre class="sk">${esc(diagram)}</pre>`}</div>` : '')
 const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
 
 // --- 描画

@@ -20,9 +20,7 @@ export type JsonSchemaNode = {
 
 // fleet の状態（artifact の DB の文書）。置き場所は fleet/fleet-db.ts、1 文書を書くのは 1 人だけ
 export type ShipName = 'requirement' | 'behavior' | 'code-design' | 'implementation' | 'qa' | 'cs' | 'security' | 'ops'
-// HTML か SVG の断片。ページがそのまま埋め込む
-export type Html = string
-export type Explain = { text: string; diagram?: Html }
+export type Explain = { text: string; diagram?: string }
 export type OptionId = string
 export type AskId = string
 export type Option = { id: OptionId; label: string; consequence: string; detail: Explain }
