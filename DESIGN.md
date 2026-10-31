@@ -55,7 +55,7 @@
     - セキュリティ責任者として、すべてのレイヤを横断してセキュリティホールを塞ぐ
   - ops
     - 保守運用の責任者として、運用で困らないように指摘を加え、必要なら開発にも加わる
-    - 運用設計書（任意）。要るときだけ、雛形（全体図・目安・気づく・出す戻す・壊れたとき・受け入れたリスク）から書く。章は案件ごとに組み替えてよい
+    - 運用設計書（任意）。要るときだけ書く
 
 ### skill の構成
 - `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
@@ -71,17 +71,17 @@
   - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答・付箋へのコメント）はページが、別の文書に書く
   - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
 - html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
-  - 読み手向けの文書（cs のヘルプガイドと決定ログ、ops の運用設計書）も DB に置く。revise_document で章と部品（文・手順・箇条書き・表・図）だけを、直す分だけ書き、見た目はページが描く。HTML は書かない
+  - 読み手向けの文書（cs のヘルプガイドと聞かずに決めた仕様、ops の運用設計書）も DB に置く。revise_document で章と部品（文・手順・箇条書き・表・図・注意）だけを、直す分だけ書き、見た目はページが描く。HTML は書かない。cs と ops で 1 つの tool を共有し、どの文書を書くかは skill に任せる
   - 図の SVG だけは直接書く。ページが img で描くので、script も外部の読み込みも動かない
   - 運用設計書は任意なので、無ければページは「まだありません」と出す
   - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える
   - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
 - 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
   - シグネチャは成果物ごとに最適にする。URL・文書ID・if_version・時刻・書いた ship は mod が付け、LLM には書かせない
-  - 入力の形（型・必須・空でない・enum）は tool の JSON Schema が見る。意味（件数・文字数・推奨は選択肢のどれか など）は logic が見る。同じことを 2 か所で見ない
+  - 入力の形（型・必須・空でない・enum・pattern）は tool の JSON Schema が見る。意味（件数・文字数・推奨は選択肢のどれか など）は logic が見る。同じことを 2 か所で見ない
   - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）
   - 前提: settings の permissions.allow に `ArtifactData` を入れる。mod の中からの ArtifactData は、auto モードの判定が「依頼にない操作」として止めるため。設定は起動時に読まれるので、足す前に起動したセッションには効かない
-- fleet のセッションが preview_start で dev server を起こすことを mod が tool.call で拒否する。毎回ユーザの確認を出してセッションを止めるため。url で開くだけなら通す
+- fleet のセッションが preview_start で dev server を起こすことを mod が tool.call で拒否する。ユーザの確認を出してセッションを止めるため。url で開くだけなら通す
 - ship の合図: 同梱 skill の呼び出し（tool.call の Skill）で、そのセッションがどの ship かを mod が知る
   - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
 ### コードの置き場所

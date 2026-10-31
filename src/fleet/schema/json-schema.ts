@@ -1,7 +1,7 @@
 import type { JsonSchemaNode, Result as Data } from '../../types/fleet'
 import { Result } from '../logic/result'
 
-// tool の入力の形（型・必須・空でない・enum）を、LLM に渡したのと同じ JSON Schema で検査する。意味の検査は logic がする
+// tool の入力の形（型・必須・空でない・enum・pattern）を、LLM に渡したのと同じ JSON Schema で検査する。意味の検査は logic がする
 // 通した値はスキーマにある項目だけにする（tool の呼び出しの付帯情報や、LLM が足した項目を持ち込まない）
 export const JsonSchema = {
   check: <T>(schema: JsonSchemaNode, value: unknown) => checked<T>(resolved(schema, schema.$defs ?? {}), value),
@@ -38,12 +38,12 @@ const fits = (schema: JsonSchemaNode, value: unknown) => schema.type === undefin
   object: typeof value === 'object' && value !== null && !Array.isArray(value),
   array: Array.isArray(value),
   string: typeof value === 'string',
-  boolean: typeof value === 'boolean',
 }[schema.type]
-// 文字列は minLength 以上で、enum があればそのどれか
+// 文字列は minLength 以上で、enum があればそのどれかで、pattern があればそれに合う
 const text = (schema: JsonSchemaNode, value: unknown, at: string) => typeof value !== 'string' ? [] : [
   ...([...value].length < (schema.minLength ?? 0) ? [`${at} が空`] : []),
   ...(schema.enum && !schema.enum.includes(value) ? [`${at} は ${schema.enum.join(' | ')} のどれか`] : []),
+  ...(schema.pattern && !new RegExp(schema.pattern).test(value) ? [`${at} は ${schema.pattern} に合わない`] : []),
 ]
 // 配列は要素ごとに items を満たす
 const list = (schema: JsonSchemaNode, value: unknown, at: string) =>

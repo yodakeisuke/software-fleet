@@ -21,7 +21,9 @@ describe('set-pull-request', () => {
     expect(await written({ url })).toEqual({ at: 'fleet/implementation/deliverables/pull-request', data: { url } })
   })
 
-  test('PR の URL でなければ書かずに拒む', async () => {
-    expect(await written({ url: 'javascript:alert(1)' })).toEqual({ deny: 'GitHub の PR の URL ではない: javascript:alert(1)' })
+  test('GitHub の PR の URL でなければ書かずに拒む', async () => {
+    for (const url of ['javascript:alert(1)', 'http://github.com/owner/repo/pull/12', 'https://github.com/owner/repo', 'https://example.com/owner/repo/pull/12', 'https://github.com/owner/repo?x=/pull/1']) {
+      expect(await written({ url })).toHaveProperty('deny', expect.stringContaining('入力.url は'))
+    }
   })
 })

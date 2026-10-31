@@ -174,20 +174,15 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .seg a{min-height:40px;border-radius:9px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .seg a[aria-current]{background:var(--fg);color:var(--bg)}
 /* cs・ops の文書: 章と部品を描く */
-.dtitle{margin:0;font-size:20px;line-height:1.4}
-.dsec{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
+.dsec{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .dh{margin:0;font-size:15px;line-height:1.5}
-.dsec p,.dsec li{margin:0;font-size:14px;line-height:1.7;text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
+.dsec p,.dsec li{margin:0;font-size:14px;line-height:1.7;text-wrap:pretty;word-break:auto-phrase;line-break:strict;white-space:pre-wrap}
 .dsec ol,.dsec ul{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:4px}
-.dtw{overflow-x:auto}
 .dtb{width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.55}
 .dtb th{font-size:11px;color:var(--muted);text-align:left;padding:0 8px 4px 0}
-.dtb td{vertical-align:top;padding:7px 8px 7px 0;border-top:1px solid var(--line);min-width:72px;overflow-wrap:anywhere}
+.dtb td{vertical-align:top;padding:7px 8px 7px 0;border-top:1px solid var(--line);min-width:72px}
 .dsvg{display:block;width:100%;height:auto}
-.dnote{padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.6;background:var(--surface);box-shadow:inset 3px 0 0 var(--muted),0 0 0 1px var(--line)}
-.dnote.warning{box-shadow:inset 3px 0 0 var(--stuck),0 0 0 1px var(--line)}
-.dnote.tip{box-shadow:inset 3px 0 0 var(--done),0 0 0 1px var(--line)}
-.dfold{display:flex;flex-direction:column;gap:8px}
+.dwarn{padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.6;white-space:pre-wrap;background:var(--surface);box-shadow:inset 3px 0 0 var(--stuck),0 0 0 1px var(--line)}
 .rmk.old{box-shadow:inset 0 0 0 1.5px var(--line);color:var(--muted)}
 /* behavior の盤面（event modeling の図）: 時間は左から右へ。上から 役者のレーン → コマンド・リードモデル → 時間軸 → 集約のレーン。色は event modeling の慣例 */
 .bleg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:11px;color:var(--muted)}
@@ -239,6 +234,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .cdone{align-self:flex-end;font-size:12px;font-weight:700;color:var(--acc);min-height:32px}
 .sk{margin:0;padding:8px 10px;border-radius:10px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
 .sk.txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.w2{display:inline-block;width:2ch;text-align:center}
 .tk{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
 .th{display:flex;align-items:flex-start;gap:8px;font-size:14px;font-weight:700;line-height:20px}
 .th .rmk{margin-top:1px;flex:none}
@@ -287,7 +283,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const S = { paths: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '', documents: {} }
+const S = { paths: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '', documents: {}, drawn: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -336,7 +332,9 @@ const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ..
 const render = () => {
   const [hash, sub] = location.hash.slice(1).split('.')
   const ship = SHIPS.includes(hash) ? hash : ''
-  $('glance').innerHTML = PAGES[ship]?.body ? PAGES[ship].body(sub) : ship ? shipPage(ship) : glance()
+  const page = PAGES[ship] ? PAGES[ship].body(sub) : ship ? shipPage(ship) : glance()
+  // 中身が同じなら作り直さない（作り直すと、開いた箇所・横スクロール・文字の選択が消える）
+  if (page !== S.drawn) { S.drawn = page; $('glance').innerHTML = page }
   renderDock(ship, sub)
   renderSheet()
 }
@@ -384,8 +382,7 @@ const remainingView = () => {
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
   const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
-  // 写しの例外: URL の規則は src/skills/implementation/logic/pull-request.ts の写し。変えたらここも直す
-  const pr = ship === 'implementation' && /^https:\/\/github\.com\/[A-Za-z0-9-]+\/(?!\.{1,2}\/)[A-Za-z0-9._-]+\/pull\/\d+$/.test(S.pullRequest?.url ?? '') ? `<a class="act" href="${esc(S.pullRequest.url)}" target="_blank" rel="noopener"><span class="al">PR を開く ›</span></a>` : ''
+  const pr = ship === 'implementation' && /^https:\/\//.test(S.pullRequest?.url) ? `<a class="act" href="${esc(S.pullRequest.url)}" target="_blank" rel="noopener"><span class="al">PR を開く ›</span></a>` : ''
   return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${ship}</div>${pr}
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
@@ -403,26 +400,31 @@ const requirementPage = sub => {
   return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
 // 読み手向けの文書。cs はヘルプガイドと聞かずに決めた仕様の 2 枚、ops は運用設計書。章と部品を DB から描く
-// SVG は img で描く。img の中では script も外部の読み込みも動かない。ページの色の変数と文字は img に届かないので、今の値を埋める
-const themed = svg => svg.replace(/var\(--([\w-]+)\)/g, (_, name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim())
-const lettered = svg => svg.replace(/<svg\b[^>]*>/, open => `${open}<style>svg{font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif}</style>`)
-const svgImage = svg => `<img class="dsvg" alt="図" src="data:image/svg+xml,${encodeURIComponent(lettered(themed(svg.includes('xmlns=') ? svg : svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"'))))}">`
+// SVG は img で描く。img の中では script も外部の読み込みも動かない。img は厳密な XML しか読めないので、HTML として読み直して XML で書き出す。ページの色の変数と文字は img に届かないので、今の値を埋める
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim()
+const svgImage = svg => {
+  const root = new DOMParser().parseFromString(svg.replace(/var\(--([\w-]+)\)/g, (_, name) => cssVar(name)), 'text/html').querySelector('svg')
+  if (!root) return ''
+  root.style.fontFamily = cssVar('font')
+  return `<img class="dsvg" alt="図" src="data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(root))}">`
+}
+// 等幅フォントでも全角は半角 2 文字分にならないので、そろえて枠の縦線をずらさない
+const mono = text => esc(text).replace(/[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹯＀-｠￠-￦]/g, c => `<span class="w2">${c}</span>`)
 const listItems = list => list.map(item => `<li>${esc(item)}</li>`).join('')
 const BLOCK = {
   text: b => `<p>${esc(b.text)}</p>`,
   steps: b => `<ol>${listItems(b.items)}</ol>`,
   list: b => `<ul>${listItems(b.items)}</ul>`,
-  table: b => `<div class="dtw"><table class="dtb"><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${b.rows.map(row => `<tr>${row.map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</table></div>`,
-  ascii: b => `<pre class="sk">${esc(b.ascii)}</pre>`,
+  table: b => `<div class="evw"><table class="dtb"><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${b.rows.map(row => `<tr>${row.map(cell => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</table></div>`,
+  ascii: b => `<pre class="sk">${mono(b.ascii)}</pre>`,
   svg: b => svgImage(b.svg),
-  note: b => `<div class="dnote ${b.tone}">${esc(b.text)}</div>`,
+  warning: b => `<div class="dwarn">${esc(b.text)}</div>`,
 }
-const blocks = list => list.map(b => BLOCK[b.kind]?.(b) ?? '').join('')
-const docSection = s => `<section class="dsec">${s.folded ? `<details class="log"><summary>${esc(s.heading)}</summary><div class="dfold">${blocks(s.blocks)}</div></details>` : `<h2 class="dh">${esc(s.heading)}</h2>${blocks(s.blocks)}`}</section>`
+const docSection = s => `<section class="dsec"><h2 class="dh">${esc(s.heading)}</h2>${s.blocks.map(b => BLOCK[b.kind](b)).join('')}</section>`
 // 運用設計書は ops が要ると判断したときだけ作るので、まだ無ければそう出す
-const documentPage = (ship, name) => sub => {
-  const doc = S.documents[name(sub)]
-  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${ship}</a>${unready() || (doc ? `${doc.title ? `<h1 class="dtitle">${esc(doc.title)}</h1>` : ''}${doc.sections.map(docSection).join('')}` : '<p class="req wait">まだありません</p>')}`
+const documentPage = (ship, name) => {
+  const sections = S.documents[name]?.sections ?? []
+  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${ship}</a>${unready() || (sections.length ? sections.map(docSection).join('') : '<p class="req wait">まだありません</p>')}`
 }
 // behavior: event modeling の盤面（流れ）と、その例（テスト）の 2 枚。DB の時点の並びが時間の順
 const mark = change => `<span class="rmk${change === '新' ? ' new' : change === '既' ? ' old' : ''}">${esc(change)}</span>`
@@ -554,7 +556,7 @@ const momentPeek = m => {
   const by = m.by
   const who = by.kind === 'screen' ? `${esc(by.actor)} ▸ ${esc(by.screen)}` : by.kind === 'agent' ? `${esc(by.agent)} ▸ ${esc(by.task)}` : esc(by.rule)
   return `<div class="sq">${mark(m.change)} ${who}</div>${by.on ? `<div class="stxt">← 「${esc(by.on)}」が起きたら</div>` : ''}
-    ${by.sketch ? sec(by.kind === 'screen' ? '画面' : 'コンテキスト', `<pre class="sk${by.kind === 'agent' ? ' txt' : ''}">${esc(by.sketch)}</pre>`) : ''}
+    ${by.sketch ? sec(by.kind === 'screen' ? '画面' : 'コンテキスト', by.kind === 'agent' ? `<pre class="sk txt">${esc(by.sketch)}</pre>` : `<pre class="sk">${mono(by.sketch)}</pre>`) : ''}
     ${m.reads.length ? sec('読む', `<div class="stxt">${joined(m.reads)}</div>`) : ''}${sec('コマンド', `<div class="stxt"><b>${esc(m.command.name)}</b>　${joined(m.command.params)}</div>`)}
     ${sec(`事実（集約: ${esc(m.aggregate)}）`, `<div class="stxt">${[...m.events.map(e => `<b>${esc(e.name)}</b>　${joined(e.attrs)}`), ...m.otherwise.map(e => `↳ ${esc(e.name)}　${joined(e.attrs)}`)].join('\n')}</div>`)}
     <a class="more" href="#behavior.test">例 ${m.tests.length} 件を見る ›</a>`
@@ -562,7 +564,7 @@ const momentPeek = m => {
 const readPeek = r => `<div class="sq">${mark(r.change)} ${esc(r.name)}</div>${sec('見せる項目', `<div class="stxt">${joined(r.fields)}</div>`)}
   ${sec('出どころ（これを更新する事実）', `<div class="stxt">${joined(r.sources)}</div>`)}<a class="more" href="#behavior.test">例 ${r.tests.length} 件を見る ›</a>`
 const viewPeek = v => `<div class="sq">${mark(v.change)} ${esc(v.actor)} ▸ ${esc(v.screen)}</div><div class="stxt">読むだけの画面。「${esc(v.at)}」の時点で見る</div>
-  ${sec('画面', `<pre class="sk">${esc(v.sketch)}</pre>`)}${v.reads.length ? sec('読む', `<div class="stxt">${joined(v.reads)}</div>`) : ''}`
+  ${sec('画面', `<pre class="sk">${mono(v.sketch)}</pre>`)}${v.reads.length ? sec('読む', `<div class="stxt">${joined(v.reads)}</div>`) : ''}`
 const hotspotPeek = h => `<div class="sq">未決定: ${esc(h.question)}</div>${sec('当面の仮定', `<div class="stxt">${esc(h.assumption)}</div>`)}${h.at ? sec('関わる事実', `<div class="stxt">${esc(h.at)}</div>`) : ''}`
 // 付箋へのコメントと返信。返信は behavior ship が書く。下ろすと薄くなる。sticky は、付箋が変わったコメントの元の付箋の名前
 const comment = (id, t, sticky) => `<div class="cmt${t.resolved ? ' done' : ''}">${sticky ? `<div class="cw">「${esc(sticky)}」へ</div>` : ''}<div class="ct">${esc(t.text)}</div>
@@ -665,8 +667,8 @@ const PAGES = {
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
   behavior: { body: behaviorPage, label: '流れとテスト', tabs: () => [['', '流れ'], ['test', `テスト ${testCount()}`]] },
   qa: { body: qaPage, label: '品質と発見', tabs: () => [['', '品質'], ['found', `発見 ${openFindings().length}`]] },
-  cs: { body: documentPage('cs', sub => (sub === 'decisions' ? 'decisionLog' : 'guide')), label: 'ガイドと決めたこと', tabs: () => [['', 'ガイド'], ['decisions', '決めたこと']] },
-  ops: { body: documentPage('ops', () => 'operationsDesign'), label: '運用設計書', tabs: () => [['', '運用設計書']] },
+  cs: { body: sub => documentPage('cs', sub === 'unasked' ? 'unaskedSpecs' : 'guide'), label: 'ガイドと聞かずに決めた仕様', tabs: () => [['', 'ガイド'], ['unasked', '聞かずに決めた']] },
+  ops: { body: () => documentPage('ops', 'operationsDesign'), label: '運用設計書', tabs: () => [['', '運用設計書']] },
 }
 // ページのドック: タブと、レビュー待ちなら承認
 // ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
@@ -898,7 +900,7 @@ const start = async () => {
   listen(S.paths.comments, docs => { S.threads = docs })
   S.db.doc(S.paths.quality).onSnapshot(snap => { S.quality = { checks: [], findings: [], charters: [], ...snap.data() }; render() }, () => {})
   S.db.doc(S.paths.pullRequest).onSnapshot(snap => { S.pullRequest = snap.data(); render() }, () => {})
-  ;['guide', 'decisionLog', 'operationsDesign'].forEach(name => S.db.doc(S.paths[name]).onSnapshot(snap => { S.documents[name] = snap.data(); render() }, () => {}))
+  ;['guide', 'unaskedSpecs', 'operationsDesign'].forEach(name => S.db.doc(S.paths[name]).onSnapshot(snap => { S.documents[name] = snap.data(); render() }, () => {}))
 }
 render()
 start()
