@@ -61,6 +61,15 @@ describe('register', () => {
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/implementation/deliverables', doc_id: 'pull-request', data: { url } })
   })
 
+  test('cs と ops の ship になったセッションは revise_document を持ち、それで fleet の DB に文書を書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:ops', args: fleet })
+    expect(registered).toEqual(['report_status', 'revise_document'])
+    const section = { heading: '目安', blocks: [{ kind: 'text', text: '数秒で開く' }] }
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_document', document: 'operationsDesign', changes: [{ op: 'add', section }] })).toEqual({ result: 'DocumentRevised' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/ops/deliverables', doc_id: 'operations-design', data: { sections: [section] } })
+  })
+
   test('qa の ship になったセッションは revise_quality を持ち、それで fleet の DB の品質ダッシュボードに書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes } = world(on)
     await $.tool.call({ tool: 'Skill', skill: 'software-fleet:qa', args: fleet })

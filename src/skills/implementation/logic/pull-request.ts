@@ -8,5 +8,5 @@ export const PullRequest = {
 
 // --- business rules
 // ユーザがスマホで押すリンクになるので、GitHub の PR の URL だけを通す
-const of = (pullRequest: PullRequestDoc) => Result.given<Data<PullRequestDoc, string>>(/^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+$/.test(pullRequest.url)
+const of = (pullRequest: PullRequestDoc) => Result.given<Data<PullRequestDoc, string>>(/^https:\/\/github\.com\/[A-Za-z0-9-]+\/(?!\.{1,2}\/)[A-Za-z0-9._-]+\/pull\/\d+$/.test(pullRequest.url)
   ? { ok: true, value: pullRequest } : { ok: false, error: `GitHub の PR の URL ではない: ${pullRequest.url}` })

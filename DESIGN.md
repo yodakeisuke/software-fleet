@@ -71,8 +71,9 @@
   - 1つの文書を書くのは1人だけ。ship の状態はその ship、ユーザの操作（needs review・承認・判断の回答・付箋へのコメント）はページが、別の文書に書く
   - 制約: 1文書 256KiB、1書き込み 1MiB、1 artifact 25,000 文書。成果物は細かい文書に分け、証跡の画像などは assets に置く
 - html は事前定義の枠を set-afloat で1回だけ publish する。以後 agent は html を触らず、DB の文書だけを書く。ページは onSnapshot で自分で描き直す
-  - 例外: cs のヘルプガイドは、公開する HTML そのものが成果物。cs が fleet の artifact に `cs/guide.html`（と決定ログの `cs/decisions.html`）として Artifact で出し、ページは script の動かない iframe に入れる
-  - 同じく ops の運用設計書も `ops/design.html` として出す。任意なので、無ければページは「まだありません」と出す
+  - 読み手向けの文書（cs のヘルプガイドと決定ログ、ops の運用設計書）も DB に置く。revise_document で章と部品（文・手順・箇条書き・表・図）だけを、直す分だけ書き、見た目はページが描く。HTML は書かない
+  - 図の SVG だけは直接書く。ページが img で描くので、script も外部の読み込みも動かない
+  - 運用設計書は任意なので、無ければページは「まだありません」と出す
   - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える
   - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
 - 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
