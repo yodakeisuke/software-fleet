@@ -52,6 +52,15 @@ describe('register', () => {
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/journal', data: { note: '申請を足す', changed: '時点 +1 ~0 -0' } })
   })
 
+  test('implementation の ship になったセッションは set_pull_request を持ち、それで fleet の DB に PR の URL を書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:implementation', args: fleet })
+    expect(registered).toEqual(['report_status', 'set_pull_request'])
+    const url = 'https://github.com/owner/repo/pull/12'
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__set_pull_request', url })).toEqual({ result: 'PullRequestSet' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/implementation/deliverables', doc_id: 'pull-request', data: { url } })
+  })
+
   test('qa の ship になったセッションは revise_quality を持ち、それで fleet の DB の品質ダッシュボードに書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes } = world(on)
     await $.tool.call({ tool: 'Skill', skill: 'software-fleet:qa', args: fleet })

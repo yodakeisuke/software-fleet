@@ -373,7 +373,9 @@ const remainingView = () => {
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
   const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
-  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${ship}</div>
+  // 写しの例外: URL の規則は src/skills/implementation/logic/pull-request.ts の写し。変えたらここも直す
+  const pr = ship === 'implementation' && /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+$/.test(S.pullRequest?.url ?? '') ? `<a class="act" href="${esc(S.pullRequest.url)}" target="_blank" rel="noopener"><span class="al">PR を開く ›</span></a>` : ''
+  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${ship}</div>${pr}
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
     <div class="acts">${approve}</div>`
@@ -879,6 +881,7 @@ const start = async () => {
   listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
   S.db.doc(S.paths.quality).onSnapshot(snap => { S.quality = { checks: [], findings: [], charters: [], ...snap.data() }; render() }, () => {})
+  S.db.doc(S.paths.pullRequest).onSnapshot(snap => { S.pullRequest = snap.data(); render() }, () => {})
 }
 render()
 start()

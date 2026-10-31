@@ -10,6 +10,7 @@ import { recordDecision } from '../skills/flagship/tool/record-decision'
 import { setBrief } from '../skills/flagship/tool/set-brief'
 import { setRemaining } from '../skills/flagship/tool/set-remaining'
 import { reviseBehavior } from '../skills/behavior/tool/revise-behavior'
+import { setPullRequest } from '../skills/implementation/tool/set-pull-request'
 import { reviseRequirements } from '../skills/requirement/tool/revise-requirements'
 import { reviseQuality } from '../skills/qa/tool/revise-quality'
 
@@ -30,7 +31,7 @@ const engine = ($: EngineInterface): Engine => ({
 // 機能ごとの tool の一覧。join-fleet への一覧と on の行は同じものを指す
 const flagshipTools = [setBrief, askUser, recordDecision, setRemaining]
 // ship は全員 report_status を持ち、成果物の tool はその ship だけが持つ
-const deliverableTools: Partial<Record<ShipName, readonly FleetTool[]>> = { requirement: [reviseRequirements], behavior: [reviseBehavior], qa: [reviseQuality] }
+const deliverableTools: Partial<Record<ShipName, readonly FleetTool[]>> = { requirement: [reviseRequirements], behavior: [reviseBehavior], implementation: [setPullRequest], qa: [reviseQuality] }
 const shipTools = (ship: ShipName) => [reportStatus, ...(deliverableTools[ship] ?? [])]
 
 export const register: Register = on => {
@@ -58,4 +59,5 @@ export const register: Register = on => {
   on('tool.call', { tool: reviseRequirements.tool }, ($, e) => reviseRequirements.run(engine($), e))
   on('tool.call', { tool: reviseBehavior.tool }, ($, e) => reviseBehavior.run(engine($), e))
   on('tool.call', { tool: reviseQuality.tool }, ($, e) => reviseQuality.run(engine($), e))
+  on('tool.call', { tool: setPullRequest.tool }, ($, e) => setPullRequest.run(engine($), e))
 }

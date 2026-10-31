@@ -47,6 +47,8 @@ export type Status =
   | { state: 'stuck'; reason: string }
   | { state: 'waiting'; on: Role; what: string }
 export type Ship = Status & { since: string }
+// implementation が作った PR
+export type PullRequest = { url: string }
 
 // ページ（ユーザ）が書く
 export type Answer = { choice: OptionId } | { text: string }
@@ -126,7 +128,7 @@ export type QualityInput = { verdict?: Omit<Verdict, 'at'>; checks?: Omit<Check,
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
   brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
-  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; self: string
+  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; pullRequest: string; self: string
 }
 
 // セッションが属する fleet（mod が $.state に持つ）
@@ -167,5 +169,6 @@ declare module 'claude-code' {
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
     'mcp__software-fleet__revise_behavior': BehaviorInput
     'mcp__software-fleet__revise_quality': QualityInput
+    'mcp__software-fleet__set_pull_request': PullRequest
   }
 }
