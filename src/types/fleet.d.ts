@@ -2,7 +2,7 @@ export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
 // tool の入力スキーマ（JSON Schema のうち fleet が使う部分）。mod はこれで入力の形も検査する
 export type JsonSchemaNode = {
-  type?: 'object' | 'array' | 'string'
+  type?: 'object' | 'array' | 'string' | 'boolean'
   description?: string
   properties?: Readonly<Record<string, JsonSchemaNode>>
   required?: readonly string[]
@@ -47,6 +47,22 @@ export type Status =
   | { state: 'stuck'; reason: string }
   | { state: 'waiting'; on: Role; what: string }
 export type Ship = Status & { since: string }
+// implementation が作った PR
+export type PullRequest = { url: string }
+// 読み手向けの文書（cs のガイド・決定ログ、ops の運用設計書）。章と部品だけを持ち、見た目はページが描く
+export type DocumentName = 'guide' | 'decisionLog' | 'operationsDesign'
+export type Block =
+  | { kind: 'text'; text: string }
+  | { kind: 'steps'; items: string[] }
+  | { kind: 'list'; items: string[] }
+  | { kind: 'table'; head: string[]; rows: string[][] }
+  | { kind: 'ascii'; ascii: string }
+  | { kind: 'svg'; svg: string }
+  | { kind: 'note'; tone: 'note' | 'warning' | 'tip'; text: string }
+export type Section = { heading: string; folded?: boolean; blocks: Block[] }
+export type ReaderDocument = { title?: string; sections: Section[] }
+export type DocumentChange = { op: 'add'; section: Section; after?: string } | { op: 'replace'; heading: string; section: Section } | { op: 'remove'; heading: string }
+export type ReviseDocument = { document: DocumentName; title?: string; changes: DocumentChange[] }
 
 // ページ（ユーザ）が書く
 export type Answer = { choice: OptionId } | { text: string }
@@ -126,7 +142,7 @@ export type QualityInput = { verdict?: Omit<Verdict, 'at'>; checks?: Omit<Check,
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
   brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
-  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; self: string
+  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; pullRequest: string; guide: string; decisionLog: string; operationsDesign: string; self: string
 }
 
 // セッションが属する fleet（mod が $.state に持つ）
@@ -167,5 +183,7 @@ declare module 'claude-code' {
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
     'mcp__software-fleet__revise_behavior': BehaviorInput
     'mcp__software-fleet__revise_quality': QualityInput
+    'mcp__software-fleet__set_pull_request': PullRequest
+    'mcp__software-fleet__revise_document': ReviseDocument
   }
 }

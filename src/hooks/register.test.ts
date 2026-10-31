@@ -22,6 +22,14 @@ const world = (on: On) => {
 }
 
 describe('register', () => {
+  test('fleet に乗ったセッションの preview_start は、確認を出す前に拒む', { timeoutMs: 15000 }, async ($, on) => {
+    const { state } = world(on)
+    on('tool.call', { tool: 'mcp__Claude_Browser__preview_start' }, async () => ({ result: 'started' }))
+    expect(await $.tool.call({ tool: 'mcp__Claude_Browser__preview_start', name: 'dash' })).toEqual({ result: 'started' })
+    state.set('fleet', { url: fleet, role: 'qa' })
+    expect(await $.tool.call({ tool: 'mcp__Claude_Browser__preview_start', name: 'dash' })).toMatchObject({ deny: expect.stringContaining('preview_start') })
+  })
+
   // plugin を丸ごと読み込むので、混んだマシンでは既定の 5 秒を超えることがある
   test('flagship は set_remaining を持ち、それで fleet の DB の残りの塊に書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes, state } = world(on)
@@ -42,6 +50,24 @@ describe('register', () => {
     expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_behavior', note: '申請を足す', moments: [{ op: 'add', to: moment }] })).toEqual({ result: 'BehaviorRevised' })
     expect(writes.find(call => call.doc_id === 'event-model' && call.action === 'set')).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/deliverables', data: { moments: [moment], views: [], readModels: [], flows: [], hotspots: [] } })
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/journal', data: { note: '申請を足す', changed: '時点 +1 ~0 -0' } })
+  })
+
+  test('implementation の ship になったセッションは set_pull_request を持ち、それで fleet の DB に PR の URL を書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:implementation', args: fleet })
+    expect(registered).toEqual(['report_status', 'set_pull_request'])
+    const url = 'https://github.com/owner/repo/pull/12'
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__set_pull_request', url })).toEqual({ result: 'PullRequestSet' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/implementation/deliverables', doc_id: 'pull-request', data: { url } })
+  })
+
+  test('cs と ops の ship になったセッションは revise_document を持ち、それで fleet の DB に文書を書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:ops', args: fleet })
+    expect(registered).toEqual(['report_status', 'revise_document'])
+    const section = { heading: '目安', blocks: [{ kind: 'text', text: '数秒で開く' }] }
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_document', document: 'operationsDesign', changes: [{ op: 'add', section }] })).toEqual({ result: 'DocumentRevised' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/ops/deliverables', doc_id: 'operations-design', data: { sections: [section] } })
   })
 
   test('qa の ship になったセッションは revise_quality を持ち、それで fleet の DB の品質ダッシュボードに書く', { timeoutMs: 15000 }, async ($, on) => {

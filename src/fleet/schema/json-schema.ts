@@ -38,6 +38,7 @@ const fits = (schema: JsonSchemaNode, value: unknown) => schema.type === undefin
   object: typeof value === 'object' && value !== null && !Array.isArray(value),
   array: Array.isArray(value),
   string: typeof value === 'string',
+  boolean: typeof value === 'boolean',
 }[schema.type]
 // 文字列は minLength 以上で、enum があればそのどれか
 const text = (schema: JsonSchemaNode, value: unknown, at: string) => typeof value !== 'string' ? [] : [
