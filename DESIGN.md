@@ -80,6 +80,7 @@
   - 入力の形（型・必須・空でない・enum）は tool の JSON Schema が見る。意味（件数・文字数・推奨は選択肢のどれか など）は logic が見る。同じことを 2 か所で見ない
   - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）
   - 前提: settings の permissions.allow に `ArtifactData` を入れる。mod の中からの ArtifactData は、auto モードの判定が「依頼にない操作」として止めるため。設定は起動時に読まれるので、足す前に起動したセッションには効かない
+- fleet のセッションが preview_start で dev server を起こすことを mod が tool.call で拒否する。毎回ユーザの確認を出してセッションを止めるため。url で開くだけなら通す
 - ship の合図: 同梱 skill の呼び出し（tool.call の Skill）で、そのセッションがどの ship かを mod が知る
   - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
 ### コードの置き場所

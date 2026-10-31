@@ -1,6 +1,7 @@
 import type { EngineInterface, Register } from 'claude-code'
 import type { Engine, FleetTool, ShipName } from '../types/fleet'
 import { allowOwnWrite } from '../fleet/hook/allow-own-write'
+import { forbidPreview } from '../fleet/hook/forbid-preview'
 import { forbidRawWrite } from '../fleet/hook/forbid-raw-write'
 import { joinFleet } from '../fleet/hook/join-fleet'
 import { reportStatus } from '../fleet/tool/report-status'
@@ -42,6 +43,10 @@ export const register: Register = on => {
   on('tool.call', { tool: 'Skill' }, async ($, e, next) => { await joinFleet.skill(engine($), { skill: e.skill, args: e.args ?? '' }, shipTools); return next(e) })
   on('tool.call', { tool: 'ArtifactData' }, async ($, e, next) => {
     const deny = await forbidRawWrite(engine($), e, next.origin.plugin)
+    return deny === undefined ? next(e) : { deny }
+  })
+  on('tool.call', { tool: 'mcp__Claude_Browser__preview_start' }, async ($, e, next) => {
+    const deny = await forbidPreview(engine($), e)
     return deny === undefined ? next(e) : { deny }
   })
   on('tool.check', { tool: 'ArtifactData' }, async ($, e, next) => (await allowOwnWrite(engine($), e.input, next.origin.plugin, $.plugin.name)) ?? next(e))

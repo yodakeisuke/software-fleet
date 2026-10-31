@@ -22,6 +22,14 @@ const world = (on: On) => {
 }
 
 describe('register', () => {
+  test('fleet に乗ったセッションの preview_start は、確認を出す前に拒む', { timeoutMs: 15000 }, async ($, on) => {
+    const { state } = world(on)
+    on('tool.call', { tool: 'mcp__Claude_Browser__preview_start' }, async () => ({ result: 'started' }))
+    expect(await $.tool.call({ tool: 'mcp__Claude_Browser__preview_start', name: 'dash' })).toEqual({ result: 'started' })
+    state.set('fleet', { url: fleet, role: 'qa' })
+    expect(await $.tool.call({ tool: 'mcp__Claude_Browser__preview_start', name: 'dash' })).toMatchObject({ deny: expect.stringContaining('preview_start') })
+  })
+
   // plugin を丸ごと読み込むので、混んだマシンでは既定の 5 秒を超えることがある
   test('flagship は set_remaining を持ち、それで fleet の DB の残りの塊に書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes, state } = world(on)
