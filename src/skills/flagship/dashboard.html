@@ -1,34 +1,39 @@
 <title>Software Fleet</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
 <style>
-/* 1 列のスマホ画面: 上がスクロールする一覧（判断すること・残り・仮定・ships・決めたこと）、下が親指で操作するドック（あなたの番） */
+/* 1 列のスマホ画面: 上の濃い帯（依頼と件数）、本体（8 つの ship のパネルと一覧）、下の濃い帯（親指で操作する、あなたの番）。色は藍鉄と浅葱。面の彩度は低く、色の面は押すものと あなたの番 だけ */
 :root{
-  --bg:oklch(0.97 0.008 75);--surface:oklch(0.995 0.003 75);--fg:oklch(0.24 0.012 60);--muted:oklch(0.5 0.012 60);
-  --line:oklch(0.88 0.01 70);--acc:oklch(0.56 0.14 40);--on-acc:oklch(0.99 0.003 75);
-  --work:oklch(0.55 0.13 250);--review:oklch(0.62 0.14 75);--done:oklch(0.56 0.13 150);--stuck:oklch(0.55 0.17 25);--wait:oklch(0.78 0.01 60);
-  --shadow:oklch(0 0 0 / .08);--scrim:oklch(0 0 0 / .35);
-  --em-rm:oklch(0.58 0.13 150);--em-cmd:oklch(0.55 0.13 250);--em-ev:oklch(0.68 0.15 55);--em-pol:oklch(0.55 0.15 305);
-  --em-rm-bg:oklch(0.87 0.09 145);--em-cmd-bg:oklch(0.85 0.07 240);--em-ev-bg:oklch(0.84 0.12 68);--em-pol-bg:oklch(0.94 0.035 305);
-  --em-hot:oklch(0.6 0.16 355);--em-hot-bg:oklch(0.91 0.06 355);
-  --font:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --bg:oklch(0.955 0.006 240);--dim:oklch(0.925 0.009 240);--surface:oklch(0.995 0.0024 240);--fg:oklch(0.25 0.021 240);--muted:oklch(0.48 0.018 240);
+  --line:oklch(0.87 0.009 240);--acc:oklch(0.42 0.06 240);--on-acc:oklch(0.98 0.003 240);
+  --chrome:oklch(0.27 0.03 240);--on-chrome:oklch(0.97 0.006 240);--on-chrome2:oklch(0.8 0.015 240);--pas:oklch(0.4 0.045 240);--on-pas:oklch(0.98 0.003 240);--on-pas2:oklch(0.86 0.018 240);
+  --fill:oklch(0.74 0.075 205);--on-fill:oklch(0.2 0.024 240);
+  --work:oklch(0.5 0.05 240);--review:oklch(0.5 0.07 75);--done:oklch(0.47 0.06 165);--stuck:oklch(0.5 0.13 30);--wait:oklch(0.78 0.008 240);
+  --shadow:oklch(0.25 0.02 240 / .08);--scrim:oklch(0.2 0.02 240 / .4);
+  --em-rm:oklch(0.5 0.07 165);--em-cmd:oklch(0.5 0.07 240);--em-ev:oklch(0.58 0.09 65);--em-pol:oklch(0.5 0.07 305);
+  --em-rm-bg:oklch(0.89 0.035 165);--em-cmd-bg:oklch(0.88 0.035 240);--em-ev-bg:oklch(0.88 0.055 75);--em-pol-bg:oklch(0.93 0.02 305);
+  --em-hot:oklch(0.55 0.09 355);--em-hot-bg:oklch(0.93 0.03 355);
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);
-  --line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);
-  --work:oklch(0.72 0.12 250);--review:oklch(0.8 0.13 75);--done:oklch(0.74 0.13 150);--stuck:oklch(0.7 0.16 25);--wait:oklch(0.42 0.01 60);
-  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
-  --em-rm:oklch(0.74 0.13 150);--em-cmd:oklch(0.72 0.12 250);--em-ev:oklch(0.78 0.13 60);--em-pol:oklch(0.74 0.13 305);
-  --em-rm-bg:oklch(0.42 0.08 148);--em-cmd-bg:oklch(0.41 0.07 245);--em-ev-bg:oklch(0.5 0.1 62);--em-pol-bg:oklch(0.33 0.05 305);
-  --em-hot:oklch(0.76 0.12 355);--em-hot-bg:oklch(0.38 0.07 355)}}
+  --bg:oklch(0.21 0.018 240);--dim:oklch(0.25 0.021 240);--surface:oklch(0.3 0.024 240);--fg:oklch(0.94 0.006 240);--muted:oklch(0.76 0.015 240);
+  --line:oklch(0.35 0.021 240);--acc:oklch(0.8 0.08 240);--on-acc:oklch(0.2 0.024 240);
+  --chrome:oklch(0.16 0.018 240);--on-chrome:oklch(0.96 0.006 240);--on-chrome2:oklch(0.76 0.015 240);--pas:oklch(0.42 0.045 240);--on-pas:oklch(0.98 0.003 240);--on-pas2:oklch(0.86 0.018 240);
+  --fill:oklch(0.74 0.075 205);--on-fill:oklch(0.2 0.024 240);
+  --work:oklch(0.76 0.06 240);--review:oklch(0.78 0.08 75);--done:oklch(0.76 0.07 165);--stuck:oklch(0.76 0.11 35);--wait:oklch(0.42 0.01 240);
+  --shadow:oklch(0 0 0 / .35);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
+  --em-rm:oklch(0.74 0.07 165);--em-cmd:oklch(0.74 0.07 240);--em-ev:oklch(0.78 0.08 70);--em-pol:oklch(0.74 0.07 305);
+  --em-rm-bg:oklch(0.36 0.04 165);--em-cmd-bg:oklch(0.36 0.04 240);--em-ev-bg:oklch(0.4 0.05 70);--em-pol-bg:oklch(0.32 0.03 305);
+  --em-hot:oklch(0.76 0.07 355);--em-hot-bg:oklch(0.35 0.04 355)}}
 :root[data-theme="dark"]{
-  --bg:oklch(0.18 0.008 60);--surface:oklch(0.23 0.009 60);--fg:oklch(0.94 0.008 75);--muted:oklch(0.72 0.012 60);
-  --line:oklch(0.33 0.01 60);--acc:oklch(0.72 0.13 45);--on-acc:oklch(0.18 0.01 60);
-  --work:oklch(0.72 0.12 250);--review:oklch(0.8 0.13 75);--done:oklch(0.74 0.13 150);--stuck:oklch(0.7 0.16 25);--wait:oklch(0.42 0.01 60);
-  --shadow:oklch(0 0 0 / .3);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
-  --em-rm:oklch(0.74 0.13 150);--em-cmd:oklch(0.72 0.12 250);--em-ev:oklch(0.78 0.13 60);--em-pol:oklch(0.74 0.13 305);
-  --em-rm-bg:oklch(0.42 0.08 148);--em-cmd-bg:oklch(0.41 0.07 245);--em-ev-bg:oklch(0.5 0.1 62);--em-pol-bg:oklch(0.33 0.05 305);
-  --em-hot:oklch(0.76 0.12 355);--em-hot-bg:oklch(0.38 0.07 355)}
+  --bg:oklch(0.21 0.018 240);--dim:oklch(0.25 0.021 240);--surface:oklch(0.3 0.024 240);--fg:oklch(0.94 0.006 240);--muted:oklch(0.76 0.015 240);
+  --line:oklch(0.35 0.021 240);--acc:oklch(0.8 0.08 240);--on-acc:oklch(0.2 0.024 240);
+  --chrome:oklch(0.16 0.018 240);--on-chrome:oklch(0.96 0.006 240);--on-chrome2:oklch(0.76 0.015 240);--pas:oklch(0.42 0.045 240);--on-pas:oklch(0.98 0.003 240);--on-pas2:oklch(0.86 0.018 240);
+  --fill:oklch(0.74 0.075 205);--on-fill:oklch(0.2 0.024 240);
+  --work:oklch(0.76 0.06 240);--review:oklch(0.78 0.08 75);--done:oklch(0.76 0.07 165);--stuck:oklch(0.76 0.11 35);--wait:oklch(0.42 0.01 240);
+  --shadow:oklch(0 0 0 / .35);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
+  --em-rm:oklch(0.74 0.07 165);--em-cmd:oklch(0.74 0.07 240);--em-ev:oklch(0.78 0.08 70);--em-pol:oklch(0.74 0.07 305);
+  --em-rm-bg:oklch(0.36 0.04 165);--em-cmd-bg:oklch(0.36 0.04 240);--em-ev-bg:oklch(0.4 0.05 70);--em-pol-bg:oklch(0.32 0.03 305);
+  --em-hot:oklch(0.76 0.07 355);--em-hot-bg:oklch(0.35 0.04 355)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -41,6 +46,27 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .glance{flex:1;min-height:0;overflow-y:auto;padding-block:18px 12px;display:flex;flex-direction:column;gap:10px}
 .req{margin:0;font-size:14px;line-height:1.5;font-weight:700;text-wrap:balance}
 .req.wait{color:var(--muted);font-weight:400}
+.band{display:flex;flex-direction:column;gap:4px;margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding:18px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));background:var(--chrome);color:var(--on-chrome)}
+.band .req{font-size:17px;line-height:24px;font-weight:600}
+.band .req.wait,.band .warn{color:var(--on-chrome2);font-weight:400}
+.sums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.sum{display:flex;align-items:baseline;gap:6px;min-height:44px;padding-top:8px;font-size:12px;color:var(--on-chrome2)}
+.sum b{font-size:22px;line-height:28px;font-weight:600;color:var(--on-chrome);font-variant-numeric:tabular-nums}
+.glance:has(> .band){padding-top:0}
+.tiles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
+.tile{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:10px;align-items:center;height:52px;padding:0 10px;border-radius:3px;background:var(--dim);color:var(--fg)}
+.tile .tx{display:flex;flex-direction:column;min-width:0}
+.tile b{font-size:14px;line-height:20px;font-weight:400;white-space:nowrap}
+.tile small{font-size:12px;line-height:16px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.work{background:var(--surface);box-shadow:0 1px 2px var(--shadow)}
+.tile.turn{background:var(--pas);color:var(--on-pas)}
+.tile.turn b,.tile.stuck b{font-weight:600}
+.tile.turn small{color:var(--on-pas2)}
+.tile.stuck{background:var(--surface);color:var(--stuck);box-shadow:0 1px 2px var(--shadow)}
+.tile.stuck small{color:var(--stuck)}
+.gly{display:block;width:24px;height:24px;flex:none}
+.spin{transform-origin:12px 12px;animation:xspin 1.4s linear infinite}
+@keyframes xspin{to{transform:rotate(360deg)}}
 .h2{font-size:14px;font-weight:700}
 .cnt{font-size:12px;color:var(--muted)}
 .ships{display:flex;flex-direction:column}
@@ -56,13 +82,13 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .go{margin-left:auto;font-size:18px;line-height:1;color:var(--muted)}
 .snote{font-size:11.5px;line-height:1.5;color:var(--muted);padding-left:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sw{flex:none;width:52px;height:44px;display:flex;align-items:center;justify-content:center}
-.trk{position:relative;width:40px;height:24px;border-radius:999px;background:var(--line)}
+.trk{position:relative;width:40px;height:24px;border-radius:12px;background:var(--line)}
 .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:left .15s}
 .sw.on .trk{background:var(--fg)}
 .sw.on .knob{left:19px}
 /* あなたが判断すること・残りの塊・仮定: 一覧で見渡し、押すとドックのその件か付箋へ */
 .yt{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 0;border-top:1px solid var(--line)}
-.ytk{flex:none;width:52px;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px}
+.ytk{flex:none;width:52px;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:3px}
 .k-ask{background:var(--acc);color:var(--on-acc)}
 .k-review{background:color-mix(in oklch,var(--review) 35%,transparent);color:var(--fg)}
 .k-hot{background:var(--em-hot-bg);box-shadow:inset 0 0 0 1px var(--em-hot)}
@@ -82,64 +108,62 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .logi{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .lt{font-size:13px;font-weight:700}
 .lw{font-size:12px;color:var(--muted)}
-.dock{flex:none;display:flex;flex-direction:column;gap:6px;padding-top:8px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -10px 24px var(--shadow)}
-.nav{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;padding:0 8px}
-.arrow{width:48px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center}
+.dock{--bg:var(--chrome);--fg:var(--on-chrome);--muted:var(--on-chrome2);--line:var(--on-chrome2);--acc:var(--on-chrome);--surface:var(--chrome);position:relative;flex:none;display:flex;flex-direction:column;gap:6px;padding-top:12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--chrome);color:var(--fg)}
+.nav{position:absolute;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:1;display:flex;align-items:center}
+.arrow{width:36px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;text-align:center}
 .arrow.off{opacity:.25;pointer-events:none}
 .navc{display:flex;flex-direction:column;align-items:center;gap:4px}
 .navt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.navt b{color:var(--acc)}
-.dots{display:flex;align-items:center}
-.dotb{width:24px;height:20px;display:flex;align-items:center;justify-content:center}
-.dotb span{width:7px;height:7px;border-radius:50%;background:var(--line)}
-.dotb.on span{width:18px;border-radius:4px;background:var(--fg)}
 .rail{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;align-items:stretch}
 .rail::-webkit-scrollbar{display:none}
 .slide{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;padding:0 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.qbtn{display:flex;flex-direction:column;gap:2px;width:100%;min-height:44px}
-.dq{font-size:15px;line-height:1.45;font-weight:700;text-wrap:pretty}
+.qbtn{display:block;width:100%}
+.slk{display:flex;gap:16px;align-items:center;min-height:32px;font-size:13px}
+.slk button{min-height:32px}
+.slide:not(:has(.slk))::after{content:"";flex:none;height:32px}
+.dq{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:17px;line-height:24px;font-weight:600;text-wrap:pretty}
 .more{font-size:12px;font-weight:700;color:var(--acc)}
 .dw{font-size:12px;line-height:1.6;color:var(--muted)}
 .acts{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:2px}
-.act{display:flex;flex-direction:column;justify-content:center;gap:1px;width:100%;min-height:48px;padding:5px 14px;border-radius:12px;box-shadow:inset 0 0 0 1.5px var(--line);transition:opacity .12s;min-width:0}
-.act.pri{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.act{display:flex;flex-direction:column;justify-content:center;gap:1px;width:100%;min-height:48px;padding:5px 14px;border-radius:3px;box-shadow:inset 0 0 0 1.5px var(--line);transition:opacity .12s;min-width:0}
+.act.pri{background:var(--fill);color:var(--on-fill);box-shadow:none}
 .act.free{min-height:44px;flex-direction:row;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:700}
 .act.free span{border-bottom:1px dashed currentColor}
 .locked .act,.locked .qbtn{pointer-events:none}
 .locked .act{opacity:.55}
 .al{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;line-height:1.3;min-width:0}
 .ae{font-size:11px;line-height:1.35;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.atag{flex:none;font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--on-acc);color:var(--acc)}
-.ft{width:100%;min-height:96px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:16px;line-height:1.5;resize:none}
+.atag{flex:none;font-size:12px;font-weight:400}
+.ft{width:100%;min-height:96px;padding:10px 12px;border-radius:3px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:16px;line-height:1.5;resize:none}
 .ft:focus{outline:2px solid var(--acc);outline-offset:0;border-color:transparent}
 .ftrow{display:grid;grid-template-columns:96px 1fr;gap:8px}
-.fb{min-height:48px;border-radius:12px;font-size:14px;font-weight:700;text-align:center;box-shadow:inset 0 0 0 1.5px var(--line)}
-.fb.pri{background:var(--acc);color:var(--on-acc);box-shadow:none}
+.fb{min-height:48px;border-radius:3px;font-size:14px;font-weight:700;text-align:center;box-shadow:inset 0 0 0 1.5px var(--line)}
+.fb.pri{background:var(--fill);color:var(--on-fill);box-shadow:none}
 .rship{font-size:20px;font-weight:700}
 .dmsg{font-size:15px;font-weight:700;line-height:1.5;word-break:break-all}
 .dsub{font-size:12px;color:var(--muted)}
 .warn{font-size:12px;line-height:1.5;color:var(--stuck)}
-.undo{min-height:52px;border-radius:14px;box-shadow:inset 0 0 0 2px var(--fg);font-size:15px;font-weight:700;text-align:center;margin-top:auto}
-.tbar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.undo{min-height:52px;border-radius:3px;box-shadow:inset 0 0 0 2px var(--fg);font-size:15px;font-weight:700;text-align:center;margin-top:auto}
+.tbar{height:3px;border-radius:3px;background:var(--line);overflow:hidden}
 .tfill{height:100%;background:var(--fg);transform-origin:left;animation:shrink 5s linear forwards}
 @keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 .dnone{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px}
 .dnone .cnt{margin-left:auto}
 .scrim{position:absolute;inset:0;background:var(--scrim);z-index:20;display:flex;flex-direction:column;justify-content:flex-end}
-.sheet{height:90%;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;overflow:hidden}
+.sheet{height:90%;display:flex;flex-direction:column;background:var(--bg);border-radius:12px 22px 0 0;overflow:hidden}
 .sbody{flex:1;min-height:0;overflow-y:auto;padding-block:18px 12px;display:flex;flex-direction:column;gap:14px}
 .sq{font-size:16px;line-height:1.5;font-weight:700}
 .sec2{display:flex;flex-direction:column;gap:8px}
 .sh{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--acc)}
 .stxt{font-size:13px;line-height:1.7;text-wrap:pretty;white-space:pre-wrap}
-.fig{max-width:100%;overflow-x:auto;border-radius:12px}
+.fig{max-width:100%;overflow-x:auto;border-radius:3px}
 .fig svg{max-width:100%;height:auto}
-.opt2{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
+.opt2{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
 .ot{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
-.otag{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--acc);color:var(--on-acc)}
+.otag{font-size:11px;padding:1px 8px;border-radius:3px;background:var(--acc);color:var(--on-acc)}
 .oc{font-size:12px;color:var(--muted)}
 .evw{overflow-x:auto}
-.ev{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.ev{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;background:var(--surface);border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
 .ev th,.ev td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;line-height:1.35;word-break:break-all}
 .ev .ax{width:70px}
 .ev .rec{background:color-mix(in srgb,var(--acc) 10%,transparent)}
@@ -147,7 +171,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .mk{display:block;font-size:15px;font-weight:700;line-height:1.2}
 .nt{display:block;color:var(--muted);font-size:10.5px}
 .sfoot{flex:none;padding-block:10px calc(22px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--bg)}
-.close{width:100%;min-height:52px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:14px;font-weight:700;text-align:center}
+.close{width:100%;min-height:52px;border-radius:3px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:14px;font-weight:700;text-align:center}
 .back{font-size:13px;font-weight:700;color:var(--acc);min-height:44px;display:flex;align-items:center}
 .big{font-size:20px;font-weight:700}
 /* requirement: 要求を 1 文で読む。印は別の列に置き、折り返しても文の左端をそろえる。文節で折り返す（lang="ja" が要る） */
@@ -155,7 +179,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rhead span{font-size:20px;font-weight:400;color:var(--muted)}
 .rkh{position:sticky;top:-18px;z-index:1;background:var(--bg);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--acc);padding:12px 0 5px;border-bottom:1px solid var(--line)}
 .rrow{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:9px;padding:11px 0;border-bottom:1px solid var(--line)}
-.rmk{width:20px;height:18px;margin-top:3px;border-radius:5px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px var(--fg)}
+.rmk{width:20px;height:18px;margin-top:3px;border-radius:3px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px var(--fg)}
 .rmk.new{background:var(--acc);color:var(--on-acc);box-shadow:none}
 .rbody{display:flex;flex-direction:column;gap:6px;min-width:0}
 .rsen,.ract,.rev{margin:0;text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
@@ -170,8 +194,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rgist th{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-align:left;padding:0 0 4px}
 .rgist td{vertical-align:top;padding:7px 10px 7px 0;border-top:1px solid var(--line);text-wrap:pretty;word-break:auto-phrase;line-break:strict;overflow-wrap:break-word}
 .rgist td+td{padding-right:0;font-weight:700}
-.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
-.seg a{min-height:40px;border-radius:9px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:3px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
+.seg a{min-height:40px;border-radius:3px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .seg a[aria-current]{background:var(--fg);color:var(--bg)}
 /* cs・ops: ship が出した HTML はドックの上までを埋め、iframe の中でスクロールする。画面の端まで広げる */
 .glance:has(> .guide){overflow:hidden}
@@ -190,7 +214,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .emlabs{position:absolute;left:0;top:0;z-index:2;width:66px;pointer-events:none}
 .emlab{position:absolute;left:0;width:66px;padding:6px 6px 0 0;background:var(--bg);font-size:10.5px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
 .emlab small{display:block;font-size:9.5px;font-weight:400;color:var(--muted)}
-.emc,.ems{position:absolute;z-index:1;display:flex;flex-direction:column;gap:3px;padding:6px 7px;border-radius:6px;font-size:11px;line-height:1.3;overflow:hidden}
+.emc,.ems{position:absolute;z-index:1;display:flex;flex-direction:column;gap:3px;padding:6px 7px;border-radius:3px;font-size:11px;line-height:1.3;overflow:hidden}
 .emc{background:var(--surface);box-shadow:0 0 0 1px var(--line),0 2px 6px var(--shadow)}
 .emc.pol{background:var(--em-pol-bg);box-shadow:0 0 0 1px color-mix(in oklch,var(--em-pol) 45%,transparent)}
 .emk{font-size:9.5px;color:var(--muted)}
@@ -201,7 +225,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .ems.cmd{background:var(--em-cmd-bg)}.ems.rm{background:var(--em-rm-bg)}.ems.ev{background:var(--em-ev-bg)}
 .ems.alt{background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--em-ev);font-weight:400}
 .emold{opacity:.45}
-.emtag{position:absolute;top:5px;right:5px;font-size:9px;font-style:normal;font-weight:700;line-height:14px;padding:0 4px;border-radius:4px;background:var(--acc);color:var(--on-acc)}
+.emtag{position:absolute;top:5px;right:5px;font-size:9px;font-style:normal;font-weight:700;line-height:14px;padding:0 4px;border-radius:3px;background:var(--acc);color:var(--on-acc)}
 .emtag.mod{background:var(--surface);color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
 .emaxis{position:absolute;height:2px;background:var(--fg)}
 .emno{position:absolute;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -212,27 +236,26 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .mh.cmd{fill:var(--em-cmd)}.mh.rd{fill:var(--em-rm)}.mh.pol{fill:var(--em-pol)}
 .ems.hot{background:var(--em-hot-bg);box-shadow:inset 0 0 0 1px var(--em-hot)}
 .ems.hot small{font-weight:400;font-size:10px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.embub{position:absolute;right:5px;bottom:4px;font-size:9px;font-style:normal;font-weight:700;line-height:14px;padding:0 5px;border-radius:7px;background:var(--fg);color:var(--bg)}
-.embub::before{content:"💬 "}
+.embub{position:absolute;right:5px;bottom:4px;font-size:9px;font-style:normal;font-weight:700;line-height:14px;padding:0 5px;border-radius:3px;background:var(--fg);color:var(--bg)}
 .emid{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
 .emid b{color:var(--fg)}
-.emhot{padding:1px 8px;border-radius:999px;background:var(--em-hot-bg);color:var(--fg);box-shadow:inset 0 0 0 1px var(--em-hot)}
+.emhot{padding:1px 8px;border-radius:3px;background:var(--em-hot-bg);color:var(--fg);box-shadow:inset 0 0 0 1px var(--em-hot)}
 .emfh{margin:18px 0 0;font-size:13px;font-weight:700}
 .emfh small{font-weight:400;color:var(--muted)}
-.cmt{display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:12px;background:var(--surface);box-shadow:0 0 0 1px var(--line)}
+.cmt{display:flex;flex-direction:column;gap:4px;padding:9px 11px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line)}
 .cmt.done{opacity:.55}
 .ct{font-size:13px;line-height:1.55;white-space:pre-wrap}
 .cr{font-size:12.5px;line-height:1.55;font-weight:700;white-space:pre-wrap}
 .cw{font-size:11.5px;color:var(--muted)}
 .cdone{align-self:flex-end;font-size:12px;font-weight:700;color:var(--acc);min-height:32px}
-.sk{margin:0;padding:8px 10px;border-radius:10px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
+.sk{margin:0;padding:8px 10px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
 .sk.txt{white-space:pre-wrap;overflow-wrap:anywhere}
 .tk{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
 .th{display:flex;align-items:flex-start;gap:8px;font-size:14px;font-weight:700;line-height:20px}
 .th .rmk{margin-top:1px;flex:none}
 .tt{min-width:0;overflow-wrap:anywhere}
 .th .cnt{margin-left:auto;flex:none;white-space:nowrap;font-weight:400}
-.ex{display:flex;flex-direction:column;gap:3px;padding:9px 11px;border-radius:12px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
+.ex{display:flex;flex-direction:column;gap:3px;padding:9px 11px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);min-width:0}
 .en{margin:0 0 2px;font-size:13px;font-weight:700;line-height:1.45;text-wrap:pretty}
 .g{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:6px;font-size:12px;line-height:1.6}
 .g>span:first-child{color:var(--muted);font-weight:700}
@@ -244,24 +267,25 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .rows th,.rows td{padding:2px 10px 2px 0;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
 .rows th{color:var(--muted);font-weight:700}
 /* qa: 品質ダッシュボード。判定 → ケースの消化（棒）→ 見てほしいケースの順に、上から読めば QA が十分かが分かる */
-.qv{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--surface);box-shadow:inset 4px 0 0 var(--wait),0 0 0 1px var(--line)}
-.qv.ok{box-shadow:inset 4px 0 0 var(--done),0 0 0 1px var(--line)}.qv.mid{box-shadow:inset 4px 0 0 var(--review),0 0 0 1px var(--line)}.qv.ng{box-shadow:inset 4px 0 0 var(--stuck),0 0 0 1px var(--line)}
-.qvm{font-size:18px;font-weight:700}
-.qbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
+.qv{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:3px;background:var(--pas);color:var(--on-pas)}
+.qv .cnt,.qv .stxt{color:var(--on-pas2)}
+.qv .warn{color:var(--on-pas)}
+.qvm{font-size:22px;line-height:28px;font-weight:600}
+.qbar{display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--line)}
 .qbar i{display:block}
 .o-pass{background:var(--done)}.o-fail{background:var(--stuck)}.o-block{background:var(--review)}.o-none{background:var(--wait)}
 .qleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .qleg span{display:flex;align-items:center;gap:5px}
-.qleg i{width:8px;height:8px;border-radius:2px}
+.qleg i{width:8px;height:8px;border-radius:3px}
 .qrow{display:grid;grid-template-columns:76px minmax(0,1fr);column-gap:10px;padding:10px 0;border-top:1px solid var(--line)}
-.qk{align-self:start;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px;color:var(--fg);background:color-mix(in oklch,var(--wait) 60%,transparent)}
+.qk{align-self:start;text-align:center;font-size:10.5px;font-weight:700;line-height:18px;border-radius:3px;color:var(--fg);background:color-mix(in oklch,var(--wait) 60%,transparent)}
 .qk.o-pass{background:var(--done)}.qk.o-fail{background:var(--stuck)}.qk.o-block{background:var(--review)}
 .qk.o-pass,.qk.o-fail,.qk.o-block{color:var(--on-acc)}
 .qb{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
 .qb small{font-size:11.5px;color:var(--muted)}
 .qshots{display:flex;gap:6px;overflow-x:auto;padding-top:4px}
-.qshots img{height:96px;border-radius:8px;box-shadow:0 0 0 1px var(--line);background:var(--surface)}
-@media (prefers-reduced-motion:reduce){.tfill{animation:none}.knob,.act{transition:none}}
+.qshots img{height:96px;border-radius:3px;box-shadow:0 0 0 1px var(--line);background:var(--surface)}
+@media (prefers-reduced-motion:reduce){.spin,.tfill{animation:none}.knob,.act{transition:none}}
 </style>
 
 <div class="app" id="app" lang="ja">
@@ -275,6 +299,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
+const NAME = { requirement: '要求', behavior: '振る舞い', 'code-design': '設計', implementation: '実装', qa: 'QA', cs: 'CS', security: 'セキュリティ', ops: '運用' }
 const S = { paths: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
@@ -301,7 +326,6 @@ const items = () => {
 }
 // あなたが判断すること。ドックに出る件（決めた直後のものを除く）で、ドックで答える（at はドックでの位置）
 const toDecide = () => items().flatMap((item, at) => (item.done ? [] : [{ ...item, at }]))
-const KIND = { ask: '判断', review: 'レビュー' }
 
 // --- 表示の言葉
 const view = ship => {
@@ -309,7 +333,7 @@ const view = ship => {
   if (!status) return { cls: 's-none', label: '未報告', note: '' }
   if (status.state === 'working') return { cls: 's-working', label: '作業中', note: status.doing }
   if (status.state === 'stuck') return { cls: 's-stuck', label: '詰まり', note: status.reason }
-  if (status.state === 'waiting') return { cls: 's-waiting', label: '待機', note: `${status.on} を待っている: ${status.what}` }
+  if (status.state === 'waiting') return { cls: 's-waiting', label: '待機', note: `${NAME[status.on] ?? status.on} を待っている: ${status.what}` }
   return awaiting(ship, status, S.reviews[ship])
     ? { cls: 's-review', label: 'レビュー待ち', note: `${hhmm(status.since)} に収束` }
     : { cls: 's-converged', label: '収束', note: `${hhmm(status.since)} に収束` }
@@ -332,23 +356,34 @@ const render = () => {
 // DB を読めるまでの表示。読めたら空。db は claude.use が答えるまで undefined で、答えが null ならこの表示では読めない
 const unready = () => (S.db === null ? `<p class="req wait">${esc(S.failed || 'この表示では fleet のデータを読めません。claude.ai で開いてください')}</p>`
   : !S.loaded ? '<p class="req wait">読み込み中</p>' : '')
+// 状態の印。注意が要るものだけが面を持つのはパネルの役目で、印は形で見分ける
+const glyph = cls => {
+  const open = 'class="gly" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"'
+  if (cls === 's-converged') return `<svg ${open}><path d="m6.5 12.5 3.8 3.8 7.2-8.3" stroke="var(--muted)" stroke-width="2"/></svg>`
+  if (cls === 's-working') return `<svg ${open}><circle cx="12" cy="12" r="8" stroke="var(--line)" stroke-width="2"/><path class="spin" d="M12 4a8 8 0 0 1 8 8" stroke="var(--fg)" stroke-width="2"/></svg>`
+  if (cls === 's-review') return `<svg ${open}><path d="M3 12s3.2-5.5 9-5.5 9 5.5 9 5.5-3.2 5.5-9 5.5S3 12 3 12Z" stroke="currentColor" stroke-width="1.75"/><circle cx="12" cy="12" r="2.25" fill="currentColor"/></svg>`
+  if (cls === 's-stuck') return `<svg ${open}><path d="M12 3.5 22 20.5H2L12 3.5Z" stroke="currentColor" stroke-width="1.75"/><path d="M12 10v5M12 17.8v.01" stroke="currentColor" stroke-width="2"/></svg>`
+  return `<svg ${open}><path d="M9.5 8v8M14.5 8v8" stroke="var(--muted)" stroke-width="2"/></svg>`
+}
+const shipTile = ship => {
+  const v = view(ship), kind = { 's-working': 'work', 's-review': 'turn', 's-stuck': 'stuck' }[v.cls] ?? ''
+  const note = v.cls === 's-review' ? v.label : v.cls === 's-converged' ? '' : v.cls === 's-none' ? v.label : v.note
+  return `<a class="tile ${kind}" href="#${ship}">${glyph(v.cls)}<span class="tx"><b>${NAME[ship]}</b>${note ? `<small>${esc(note)}</small>` : ''}</span></a>`
+}
+const sum = (to, count, label) => `<button class="sum" data-act="jump" data-to="${to}"><b>${count}</b>${label}</button>`
 const glance = () => {
   if (unready()) return unready()
   const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
-  const ships = SHIPS.map(ship => {
-    const v = view(ship), on = required(ship, S.reviews[ship])
-    return `<div class="ship"><a class="sm" href="#${ship}"><span class="sr"><span class="dot ${v.cls}"></span><span class="sname">${ship}</span><span class="st">${esc(v.label)}</span><span class="go" aria-hidden="true">›</span></span><span class="snote">${esc(v.note)}</span></a>
-      <button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
-  }).join('')
   const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')
-  return `${brief}${decideView()}${remainingView()}${assumedView()}<div class="ships"><div class="shiph"><span class="h2">ships</span><span class="legend">要レビュー</span></div>${ships}</div>
-    <details class="log"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
+  const sums = `<div class="sums">${sum('remain', S.remaining?.length ?? '–', '残り')}${sum('assumed', S.behavior.hotspots.length, '仮定')}${sum('decided', S.decisions.length, '決定')}</div>`
+  return `<header class="band">${brief}${sums}</header><div class="tiles">${SHIPS.map(shipTile).join('')}</div>${toDecide().length > 1 ? decideView() : ''}<div id="remain">${remainingView()}</div><div id="assumed">${assumedView()}</div>
+    <details class="log" id="decided"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
 }
 const head = (title, count) => `<div class="shiph"><span class="h2">${title}</span><span class="cnt">${count}</span></div>`
 const glanceRow = (attrs, kind, label, text, note) => `<button ${attrs} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span></button>`
 const decideRow = item => {
   if (item.kind === 'ask') return glanceRow(`data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)
-  return glanceRow(`data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${item.ship} が収束`, '構造と QA を確かめて承認する')
+  return glanceRow(`data-act="go" data-to="${item.at}"`, 'k-review', 'レビュー', `${NAME[item.ship]} が収束`, '構造と QA を確かめて承認する')
 }
 const decideView = () => {
   const list = toDecide()
@@ -373,7 +408,7 @@ const remainingView = () => {
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
   const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
-  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${ship}</div>
+  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
     <div class="acts">${approve}</div>`
@@ -387,7 +422,7 @@ const requirementPage = sub => {
   const body = S.requirements.map((r, at) => (S.requirements[at - 1]?.kind === r.kind ? '' : `<h2 class="rkh">${esc(r.kind)}</h2>`) + row(r)).join('')
   const gist = S.problems.length === 0 ? '' : `<table class="rgist"><thead><tr><th>課題</th><th>解決</th></tr></thead>
     <tbody>${S.problems.map(p => `<tr><td>${esc(p.problem)}</td><td>${esc(p.solution)}</td></tr>`).join('')}</tbody></table>`
-  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>requirement</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
+  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.requirement}</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
 // ship が fleet の artifact に出した HTML の成果物。cs は公開する形のヘルプガイドと聞かずに決めた仕様の 2 枚、ops は運用設計書
 const FILES = {
@@ -399,7 +434,7 @@ const FILES = {
 const renderFile = (ship, sub) => {
   const main = $('glance'), src = FILES[ship](sub)
   if (main.querySelector('[data-file]')?.dataset.file === src) return
-  main.innerHTML = `<a class="rhead" href="#" data-file="${src}"><span aria-hidden="true">‹</span>${ship}</a>`
+  main.innerHTML = `<a class="rhead" href="#" data-file="${src}"><span aria-hidden="true">‹</span>${NAME[ship]}</a>`
   fetch(src).then(r => r.ok, () => false).then(ok => {
     if (main.querySelector('[data-file]')?.dataset.file !== src) return
     main.insertAdjacentHTML('beforeend', ok ? `<iframe class="guide" sandbox title="${PAGES[ship].label}" src="${src}"></iframe>` : '<p class="req wait">まだありません</p>')
@@ -593,7 +628,7 @@ const testsView = () => {
   ]
   return blocks.length ? blocks.join('') : '<p class="req wait">まだ例がありません</p>'
 }
-const behaviorPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>behavior</a>${unready() || (sub === 'test' ? testsView() : boardView())}`
+const behaviorPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.behavior}</a>${unready() || (sub === 'test' ? testsView() : boardView())}`
 // qa: 品質ダッシュボード（判定とケースの消化）と、見つけたこと（バグ・曖昧な仕様・探索の狙い）の 2 枚
 // 写しの例外: ケースの集め方は src/skills/qa/logic/quality.ts の cases の写し。変えたらここも直す
 const qaCases = () => [
@@ -640,7 +675,7 @@ const foundView = () => {
     <div>${head('探索の狙いと分かったこと', S.quality.charters.length || 'なし')}${charters}</div>
     <details class="log"><summary>片づいた <span class="cnt">${closed.length}</span></summary>${closed.map(findingRow).join('')}</details>`
 }
-const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>qa</a>${unready() || (sub === 'found' ? foundView() : qualityView())}`
+const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.qa}</a>${unready() || (sub === 'found' ? foundView() : qualityView())}`
 // 自分のページを持つ ship。ページの本体と、ドックの 2 枚のタブ
 const PAGES = {
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
@@ -668,12 +703,8 @@ const renderDock = (ship, sub) => {
   const list = items()
   S.at = Math.max(0, Math.min(S.at, list.length - 1))
   if (list.length === 0) { dock.innerHTML = '<div class="dnone gut"><span class="h2">あなたの番</span><span class="cnt">なし</span></div>'; return }
-  const cur = list[S.at]
-  const dots = list.map((_, k) => `<button class="dotb${k === S.at ? ' on' : ''}" data-act="go" data-to="${k}" aria-label="${k + 1} 件目へ"><span></span></button>`).join('')
-  dock.innerHTML = `<div class="nav"><button class="arrow${S.at <= 0 ? ' off' : ''}" data-act="go" data-to="${S.at - 1}" aria-label="前の件">‹</button>
-    <div class="navc"><span class="navt"><b>${KIND[cur.kind]}</b> · ${S.at + 1} / ${list.length}</span><span class="dots">${dots}</span></div>
-    <button class="arrow${S.at >= list.length - 1 ? ' off' : ''}" data-act="go" data-to="${S.at + 1}" aria-label="次の件">›</button></div>
-    <div class="rail${S.locked ? ' locked' : ''}" id="rail">${list.map(slide).join('')}</div>`
+  dock.innerHTML = `<div class="rail${S.locked ? ' locked' : ''}" id="rail">${list.map(slide).join('')}</div>
+    <div class="nav"><button class="arrow${S.at <= 0 ? ' off' : ''}" data-act="go" data-to="${S.at - 1}" aria-label="前の件">‹</button><span class="navt">${S.at + 1}/${list.length}</span><button class="arrow${S.at >= list.length - 1 ? ' off' : ''}" data-act="go" data-to="${S.at + 1}" aria-label="次の件">›</button></div>`
   const rail = $('rail')
   rail.scrollLeft = S.at * rail.clientWidth
   rail.addEventListener('scroll', onScroll, { passive: true })
@@ -687,12 +718,11 @@ const slide = item => {
       <div class="tbar"><div class="tfill" style="animation-delay:-${5000 - left}ms"></div></div><button class="undo" data-act="undo" data-key="${esc(item.key)}">取り消す</button></div>`
   }
   if (item.kind === 'review') {
-    return `<div class="slide"><div class="rship">${item.ship}</div><div class="dw">${hhmm(item.status.since)} に収束。構造と QA を確かめて承認する</div>
+    return `<div class="slide"><div class="rship">${NAME[item.ship]}</div><div class="dw">${hhmm(item.status.since)} に収束。構造と QA を確かめて承認する</div>
       <div class="acts"><a class="act" href="#${item.ship}"><span class="al">ページで見る ›</span></a><button class="act pri" data-act="approve" data-ship="${item.ship}"><span class="al">${approveLabel(item.ship)}</span></button></div></div>`
   }
   const ask = item.ask
-  const question = `<button class="qbtn" data-act="open" data-ask="${esc(item.id)}"><span class="dq">${esc(ask.question)}</span>
-    <span class="more">${ask.evaluation ? '背景・詳細・評価表を見る ›' : '背景・詳細を見る ›'}</span></button>`
+  const question = `<button class="qbtn" data-act="open" data-ask="${esc(item.id)}"><span class="dq">${esc(ask.question)}</span></button>`
   const sentBefore = S.answers[item.id]
   if (sentBefore?.undelivered) {
     return `<div class="slide">${question}<div class="dw">回答「${esc(said(item.id, sentBefore))}」は flagship に届いていません（${esc(sentBefore.undelivered)}）</div>
@@ -704,7 +734,7 @@ const slide = item => {
   }
   const opts = ordered(ask).map(o => `<button class="act${o.id === ask.recommended ? ' pri' : ''}" data-act="pick" data-ask="${esc(item.id)}" data-option="${esc(o.id)}">
     <span class="al">${esc(o.label)}${o.id === ask.recommended ? '<span class="atag">推奨</span>' : ''}</span><span class="ae">${esc(o.consequence)}</span></button>`).join('')
-  return `<div class="slide">${question}<div class="acts"><button class="act free" data-act="free" data-ask="${esc(item.id)}"><span>自由記述で答える</span></button>${opts}</div></div>`
+  return `<div class="slide">${question}<div class="acts">${opts}</div><div class="slk"><button data-act="open" data-ask="${esc(item.id)}">詳細</button><button data-act="free" data-ask="${esc(item.id)}">自由回答</button></div></div>`
 }
 const renderSheet = () => {
   const sheet = $('sheet')
@@ -743,9 +773,8 @@ const onScroll = event => {
   lockBriefly()
   if (at === S.at) return
   S.at = at
-  document.querySelectorAll('.dotb').forEach((dot, k) => dot.classList.toggle('on', k === at))
   const list = items()
-  document.querySelector('.navt').innerHTML = `<b>${KIND[list[at]?.kind] ?? ''}</b> · ${at + 1} / ${list.length}`
+  document.querySelector('.navt').textContent = `${at + 1}/${list.length}`
   document.querySelectorAll('.arrow')[0].classList.toggle('off', at <= 0)
   document.querySelectorAll('.arrow')[1].classList.toggle('off', at >= list.length - 1)
 }
@@ -842,6 +871,7 @@ document.addEventListener('click', event => {
   if (act === 'resend') resend(ask, el)
   if (act === 'undo') undo(key)
   if (act === 'go') go(Number(to))
+  if (act === 'jump') $(to)?.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto' })
   if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
   if (act === 'close') { S.open = null; S.peek = null; renderSheet() }
   if (act === 'peek') { S.peek = el.dataset.peek; S.remarked = ''; renderSheet() }
