@@ -385,10 +385,10 @@ const glance = () => {
   const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')
   const sums = `<div class="sums">${sum('remain', S.remaining?.length ?? '–', '残り')}${sum('assumed', S.behavior.hotspots.length, '仮定')}${sum('decided', S.decisions.length, '決定')}</div>`
-  return `<header class="band">${brief}${sums}</header><div class="tiles">${SHIPS.map(shipTile).join('')}</div>${toDecide().length > 1 ? decideView() : ''}<div id="remain">${remainingView()}</div><div id="assumed">${assumedView()}</div>
+  return `<header class="band">${brief}${sums}</header><div class="tiles">${SHIPS.map(shipTile).join('')}</div>${toDecide().length > 1 ? decideView() : ''}${linksView()}<div id="remain">${remainingView()}</div><div id="assumed">${assumedView()}</div>
     <details class="log" id="decided"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
 }
-const head = (title, count) => `<div class="shiph"><span class="h2">${title}</span><span class="cnt">${count}</span></div>`
+const head = (title, count) => `<div class="shiph"><span class="h2">${title}</span>${count === undefined ? '' : `<span class="cnt">${count}</span>`}</div>`
 const glanceRow = (attrs, kind, label, text, note) => `<button ${attrs} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span></button>`
 const decideRow = item => {
   if (item.kind === 'ask') return glanceRow(`data-act="go" data-to="${item.at}"`, 'k-ask', '判断', item.ask.question)
@@ -403,6 +403,14 @@ const assumedView = () => {
   const list = S.behavior.hotspots.map(h => glanceRow(`data-act="peek" data-peek="h:${esc(h.question)}"`, 'k-hot', '仮定', h.question, `behavior の仮定: ${h.assumption}`))
   return list.length ? `<div>${head('仮定で進めていること', list.length)}${list.join('')}</div>` : ''
 }
+// 全 ship の成果物へのリンク。URL は DB の文字列なので https 以外は描かない。1 つも無ければ出さない
+const shipLinks = ship => (S.links[ship]?.links ?? []).filter(l => /^https:\/\//.test(l.url))
+const linksView = () => {
+  const rows = SHIPS.flatMap(ship => shipLinks(ship).map(l => `<a class="yt" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="ytt"><span>${esc(l.label)}</span><small>${NAME[ship]}</small></span><span class="go" aria-hidden="true">›</span></a>`))
+  return rows.length ? `<div>${head('成果物')}${rows.join('')}</div>` : ''
+}
+// ship のページの成果物のボタン
+const linkActs = ship => shipLinks(ship).map(l => `<a class="act" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="al">${esc(l.label)} ›</span></a>`).join('')
 // PR マージまでに残っている塊。flagship が書く。止めている判断のうち、まだ答えていないものを添え、押すとドックのその件へ
 const remainingView = () => {
   if (S.remaining === null) return `<div>${head('PR マージまでの残り', 'flagship がまとめています')}</div>`
@@ -417,10 +425,7 @@ const remainingView = () => {
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
   const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
-  // 成果物へのリンク。URL は DB の文字列なので https 以外は描かない
-  const links = (S.links[ship]?.links ?? []).filter(l => /^https:\/\//.test(l.url))
-    .map(l => `<a class="act" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="al">${esc(l.label)} ›</span></a>`).join('')
-  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>${links}
+  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>${linkActs(ship)}
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
     <div class="acts">${approve}</div>`
@@ -434,7 +439,7 @@ const requirementPage = sub => {
   const body = S.requirements.map((r, at) => (S.requirements[at - 1]?.kind === r.kind ? '' : `<h2 class="rkh">${esc(r.kind)}</h2>`) + row(r)).join('')
   const gist = S.problems.length === 0 ? '' : `<table class="rgist"><thead><tr><th>課題</th><th>解決</th></tr></thead>
     <tbody>${S.problems.map(p => `<tr><td>${esc(p.problem)}</td><td>${esc(p.solution)}</td></tr>`).join('')}</tbody></table>`
-  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.requirement}</a>${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
+  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.requirement}</a>${linkActs('requirement')}${unready() || gist + (body ? `<div>${body}</div>` : '<p class="req wait">まだ要求がありません</p>')}`
 }
 // 読み手向けの文書。cs はヘルプガイドと聞かずに決めた仕様の 2 枚、ops は運用設計書。章と部品を DB から描く
 // SVG は img で描く。img の中では script も外部の読み込みも動かない。img は厳密な XML しか読めないので、HTML として読み直して XML で書き出す。ページの色の変数と文字は img に届かないので、今の値を埋める
@@ -461,7 +466,7 @@ const docSection = s => `<section class="dsec"><h2 class="dh">${esc(s.heading)}<
 // 運用設計書は ops が要ると判断したときだけ作るので、まだ無ければそう出す
 const documentPage = (ship, name) => {
   const sections = S.documents[name]?.sections ?? []
-  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME[ship]}</a>${unready() || (sections.length ? sections.map(docSection).join('') : '<p class="req wait">まだありません</p>')}`
+  return `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME[ship]}</a>${linkActs(ship)}${unready() || (sections.length ? sections.map(docSection).join('') : '<p class="req wait">まだありません</p>')}`
 }
 // behavior: event modeling の盤面（流れ）と、その例（テスト）の 2 枚。DB の時点の並びが時間の順
 const mark = change => `<span class="rmk${change === '新' ? ' new' : change === '既' ? ' old' : ''}">${esc(change)}</span>`
@@ -651,7 +656,7 @@ const testsView = () => {
   ]
   return blocks.length ? blocks.join('') : '<p class="req wait">まだ例がありません</p>'
 }
-const behaviorPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.behavior}</a>${unready() || (sub === 'test' ? testsView() : boardView())}`
+const behaviorPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.behavior}</a>${linkActs('behavior')}${unready() || (sub === 'test' ? testsView() : boardView())}`
 // qa: 品質ダッシュボード（判定とケースの消化）と、見つけたこと（バグ・曖昧な仕様・探索の狙い）の 2 枚
 // 写しの例外: ケースの集め方は src/skills/qa/logic/quality.ts の cases の写し。変えたらここも直す
 const qaCases = () => [
@@ -698,7 +703,7 @@ const foundView = () => {
     <div>${head('探索の狙いと分かったこと', S.quality.charters.length || 'なし')}${charters}</div>
     <details class="log"><summary>片づいた <span class="cnt">${closed.length}</span></summary>${closed.map(findingRow).join('')}</details>`
 }
-const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.qa}</a>${unready() || (sub === 'found' ? foundView() : qualityView())}`
+const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.qa}</a>${linkActs('qa')}${unready() || (sub === 'found' ? foundView() : qualityView())}`
 // 自分のページを持つ ship。ページの本体と、ドックの 2 枚のタブ
 const PAGES = {
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },

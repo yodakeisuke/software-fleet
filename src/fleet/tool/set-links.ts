@@ -7,7 +7,7 @@ import { Links } from '../logic/links'
 const { text, object } = JsonSchema
 const limits = Links.limits()
 
-// ship の成果物へのリンク。成果物の置き場所は ship が決め（自前の artifact・fleet の artifact の asset・ブランチの文書・PR）、ページはその ship のページにボタンで出す。全 ship が使う
+// ship の成果物へのリンク。成果物の置き場所は ship が決め（自前の artifact・fleet の artifact の asset・ブランチの文書・PR）、ページは top の一覧とその ship のページにボタンで出す。全 ship が使う
 const spec = {
   name: 'set_links',
   description: 'この ship の成果物へのリンクを、今の全体で置き換えてダッシュボードに出す。ユーザはスマホでそこから開く',
