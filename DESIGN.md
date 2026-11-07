@@ -30,35 +30,36 @@
   - QA: テストケース（要求レベル。取得すべき証跡）
 - system behavior
   - event modeling で整理する
+  - UX design。画面と操作の流れをノイズのないプロのデザインとして artifact に描き、set_links で出す。描くのはセッション内の sub agent。置く情報とインタラクションは、存在する理由を言えるものだけ
   - QA: テストケース（結合レベル）
-- code design
-  - フロントエンド
-    - state/hookとcomponent構造を図示
-    - dir構造を図示
-  - API
-    - 実行時のフロー構造を図示
-    - 静的な関係構造を図示
-    - 仕様の組み合わせ網羅するunitテストを設計
-  - QA
-    - unit テストで組み合わせ網羅する仕様
-  - 実装
-    - コードを実装し、PRを作成する。URL を set_pull_request で出し、ダッシュボードの implementation のページにリンクで出す
-    - sub agentsを駆使して効率的に行う
-  - QA
-    - ブラウザから実際の動作確認を行い、証跡を取得する
-    - 他のセッションの成果物をQAの視点から監査する
-  - CS
-    - ヘルプガイドを作成し、findingsをFBする
-    - ユーザに説明可能な仕様か、テストする。複雑な仕様負債を排除する
-    - ユーザにあるいはプロダクト提供者に不利益な内容はないかテストする
-  - セキュリティ
-    - セキュリティ責任者として、すべてのレイヤを横断してセキュリティホールを塞ぐ
-  - ops
-    - 保守運用の責任者として、運用で困らないように指摘を加え、必要なら開発にも加わる
-    - 運用設計書（任意）。要るときだけ書く
+- architect
+  - system design に責任を持つ。このシステムが、動く場所まで含めて丸ごと、どんな部品からなり、どう繋がり、データがどこに置かれどう流れ、外の世界と何を約束するか
+  - 後から戻しにくい判断を意図して置き、なぜ他の形でないかを残す。brownfield では新・改・既を分けて描く。既存システムの形は自分で調べる
+  - コードの中は見ない（coder の領分）
+  - 境目: behavior は業務の事実と不変条件のまとまりを決め、architect はそれがどこに置かれどう運ばれるかを決める。プロセスやシステムをまたぐ流れは architect、1 つのプロセスの中は coder。新しい部品が要ると決めるのは architect、それを動かし監視するのは ops
+  - 成果物はその場次第の自由フォーマット（自前の artifact・fleet の artifact の asset・ブランチの文書）。set_links でダッシュボードにリンクを出す
+- coder
+  - コードの中に責任を持つ。モジュール・関数・unit テストの設計と実装、PR
+    - フロントエンド: state/hook と component の構造、dir 構造を図示
+    - API: 1 つのプロセスの中の実行時のフロー構造と静的な関係構造を図示
+    - 仕様の組み合わせを網羅する unit テストを設計
+  - ユーザはコードを読まないので、設計は図で見せる。PR も含めて set_links でダッシュボードにリンクを出す
+  - sub agentsを駆使して効率的に行う
+- QA
+  - ブラウザから実際の動作確認を行い、証跡を取得する
+  - 他のセッションの成果物をQAの視点から監査する
+- CS
+  - ヘルプガイドを作成し、findingsをFBする
+  - ユーザに説明可能な仕様か、テストする。複雑な仕様負債を排除する
+  - ユーザにあるいはプロダクト提供者に不利益な内容はないかテストする
+- セキュリティ
+  - セキュリティ責任者として、すべてのレイヤを横断してセキュリティホールを塞ぐ
+- ops
+  - 保守運用の責任者として、運用で困らないように指摘を加え、必要なら開発にも加わる
+  - 運用設計書（任意）。要るときだけ書く
 
 ### skill の構成
-- `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / code-design / implementation / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
+- `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / architect / coder / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
 - cs はヘルプガイドを skill `help-guide-driven-dev` で書く。前提: その skill がユーザの環境に入っていること（`npx skills add yodakeisuke/help-guide-driven-dev`）
 
 ## ui指針
@@ -80,6 +81,7 @@
   - fleet で1つの artifact、中身は1つの SPA。ダッシュボードと各 ship のページを画面内で切り替える
   - 画面の指定は `#<ship>` のような素の hash だけ（artifact に届くのは英数字と . _ ~ - の hash のみ）。これで各 ship のページへ直接リンクできる
 - 書き込みは成果物ごとの専用tool。mod が $.tool.register で、その ship のセッションにだけ登録し、中で ArtifactData を呼んで DB に書く（$.tool.call）
+  - 全 ship が set_links を持つ。成果物へのリンク（URL と文言）を今の全体で置き換え、ship ごとの 1 文書に書く。ページは top の「成果物」の一覧と、その ship のページにボタンで出す
   - シグネチャは成果物ごとに最適にする。URL・文書ID・if_version・時刻・書いた ship は mod が付け、LLM には書かせない
   - 入力の形（型・必須・空でない・enum・pattern）は tool の JSON Schema が見る。意味（件数・文字数・推奨は選択肢のどれか など）は logic が見る。同じことを 2 か所で見ない
   - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）

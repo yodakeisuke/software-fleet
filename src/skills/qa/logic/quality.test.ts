@@ -27,7 +27,7 @@ describe('quality', () => {
 
   test('結果は鍵で上書きし、時刻を付ける。発見と探索も鍵で上書きする', () => {
     const before: QualityDoc = { ...empty, checks: [{ ...approve, outcome: '不合格', saw: '載らない', at: 'T0' }] }
-    const finding = { title: '承認が消える', kind: 'バグ' as const, detail: 'd', to: 'implementation' as const, state: '未解決' as const }
+    const finding = { title: '承認が消える', kind: 'バグ' as const, detail: 'd', to: 'coder' as const, state: '未解決' as const }
     const after = revised(before, { checks: [pass(approve), pass(apply)], findings: [finding] }) as QualityDoc
     expect(after.checks).toEqual([{ ...pass(approve), at: 'T1' }, { ...pass(apply), at: 'T1' }])
     expect((revised(after, { findings: [{ ...finding, state: '片づいた' }] }) as QualityDoc).findings).toEqual([{ ...finding, state: '片づいた' }])

@@ -9,7 +9,7 @@ export const Boarding = {
 
 // --- business rules
 // fleet に乗れるのは flagship と、この 8 隻の ship
-const ships = (): readonly ShipName[] => ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
+const ships = (): readonly ShipName[] => ['requirement', 'behavior', 'architect', 'coder', 'qa', 'cs', 'security', 'ops']
 // 乗るのは一度だけ。乗ったセッションは、別の fleet にも別の役割にも乗り換えない
 const join = (aboard: FleetSession | undefined, wanted: FleetSession) =>
   Result.given<Data<FleetSession, string>>(aboard !== undefined ? { ok: false, error: `すでに ${aboard.role} として乗っている` }

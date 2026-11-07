@@ -19,7 +19,7 @@ export type JsonSchemaNode = {
 }
 
 // fleet の状態（artifact の DB の文書）。置き場所は fleet/fleet-db.ts、1 文書を書くのは 1 人だけ
-export type ShipName = 'requirement' | 'behavior' | 'code-design' | 'implementation' | 'qa' | 'cs' | 'security' | 'ops'
+export type ShipName = 'requirement' | 'behavior' | 'architect' | 'coder' | 'qa' | 'cs' | 'security' | 'ops'
 export type Explain = { text: string; diagram?: string }
 export type OptionId = string
 export type AskId = string
@@ -46,8 +46,9 @@ export type Status =
   | { state: 'stuck'; reason: string }
   | { state: 'waiting'; on: Role; what: string }
 export type Ship = Status & { since: string }
-// implementation が作った PR
-export type PullRequest = { url: string }
+// ship の成果物へのリンク。成果物の置き場所は ship が決める（自前の artifact・fleet の artifact の asset・ブランチの文書・PR）
+export type Link = { url: string; label: string }
+export type Links = { links: Link[] }
 // 読み手向けの文書（cs のガイドと聞かずに決めた仕様、ops の運用設計書）。章と部品だけを持ち、見た目はページが描く
 export type DocumentName = 'guide' | 'unaskedSpecs' | 'operationsDesign'
 export type Block =
@@ -141,8 +142,8 @@ export type QualityInput = { verdict?: Omit<Verdict, 'at'>; checks?: Omit<Check,
 
 // DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
-  brief: string; ships: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
-  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; pullRequest: string; guide: string; unaskedSpecs: string; operationsDesign: string; self: string
+  brief: string; ships: string; links: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
+  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; guide: string; unaskedSpecs: string; operationsDesign: string; self: string
 }
 
 // セッションが属する fleet（mod が $.state に持つ）
@@ -183,7 +184,7 @@ declare module 'claude-code' {
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
     'mcp__software-fleet__revise_behavior': BehaviorInput
     'mcp__software-fleet__revise_quality': QualityInput
-    'mcp__software-fleet__set_pull_request': PullRequest
+    'mcp__software-fleet__set_links': Links
     'mcp__software-fleet__revise_document': DocumentInput
     // 本体のブラウザの tool。生成された型は、保存したセッションがつないでいた MCP しか持たないので、ここでも宣言する
     'mcp__Claude_Browser__preview_start': { name?: string; url?: string }

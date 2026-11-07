@@ -19,6 +19,8 @@ export const FleetDb = {
 const paths: DbPaths = {
   brief: 'fleet/flagship',
   ships: 'fleet',
+  // ship ごとの成果物へのリンク。fleet/ships/links/<ship>
+  links: 'fleet/ships/links',
   asks: 'fleet/flagship/asks',
   decisions: 'fleet/flagship/decisions',
   remaining: 'fleet/flagship/deliverables/remaining',
@@ -31,7 +33,6 @@ const paths: DbPaths = {
   behaviorJournal: 'fleet/behavior/journal',
   behaviorReplies: 'fleet/behavior/replies',
   quality: 'fleet/qa/deliverables/quality',
-  pullRequest: 'fleet/implementation/deliverables/pull-request',
   guide: 'fleet/cs/deliverables/guide',
   unaskedSpecs: 'fleet/cs/deliverables/unasked-specs',
   operationsDesign: 'fleet/ops/deliverables/operations-design',
