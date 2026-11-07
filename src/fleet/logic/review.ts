@@ -10,8 +10,8 @@ export const Review = {
 // --- business rules
 // ship の状態は報告した時刻から始まる（報告のたびに新しくなるので、収束し直せば承認も取り直しになる）
 const since = (status: Status, now: string): Ship => ({ ...status, since: now })
-// ユーザが決めない限り、構造の品質（code-design）と QA の十分さ（qa）だけ人がレビューする
-const required = (ship: ShipName, review: ReviewDoc | undefined) => review?.required ?? ['code-design', 'qa'].includes(ship)
+// ユーザが決めない限り、構造の品質（architect）と QA の十分さ（qa）だけ人がレビューする
+const required = (ship: ShipName, review: ReviewDoc | undefined) => review?.required ?? ['architect', 'qa'].includes(ship)
 // 収束して、レビューが要り、今の収束をまだ承認していない
 const awaiting = (ship: ShipName, status: Ship, review: ReviewDoc | undefined) =>
   status.state === 'converged' && required(ship, review) && review?.approved_since !== status.since

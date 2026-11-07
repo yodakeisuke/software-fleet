@@ -305,16 +305,16 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 // 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答・付箋へのコメント）だけを answers・reviews・comments に書く
 // 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
-const SHIPS = ['requirement', 'behavior', 'code-design', 'implementation', 'qa', 'cs', 'security', 'ops']
-const NAME = { requirement: '要求', behavior: '振る舞い', 'code-design': '設計', implementation: '実装', qa: 'QA', cs: 'CS', security: 'セキュリティ', ops: '運用' }
-const S = { paths: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '', documents: {}, drawn: '' }
+const SHIPS = ['requirement', 'behavior', 'architect', 'coder', 'qa', 'cs', 'security', 'ops']
+const NAME = { requirement: '要求', behavior: '振る舞い', architect: 'アーキテクト', coder: '実装', qa: 'QA', cs: 'CS', security: 'セキュリティ', ops: '運用' }
+const S = { paths: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, links: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '', documents: {}, drawn: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
 const motion = () => !matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // --- 導出
-const required = (ship, review) => review?.required ?? ['code-design', 'qa'].includes(ship)
+const required = (ship, review) => review?.required ?? ['architect', 'qa'].includes(ship)
 const awaiting = (ship, status, review) => status.state === 'converged' && required(ship, review) && review?.approved_since !== status.since
 const yourTurn = () => {
   const closed = new Set(S.decisions.map(d => d.closes))
@@ -417,8 +417,10 @@ const remainingView = () => {
 const shipPage = ship => {
   const status = S.ships[ship], v = view(ship), on = required(ship, S.reviews[ship])
   const approve = status && awaiting(ship, status, S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : ''
-  const pr = ship === 'implementation' && /^https:\/\//.test(S.pullRequest?.url) ? `<a class="act" href="${esc(S.pullRequest.url)}" target="_blank" rel="noopener"><span class="al">PR を開く ›</span></a>` : ''
-  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>${pr}
+  // 成果物へのリンク。URL は DB の文字列なので https 以外は描かない
+  const links = (S.links[ship]?.links ?? []).filter(l => /^https:\/\//.test(l.url))
+    .map(l => `<a class="act" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="al">${esc(l.label)} ›</span></a>`).join('')
+  return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>${links}
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
     <div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>
     <div class="acts">${approve}</div>`
@@ -929,7 +931,7 @@ const start = async () => {
   listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
   S.db.doc(S.paths.quality).onSnapshot(snap => { S.quality = { checks: [], findings: [], charters: [], ...snap.data() }; render() }, () => {})
-  S.db.doc(S.paths.pullRequest).onSnapshot(snap => { S.pullRequest = snap.data(); render() }, () => {})
+  listen(S.paths.links, docs => { S.links = docs })
   ;['guide', 'unaskedSpecs', 'operationsDesign'].forEach(name => S.db.doc(S.paths[name]).onSnapshot(snap => { S.documents[name] = snap.data(); render() }, () => {}))
 }
 render()
