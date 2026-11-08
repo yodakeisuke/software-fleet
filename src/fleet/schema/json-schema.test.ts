@@ -63,3 +63,15 @@ describe('json-schema', () => {
     expect(kept(either, { kind: 'b', x: '1', y: '2' })).toEqual({ kind: 'b', y: '2' })
   })
 })
+
+describe('json-schema: 数・真偽と、鍵が自由なオブジェクトの $ref', () => {
+  test('number と boolean を見分け、additionalProperties の $ref も $defs で解く', () => {
+    const schema: JsonSchemaNode = {
+      type: 'object',
+      properties: { span: { type: 'array', items: { type: 'number' } }, pk: { type: 'boolean' }, out: { type: 'object', additionalProperties: { $ref: '#/$defs/wire' } } },
+      $defs: { wire: { type: 'object', required: ['name'], properties: { name: { type: 'string', minLength: 1 } } } },
+    }
+    expect(error(schema, { span: [0, 2], pk: true, out: { 1: { name: '注文' } } })).toBe('')
+    expect(error(schema, { span: ['0'], pk: 'yes', out: { 1: { label: '注文' } } })).toBe('入力.span[0] は number でなければならない / 入力.pk は boolean でなければならない / 入力.out.1.name がない')
+  })
+})

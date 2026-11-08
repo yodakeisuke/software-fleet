@@ -22,6 +22,7 @@ const resolved = (schema: JsonSchemaNode, defs: Readonly<Record<string, JsonSche
     ...schema,
     ...(schema.properties ? { properties: each(schema.properties) } : {}),
     ...(schema.items ? { items: resolved(schema.items, defs) } : {}),
+    ...(schema.additionalProperties ? { additionalProperties: resolved(schema.additionalProperties, defs) } : {}),
     ...(schema.oneOf ? { oneOf: schema.oneOf.map(branch => resolved(branch, defs)) } : {}),
   }
 }
@@ -38,6 +39,8 @@ const fits = (schema: JsonSchemaNode, value: unknown) => schema.type === undefin
   object: typeof value === 'object' && value !== null && !Array.isArray(value),
   array: Array.isArray(value),
   string: typeof value === 'string',
+  number: typeof value === 'number',
+  boolean: typeof value === 'boolean',
 }[schema.type]
 // 文字列は minLength 以上で、enum があればそのどれかで、pattern があればそれに合う
 const text = (schema: JsonSchemaNode, value: unknown, at: string) => typeof value !== 'string' ? [] : [
