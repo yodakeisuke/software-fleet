@@ -56,7 +56,7 @@ describe('register', () => {
   test('coder の ship になったセッションは set_links を持ち、それで fleet の DB のその ship のリンクに PR を書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes } = world(on)
     await $.tool.call({ tool: 'Skill', skill: 'software-fleet:coder', args: fleet })
-    expect(registered).toEqual(['report_status', 'set_links'])
+    expect(registered).toEqual(['report_status', 'set_links', 'revise_model'])
     const links = [{ url: 'https://github.com/owner/repo/pull/12', label: 'PR' }]
     expect(await $.tool.call({ tool: 'mcp__software-fleet__set_links', links })).toEqual({ result: 'LinksSet' })
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/ships/links', doc_id: 'coder', data: { links } })

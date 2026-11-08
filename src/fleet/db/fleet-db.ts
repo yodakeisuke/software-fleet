@@ -33,6 +33,7 @@ const paths: DbPaths = {
   behaviorJournal: 'fleet/behavior/journal',
   behaviorReplies: 'fleet/behavior/replies',
   quality: 'fleet/qa/deliverables/quality',
+  model: 'fleet/coder/deliverables/model',
   guide: 'fleet/cs/deliverables/guide',
   unaskedSpecs: 'fleet/cs/deliverables/unasked-specs',
   operationsDesign: 'fleet/ops/deliverables/operations-design',
