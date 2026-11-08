@@ -14,6 +14,7 @@ required     = Review.required ?? (architect | qa)
 
 - 正は `src/fleet/logic/review.ts`。ページ（dashboard.html）はビルドせずに publish するので写しを持つ
 - 「あなたの番」はページだけが使うので、ページにだけある
+- 決定は消さない。変えるときは前の決定の id を supersedes に持つ新しい決定を足し、ページは指された決定を一覧から外す（`今の決定 = supersedes で指されていない決定`）。これもページにだけある
 
 ## 回答が flagship に届く経路
 

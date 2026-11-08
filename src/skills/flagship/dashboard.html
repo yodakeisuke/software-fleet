@@ -108,6 +108,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .logi{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .lt{font-size:13px;font-weight:700}
 .lw{font-size:12px;color:var(--muted)}
+.le{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);word-break:break-all;text-decoration:none}
+a.le{color:var(--acc)}
 .dock{--bg:var(--chrome);--fg:var(--on-chrome);--muted:var(--on-chrome2);--line:var(--on-chrome2);--acc:var(--on-chrome);--surface:var(--chrome);position:relative;flex:none;display:flex;flex-direction:column;gap:6px;padding-top:12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--chrome);color:var(--fg)}
 .nav{position:absolute;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:1;display:flex;align-items:center}
 .arrow{width:36px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;text-align:center}
@@ -383,11 +385,15 @@ const sum = (to, count, label) => `<button class="sum" data-act="jump" data-to="
 const glance = () => {
   if (unready()) return unready()
   const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
-  const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')
-  const sums = `<div class="sums">${sum('remain', S.remaining?.length ?? '–', '残り')}${sum('assumed', S.behavior.hotspots.length, '仮定')}${sum('decided', S.decisions.length, '決定')}</div>`
+  const log = decided().map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div>${evidence(d.evidence)}</div>`).join('')
+  const sums = `<div class="sums">${sum('remain', S.remaining?.length ?? '–', '残り')}${sum('assumed', S.behavior.hotspots.length, '仮定')}${sum('decided', decided().length, '決定')}</div>`
   return `<header class="band">${brief}${sums}</header><div class="tiles">${SHIPS.map(shipTile).join('')}</div>${toDecide().length > 1 ? decideView() : ''}${linksView()}<div id="remain">${remainingView()}</div><div id="assumed">${assumedView()}</div>
-    <details class="log" id="decided"><summary>flagship が決めたこと <span class="cnt">${S.decisions.length}</span></summary>${log}</details>`
+    <details class="log" id="decided"><summary>flagship が決めたこと <span class="cnt">${decided().length}</span></summary>${log}</details>`
 }
+// 今の決定 = 後の決定に supersedes で指されていないもの（決定は消されず、上書きの決定が足される）
+const decided = () => { const replaced = new Set(S.decisions.map(d => d.supersedes)); return S.decisions.filter(d => !replaced.has(d.id)) }
+// 根拠のポインタ。URL は開ける、それ以外（SHA・文書の id）は文字のまま
+const evidence = ptr => !ptr ? '' : /^https:\/\//.test(ptr) ? `<a class="le" href="${esc(ptr)}" target="_blank" rel="noopener">${esc(ptr)} ›</a>` : `<span class="le">${esc(ptr)}</span>`
 const head = (title, count) => `<div class="shiph"><span class="h2">${title}</span>${count === undefined ? '' : `<span class="cnt">${count}</span>`}</div>`
 const glanceRow = (attrs, kind, label, text, note) => `<button ${attrs} class="yt"><span class="ytk ${kind}">${label}</span><span class="ytt"><span>${esc(text)}</span>${note ? `<small>${esc(note)}</small>` : ''}</span><span class="go" aria-hidden="true">›</span></button>`
 const decideRow = item => {
@@ -926,7 +932,7 @@ const start = async () => {
   S.db.doc(S.paths.brief).onSnapshot(snap => { S.brief = snap.data()?.brief; S.problems = snap.data()?.problems ?? []; render() }, () => {})
   listen(S.paths.ships, docs => { S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]])) })
   listen(S.paths.asks, docs => { S.asks = docs })
-  listen(S.paths.decisions, docs => { S.decisions = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
+  listen(S.paths.decisions, docs => { S.decisions = Object.entries(docs).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
   S.db.doc(S.paths.remaining).onSnapshot(snap => { S.remaining = snap.data()?.chunks ?? null; render() }, () => {})
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
