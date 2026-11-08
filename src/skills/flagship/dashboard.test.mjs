@@ -292,7 +292,7 @@ test('ホバーは不変条件だけを注釈に出し、背景を押すと選�
   const shown = map.renderVals()
   assert.equal(map.state.hover.id, target.id)
   assert.equal(shown.popText, target.ref.o.holds.invariant)
-  assert.match(shown.vpStyle, /cursor:pointer/)
+  assert.equal(shown.cursor, 'pointer')
   map.state.sel = map.state.hover
   map.tap([2, 790])
   assert.equal(map.state.sel, null)

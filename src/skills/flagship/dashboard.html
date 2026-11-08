@@ -308,7 +308,7 @@ a.le{color:var(--acc)}
 .ctabs button:disabled{opacity:.4;cursor:default}
 .ctabs i{display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--fill);vertical-align:middle}
 .chint{margin-left:auto;font-size:12px;color:var(--on-chrome2);font-variant-numeric:tabular-nums}
-.cvp{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;background:#F0F2F5;color:#2B3340;font-size:14px;line-height:1.4}
+.cvp{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;background:#F0F2F5;color:#2B3340;font-size:14px;line-height:1.4}
 .cfit{position:absolute;right:16px;bottom:16px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #D2D6DD;border-radius:3px;background:#FDFDFE;color:#5E6675;box-shadow:0 1px 2px rgba(43,51,64,0.08)}
 .cdock{width:100%;max-width:520px;margin:0 auto}
 @media (prefers-reduced-motion:reduce){.spin,.tfill{animation:none}.knob,.act{transition:none}}
@@ -1118,7 +1118,7 @@ class MapView {
     }
     return {
       worldStyle: 'position:absolute;left:0;top:0;width:0;height:0;transform:translate(' + cam.tx + 'px,' + cam.ty + 'px) scale(' + s + ');transform-origin:0 0',
-      vpStyle: 'position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;cursor:' + (this.state.hover ? 'pointer' : 'grab'),
+      cursor: this.state.hover ? 'pointer' : 'grab',
       shapes: shapes, texts: texts, arrows: arrows,
       popStyle: pop.style, popText: pop.text,
       isFlow: view === 'flow', flowDot: !!(view === 'struct' && tg && !fromFlow && flowsOf(tg).length > 0), structDot: !!(view === 'flow' && tg && fromFlow),
@@ -1134,8 +1134,9 @@ class MapView {
   paint() {
     if (!this.el || !this.el.isConnected) return;
     var v = this.renderVals(), q = this.q;
+    // 盤面は描くたびに innerHTML で作り直す。スマホのピンチで引っかかるなら、最初に疑う所
     q.world.style.cssText = v.worldStyle; q.world.innerHTML = MapView.markup(v);
-    q.vp.style.cssText = v.vpStyle; q.pop.style.cssText = v.popStyle; q.pop.textContent = v.popText;
+    q.vp.style.cursor = v.cursor; q.pop.style.cssText = v.popStyle; q.pop.textContent = v.popText;
     q.title.textContent = v.title; q.hint.textContent = v.hint;
     q.flow.setAttribute('aria-selected', String(v.isFlow)); q.struct.setAttribute('aria-selected', String(!v.isFlow)); q.flow.disabled = !this.hasFlows();
     q.flowDot.hidden = !v.flowDot; q.structDot.hidden = !v.structDot;
