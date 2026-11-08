@@ -1,4 +1,4 @@
-import type { ModelFlow, Model, Step } from '../../../types/fleet'
+import type { ModelFlow, Model } from '../../../types/fleet'
 
 // --- public interface
 export const Wires = {
@@ -7,7 +7,7 @@ export const Wires = {
 }
 
 // --- operations
-const problems = (model: Model) => model.flows.flatMap(flow => [...labels(flow).flatMap(label => unbound(model, flow, label)), ...flow.steps.flatMap(step => kindless(model, flow, step))])
+const problems = (model: Model) => model.flows.flatMap(flow => labels(flow).flatMap(label => unbound(model, flow, label)))
 
 // --- business rules
 // 流れの線の名前: 列名・上から入ってくる線・箱が出した線
@@ -27,11 +27,3 @@ const typeOf = (model: Model, label: string) => {
 }
 // 〈〉の中の状態（｜区切り）
 const statesOf = (label: string) => /〈([^〉]*)〉/.exec(label)?.[1]?.split('｜').map(state => state.trim()) ?? []
-// ドメインの箱の種類は出す線の型から導く（Lifecycle → Transition、Kind → Decision、他 → Computation）ので、ドメインの処理の段は型に結べる線を 1 本は出す。削る段は除く
-const kindless = (model: Model, flow: ModelFlow, step: Step) => {
-  const logic = model.logic.find(item => item.id === step.logic)
-  if (logic?.layer !== 'domain' || step.change === '削') return []
-  return bound(model, step) ? [] : [`流れ「${flow.name}」の段「${logic.name}」はドメインの処理なのに、型に結べる線を出していない（箱の種類が決まらない）`]
-}
-// 段が出す線のどれかが型に結べる
-const bound = (model: Model, step: Step) => Object.values(step.out ?? {}).some(wire => typeOf(model, wire.name) !== undefined)

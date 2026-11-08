@@ -150,16 +150,17 @@ export type World = 'api' | 'domain' | 'db'
 export type Form = 'lifecycle' | 'value' | 'kind' | 'record' | 'table'
 export type Part = { type: string; as?: string }
 export type Holds = 'unit' | { prim: string; invariant?: string } | { parts: Part[]; invariant?: string }
-// 箱の中の箱: 状態・値・選択肢。型の中で id が鍵
-export type ModelObject = { id: string; name: string; at?: number[]; holds: Holds; change?: Change }
-export type When = { type: string; at: string; all: boolean }
+// 箱の中の箱: 状態・値・選択肢。型の中で id が鍵。holds を省けば unit
+export type ModelObject = { id: string; name: string; at?: number[]; holds?: Holds; change?: Change }
+// all を省けば false（いずれか）
+export type When = { type: string; at: string; all?: boolean }
 export type Morphism = { from: string; to: string; by: string; when?: When; change?: Change }
 export type Column = { name: string; type: string; pk?: boolean; fk?: string; change?: Change }
 export type ModelType = {
-  id: string; name: string; world: World; form: Form; top?: boolean; many?: string; dir?: 'col'; doc?: string
+  id: string; name: string; world: World; form: Form; many?: string; doc?: string
   objects?: ModelObject[]; morphisms?: Morphism[]; columns?: Column[]; change?: Change
 }
-export type Mapping = { from: string; to: string; over?: boolean }
+export type Mapping = { from: string; to: string }
 export type Layer = 'domain' | 'usecase' | 'persistence'
 export type Logic = { id: string; name: string; layer: Layer; note?: string; ref?: string; fails?: string[]; change?: Change }
 export type Wire = { name: string; kind?: 'api' | 'stored' }

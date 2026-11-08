@@ -49,15 +49,15 @@ const ends = (model: Model, type: ModelType, morphism: Morphism) => [
 ]
 // 条件の型があり、その状態（at）がその型の箱にある
 const conditioned = (model: Model, type: ModelType, morphism: Morphism) => {
-  const when = morphism.when ?? { type: '', at: '', all: false }
+  const when = morphism.when ?? { type: '', at: '' }
   const target = typeOf(model, when.type)
   if (target === undefined) return [`型「${type.name}」の遷移「${morphism.by}」の条件の型「${when.type}」がない`]
   return has(target, when.at) ? [] : [`型「${type.name}」の遷移「${morphism.by}」の条件の状態「${when.at}」が型「${target.name}」の箱にない`]
 }
 // 対応（maps）の両端の型がある
 const unmapped = (model: Model, map: Mapping) => [map.from, map.to].filter(id => typeOf(model, id) === undefined).map(id => `対応 ${map.from} → ${map.to} の「${id}」が型にない`)
-// 中身の部品。unit と prim は部品を持たない
-const partsOf = (holds: Holds) => (typeof holds === 'object' && 'parts' in holds ? holds.parts : [])
+// 中身の部品。unit（省略を含む）と prim は部品を持たない
+const partsOf = (holds: Holds | undefined) => (typeof holds === 'object' && 'parts' in holds ? holds.parts : [])
 // id の型（なければ undefined）
 const typeOf = (model: Model, id: string) => model.types.find(type => type.id === id)
 // その型に id の箱があるか

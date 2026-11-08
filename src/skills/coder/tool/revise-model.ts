@@ -9,25 +9,26 @@ const list = (items: JsonSchemaNode, description?: string): JsonSchemaNode => ({
 const number: JsonSchemaNode = { type: 'number' }
 const flag = (description: string): JsonSchemaNode => ({ type: 'boolean', description })
 const keyed = (items: JsonSchemaNode, description: string): JsonSchemaNode => ({ type: 'object', description, additionalProperties: items })
+// 地図が導けるもの（最上位 = 部品になっていない型、API と保存の直結 = 両端の世界、箱の並び）は書かせない。持つだけで食い違いの種になる
 // 同じ定義は $defs に 1 度だけ書き、$ref で指す（LLM が読む tool の説明を短く保つ）
 const ref = (name: 'change' | 'holds' | 'object' | 'morphism' | 'column' | 'type' | 'map' | 'logic' | 'wire' | 'step' | 'flow') => JsonSchema.ref(name)
 const change = choice(['新', '改', '削'], '今回の変更。無印は既存（文脈として描く）')
 const part = object({ type: text('部品の型の id'), as: text('この型の中での呼び名。型名と同じなら省く') }, ['type'])
 const holds: JsonSchemaNode = {
-  description: '箱の中身。unit = 中身なし、prim = 素の値、parts = 部品の直積。invariant は常に守る不変条件（形で封じきれないもの）',
+  description: '箱の中身。省けば unit。unit = 中身なし、prim = 素の値、parts = 部品の直積。invariant は常に守る不変条件（形で封じきれないもの）',
   oneOf: [choice(['unit']), object({ prim: text('素の値の説明（例: UUID、整数 ≥ 1）'), invariant: text() }, ['prim']), object({ parts: list(part), invariant: text() }, ['parts'])],
 }
-const modelObject = object({ id: text('型の中の鍵'), name: text(), at: list(number, 'lifecycle で盤面に置く位置 [列, 行]。省くと自動'), holds: ref('holds'), change: ref('change') }, ['id', 'name', 'holds'], '箱の中の箱: 状態（lifecycle）・値（value / record）・選択肢（kind）')
-const when = object({ type: text('条件を見る型の id'), at: text('その型の箱の id'), all: flag('many の型で、全てがその状態なら true、いずれかなら false') }, ['type', 'at', 'all'], '遷移の条件')
+const modelObject = object({ id: text('型の中の鍵'), name: text(), at: list(number, 'lifecycle で盤面に置く位置 [列, 行]。省くと自動'), holds: ref('holds'), change: ref('change') }, ['id', 'name'], '箱の中の箱: 状態（lifecycle）・値（value / record）・選択肢（kind）')
+const when = object({ type: text('条件を見る型の id'), at: text('その型の箱の id'), all: flag('many の型で、全てがその状態なら true。省けばいずれか') }, ['type', 'at'], '遷移の条件')
 const morphism = object({ from: text('箱の id'), to: text('箱の id'), by: text('遷移を起こす契機（動詞句）'), when, change: ref('change') }, ['from', 'to', 'by'], '遷移 = 矢。lifecycle だけが持つ')
 const column = object({ name: text(), type: text('DB の型'), pk: flag('主キー'), fk: text('参照する表の id'), change: ref('change') }, ['name', 'type'])
 const modelType = object({
   id: text('鍵。部品・対応・fk・条件はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
-  top: flag('その世界の最上位に置く（他は部品として現れる）'), many: text('親の中に N 個あるときの単位語（例: 行）'), dir: choice(['col'], '箱の並びを縦に固定（record はいつも縦）'), doc: text('1 行の意図。地図には描かず名札に出る'),
+  many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。開いた箱の題名の下に出る'),
   objects: list(ref('object'), 'table 以外。1 つ以上'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
 }, ['id', 'name', 'world', 'form'])
-const map = object({ from: text('型の id'), to: text('型の id'), over: flag('ドメインを通さない対応（API ↔ 保存を直接）') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
+const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
 const logic = object({
   id: text('鍵。流れの段はこれで指す'), name: text(), layer: choice(['domain', 'usecase', 'persistence'], 'domain の種類は出す線の型から導く'),
   note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), change: ref('change'),

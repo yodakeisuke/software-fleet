@@ -5,7 +5,7 @@ import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { CodeModel } from '../logic/code-model'
 import { reviseModel } from './revise-model'
 
-const order = { id: 'order', name: '注文', world: 'domain', form: 'lifecycle', top: true, objects: [{ id: 'draft', name: '下書き', at: [0, 0], holds: { parts: [{ type: 'money', as: '合計' }] } }], morphisms: [] }
+const order = { id: 'order', name: '注文', world: 'domain', form: 'lifecycle', objects: [{ id: 'draft', name: '下書き', at: [0, 0], holds: { parts: [{ type: 'money', as: '合計' }] } }], morphisms: [] }
 const money = { id: 'money', name: '金額', world: 'domain', form: 'value', objects: [{ id: 'v', name: '金額', holds: { prim: '整数', invariant: '0 以上' } }] }
 const shape = (input: unknown) => JsonSchema.check(reviseModel.spec.inputSchema, input).either<unknown>(() => '', e => e)
 // DB の中身（"collection/id" ごと）を持つ engine。呼び出しを calls に残す

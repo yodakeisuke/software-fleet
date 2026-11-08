@@ -38,4 +38,9 @@ describe('references', () => {
     expect(References.problems(model([{ ...order, morphisms: [{ ...order.morphisms![0]!, when: { type: 'line', at: 'lost', all: false } }] }, line]))).toEqual(['型「注文」の遷移「全明細が出荷済」の条件の状態「lost」が型「明細」の箱にない'])
     expect(References.problems(model([order, line], [{ from: 'order', to: 't_orders' }]))).toEqual(['対応 order → t_orders の「t_orders」が型にない'])
   })
+
+  test('holds を省いた箱は unit、条件の all を省けばいずれか（どちらも問題にしない）', () => {
+    const kind: ModelType = { id: 'reason', name: '取消理由', world: 'domain', form: 'kind', objects: [{ id: 'mind', name: '気が変わった' }, { id: 'late', name: '届かない' }] }
+    expect(References.problems(model([kind, { ...order, morphisms: [{ from: 'draft', to: 'done', by: '出荷する', when: { type: 'line', at: 'shipped' } }] }, line]))).toEqual([])
+  })
 })
