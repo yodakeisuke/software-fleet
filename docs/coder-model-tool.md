@@ -1,5 +1,7 @@
 # coder の設計図: revise_model と地図
 
+図で見るなら Design artifact https://claude.ai/artifact/WeTcfwLzjwCgt5ZQMwv4oH（契約と流れ・入力の形・検証と拒否・地図がどう読むか）。
+
 型・tool の入出力・DB の置き場所はコードが正（`src/types/fleet.d.ts` の Model 系、`src/skills/coder/tool/revise-model.ts`、`src/fleet/db/fleet-db.ts`）。ここには、コードの 1 か所に収まらない判断と、その理由だけを書く。
 
 ## 何か
