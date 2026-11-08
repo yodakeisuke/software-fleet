@@ -34,7 +34,9 @@ export type Evaluation = { axes: { name: string; weight: string }[]; cells: Cell
 export type Problem = { problem: string; solution: string }
 export type Fleet = { brief: string; problems?: Problem[] }
 export type Ask = { question: string; background: Explain; options: Option[]; recommended: OptionId; evaluation?: Evaluation }
-export type Decision = { what: string; why: string; closes?: AskId }
+// evidence は根拠を指すポインタ（URL・commit の SHA・DB の文書の id）。supersedes は置き換える前の決定の id（決定は消さず、上書きの決定を足す）
+export type DecisionId = string
+export type Decision = { what: string; why: string; closes?: AskId; evidence?: string; supersedes?: DecisionId }
 // PR マージまでに残っている大きな塊。終わった塊は外す。blockedBy はその塊を止めている判断
 export type Chunk = { what: string; blockedBy?: AskId[] }
 export type Remaining = { chunks: Chunk[] }
