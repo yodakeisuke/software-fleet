@@ -116,6 +116,7 @@ src/
 例外（写しを持つもの）
 - dashboard.html はビルドせずに publish するので、レビューの規則（`fleet/logic/review.ts` の required・レビュー待ち）の写しを持つ。review を変えたら dashboard.html も直す
 - 同じく、qa のケースの集め方（`skills/qa/logic/quality.ts` の cases）の写しを持つ。変えたら dashboard.html も直す
+- 同じく、流れの線と構造の型の結び方（`skills/coder/logic/wires.ts` の typeOf・statesOf）の写しを持つ。変えたら dashboard.html の地図も直す
 - DB の置き場所は `fleet/db/fleet-db.ts` の paths が唯一の定義。mod はダッシュボードの publish のときに、それを DB の `fleet/db-paths` に置く。ページはそれを読むので、ページが知っているのはこの 1 つの置き場所だけ
 
 - 候補（未検証）
