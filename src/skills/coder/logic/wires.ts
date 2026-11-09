@@ -20,9 +20,9 @@ const unbound = (model: Model, flow: ModelFlow, label: string) => {
   if (type === undefined) return [`流れ「${flow.name}」の線「${label}」が型に結べない（〈 の前の末尾を型の名前にする）`]
   return states.filter(state => !(type.objects ?? []).some(object => object.name === state)).map(state => `流れ「${flow.name}」の線「${label}」の状態「${state}」が型「${type.name}」の箱にない`)
 }
-// 型名は 〈 の前から ✓ と ×N を除いた末尾に、最長一致（地図と同じ結び方）
+// 型名は 〈 の前から ×N と ✓ を（どちらが先でも）除いた末尾に、最長一致（地図と同じ結び方）
 const typeOf = (model: Model, label: string) => {
-  const base = label.split('〈')[0]?.replace(/\s*✓\s*$/, '').replace(/\s*×N.*$/, '').trim() ?? ''
+  const base = label.split('〈')[0]?.replace(/\s*×N.*$/, '').replace(/\s*✓\s*$/, '').trim() ?? ''
   return [...model.types].sort((a, b) => b.name.length - a.name.length).find(type => base === type.name || base.endsWith(type.name))
 }
 // 〈〉の中の状態（｜区切り）

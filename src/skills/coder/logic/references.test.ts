@@ -15,11 +15,13 @@ const customers: ModelType = { id: 't_customers', name: 'customers', world: 'db'
 const model = (types: ModelType[], maps: Model['maps'] = []): Model => ({ ...CodeModel.empty(), name: '注文', types, maps })
 
 describe('references', () => {
-  test('型・処理・流れの id、型の中の箱の id、表の列の名前は 1 つだけ', () => {
-    expect(References.problems(model([order, line, { ...line, id: 'order' }]))).toEqual(['型の id「order」が重なっている'])
+  test('型・処理・流れの id、型の名前、型の中の箱の id、表の列の名前は 1 つだけ', () => {
+    expect(References.problems(model([order, line, { ...line, id: 'order', name: '別の明細' }]))).toEqual(['型の id「order」が重なっている'])
+    // 流れの線は型の名前で結ばれるので、API の注文とドメインの注文を同じ名前にしない
+    expect(References.problems(model([order, line, { ...order, id: 'api_order', world: 'api' }]))).toEqual(['型の名前「注文」が重なっている'])
     expect(References.problems(model([{ ...line, objects: [...line.objects!, { id: 'open', name: '開', holds: 'unit' }] }]))).toEqual(['型「明細」の箱の id「open」が重なっている'])
-    expect(References.problems(model([{ ...customers, columns: [...customers.columns!, { name: 'id', type: 'text' }] }]))).toEqual(['表「customers」の列の id「id」が重なっている'])
-    expect(References.duplicated(['a', 'b', 'a'], '処理')).toEqual(['処理の id「a」が重なっている'])
+    expect(References.problems(model([{ ...customers, columns: [...customers.columns!, { name: 'id', type: 'text' }] }]))).toEqual(['表「customers」の列「id」が重なっている'])
+    expect(References.duplicated(['a', 'b', 'a'], '処理の id')).toEqual(['処理の id「a」が重なっている'])
   })
 
   test('表は列を持ち fk の先は表、表以外は箱を持つ', () => {

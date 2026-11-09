@@ -1,4 +1,4 @@
-import type { JsonSchemaNode, Result as Data } from '../../types/fleet'
+import type { JsonSchemaNode } from '../../types/fleet'
 import { Result } from '../logic/result'
 
 // tool の入力の形（型・必須・空でない・enum・pattern）を、LLM に渡したのと同じ JSON Schema で検査する。意味の検査は logic がする
@@ -11,9 +11,22 @@ export const JsonSchema = {
   text: (description?: string): JsonSchemaNode => ({ type: 'string', minLength: 1, ...(description ? { description } : {}) }),
   object: (properties: Record<string, JsonSchemaNode>, required: string[], description?: string): JsonSchemaNode =>
     ({ type: 'object', properties, required, ...(description ? { description } : {}) }),
+  choice: (values: readonly string[], description?: string): JsonSchemaNode => ({ type: 'string', enum: values, ...(description ? { description } : {}) }),
+  // oneOf の形を選ぶ印（値が 1 つだけの enum）
+  tag: (value: string): JsonSchemaNode => ({ type: 'string', enum: [value] }),
+  list: (items: JsonSchemaNode, description?: string): JsonSchemaNode => ({ type: 'array', ...(description ? { description } : {}), items }),
+  // 今の鍵（which）で指す、足す・直す・消すの並び。add は足すときだけの項目
+  changes: (to: JsonSchemaNode, which: JsonSchemaNode, description?: string, add: Record<string, JsonSchemaNode> = {}): JsonSchemaNode => JsonSchema.list({
+    type: 'object',
+    oneOf: [
+      JsonSchema.object({ op: JsonSchema.tag('add'), ...add, to }, ['op', 'to']),
+      JsonSchema.object({ op: JsonSchema.tag('replace'), which, to }, ['op', 'which', 'to']),
+      JsonSchema.object({ op: JsonSchema.tag('remove'), which }, ['op', 'which']),
+    ],
+  }, description),
 }
 
-const checked = <T>(schema: JsonSchemaNode, value: unknown) => verdict<T>(picked(schema, value), problems(schema, value, '入力'))
+const checked = <T>(schema: JsonSchemaNode, value: unknown) => Result.checked(picked(schema, value) as T, problems(schema, value, '入力'))
 // $ref を $defs の定義に置き換える（LLM には $defs のまま渡し、検査は置き換えたもので行う）
 const resolved = (schema: JsonSchemaNode, defs: Readonly<Record<string, JsonSchemaNode>>): JsonSchemaNode => {
   if (schema.$ref) return resolved(defs[schema.$ref.replace('#/$defs/', '')] as JsonSchemaNode, defs)
@@ -26,9 +39,6 @@ const resolved = (schema: JsonSchemaNode, defs: Readonly<Record<string, JsonSche
     ...(schema.oneOf ? { oneOf: schema.oneOf.map(branch => resolved(branch, defs)) } : {}),
   }
 }
-// 問題がなければ値をそのまま通し、あれば全部を 1 つの文にして失敗にする
-const verdict = <T>(value: unknown, found: string[]) =>
-  Result.given<Data<T, string>>(found.length === 0 ? { ok: true, value: value as T } : { ok: false, error: found.join(' / ') })
 // スキーマに合わない箇所を、場所つきで全部挙げる。型が違えば中は見ない
 const problems = (schema: JsonSchemaNode, value: unknown, at: string): string[] =>
   schema.oneOf ? oneOf(schema.oneOf, value, at)
@@ -70,9 +80,11 @@ const picked = (schema: JsonSchemaNode, value: unknown): unknown => {
   }))
 }
 // oneOf は 1 値の enum（state など）で形を選び、その形の問題を返す。どの形も選べなければ、選べる値を挙げる
+// 選べた形のうち、型が値に合う形を先に見る（型の違う形が「型が違う」の 1 件で、本当の問題より少なく見えないように）
 const oneOf = (branches: readonly JsonSchemaNode[], value: unknown, at: string) => {
   const chosen = branches.filter(branch => tags(branch).every(([key, tag]) => field(value, key) === tag))
-  return chosen.length > 0 ? fewest(chosen.map(branch => problems(branch, value, at))) : [`${at} は ${branches.flatMap(tags).map(([key, tag]) => `${key}: ${tag}`).join(' | ')} のどれかの形`]
+  const fitting = chosen.filter(branch => fits(branch, value))
+  return chosen.length > 0 ? fewest((fitting.length > 0 ? fitting : chosen).map(branch => problems(branch, value, at))) : [`${at} は ${branches.flatMap(tags).map(([key, tag]) => `${key}: ${tag}`).join(' | ')} のどれかの形`]
 }
 // 形を選ぶ印: 値が 1 つだけの enum を持つ項目
 const tags = (branch: JsonSchemaNode) => Object.entries(branch.properties ?? {}).flatMap(([key, inner]) => (inner.enum?.length === 1 ? [[key, inner.enum[0]] as const] : []))

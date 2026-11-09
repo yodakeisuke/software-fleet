@@ -48,9 +48,9 @@ describe('revise-behavior', () => {
     const stored = { 'fleet/user/comments/comment-1': { ship: 'behavior', on: 'm:経費を申請する', text: '上限は？', at: 'x' } }
     expect(await reviseBehavior.run(engineWith(stored, calls), { note: '上限は会社の事実なので問いにした', replies: [{ comment: 'comment-1', reply: '問いに立てました' }] })).toEqual({ result: 'BehaviorRevised' })
     expect(calls.filter(call => call.action === 'set').map(call => `${call.collection}/${call.doc_id}`)).toEqual(['fleet/behavior/journal/entry-1000', 'fleet/behavior/replies/comment-1'])
+    expect(await reviseBehavior.run(engineWith(stored, []), { note: 'x', replies: [{ comment: 'comment-9', reply: 'y' }] })).toEqual({ deny: '返信先のコメントがない: comment-9' })
     const nested = { ...stored, 'fleet/user/comments/a/b': { ship: 'behavior', on: 'm:経費を申請する', text: 'x', at: 'x' } }
-    expect(await reviseBehavior.run(engineWith(nested, []), { note: 'x', replies: [{ comment: 'comment-9', reply: 'y' }, { comment: 'a/b', reply: 'y' }] }))
-      .toEqual({ deny: '返信先のコメントがない: comment-9、a/b' })
+    expect(await reviseBehavior.run(engineWith(nested, []), { note: 'x', replies: [{ comment: 'a/b', reply: 'y' }] })).toEqual({ deny: '入力.replies[0].comment は ^[\\w-]+$ に合わない' })
   })
 
   test('盤面を書いた後で変更の記録や返信を書けなければ、盤面は戻さずに、書けなかったものを返す', async () => {

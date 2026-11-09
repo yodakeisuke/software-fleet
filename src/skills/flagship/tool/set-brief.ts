@@ -3,7 +3,7 @@ import { Result } from '../../../fleet/logic/result'
 import { FleetDb } from '../../../fleet/db/fleet-db'
 import { JsonSchema } from '../../../fleet/schema/json-schema'
 
-const { text, object } = JsonSchema
+const { text, object, list } = JsonSchema
 
 // 依頼の要約と「要は何か」。要約はダッシュボードの一番上に、課題と解決の対は requirement のページの先頭に出る
 const spec = {
@@ -11,7 +11,7 @@ const spec = {
   description: '依頼の要約と、課題と解決の対を出す。problems を省くと今の表を残し、渡すと置き換える',
   inputSchema: object({
     brief: text('何を誰のために作るか。1〜2 行'),
-    problems: { type: 'array', description: '課題 1 つに解決 1 つ。後から足してよい', items: object({ problem: text('誰が何に困っているか'), solution: text('それをどう解くか') }, ['problem', 'solution']) },
+    problems: list(object({ problem: text('誰が何に困っているか'), solution: text('それをどう解くか') }, ['problem', 'solution']), '課題 1 つに解決 1 つ。後から足してよい'),
   }, ['brief']),
   isDeferred: false,
 }

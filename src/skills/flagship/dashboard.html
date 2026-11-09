@@ -345,9 +345,9 @@ function buildStruct(M, open, pins) {
   var T = {}; M.types.forEach(function (t) { T[t.id] = t; });
   var FONT = [96, 44, 26, 13, 6.5, 3];
   var fontAt = function (d) { return FONT[Math.min(d, FONT.length - 1)]; };
-  var marks = {}; M.types.forEach(function (t) { (t.morphisms || []).forEach(function (m) { if (m.when) { (marks[m.when.type] = marks[m.when.type] || {})[m.when.at] = true; } }); });
-  var portrait = function (w, h) { return Math.abs(Math.log(w / h)); };
-  var dotsW = function (list, F) { var n = ['新', '改', '削'].filter(function (k) { return list.some(function (c) { return c.ch === k; }); }).length; return n ? F * 0.36 * (1.5 * n - 0.5) + F * 0.5 : 0; };
+  // 同じ両端の遷移の束（線は 1 本、名札は積む）と、積んだ名札（と条件）の高さ
+  var bundle = function (list, m) { return list.filter(function (q) { return q.from === m.from && q.to === m.to; }); };
+  var stackH = function (list, fl) { return sum(list.map(function (q) { return fl * (q.when ? 2.15 : 1.25); })); };
 
   function typeNode(t, as, d, path) {
     var F = fontAt(d), f = F * 0.85, pad = F * 0.4;
@@ -356,43 +356,46 @@ function buildStruct(M, open, pins) {
     var t1 = fr(single ? 2 * d + 2 : 2 * d + 1, path);
     var row = d > 1;
     if (row) t1 = Math.max(0, (t1 - 0.6) / 0.4);
-    var compact = { kind: 'type', compact: true, asText: row, t: t, path: path, title: title, label: label, F: F, f: f, pad: pad, rf: t.form === 'table' ? f * 0.9 : single ? (t.objects[0].holds.prim ? f * 0.9 : fontAt(d + 1)) : f, w: row ? tw(title, F) + F * 0.4 : tw(title, F) + 2 * pad, h: row ? F * 1.3 : pad + F * 1.35 + pad * 0.4, pts: [], arrows: [], x: 0, y: 0 };
+    var compact = { kind: 'type', compact: true, asText: row, t: t, path: path, title: title, F: F, f: f, pad: pad, rf: t.form === 'table' ? f * 0.9 : single ? (t.objects[0].holds && t.objects[0].holds.prim ? f * 0.9 : fontAt(d + 1)) : f, w: row ? tw(title, F) + F * 0.4 : tw(title, F) + 2 * pad, h: row ? F * 1.3 : pad + F * 1.35 + pad * 0.4, pts: [], arrows: [], x: 0, y: 0 };
     if (t1 <= 0) return compact;
-    var full = fullType(t, as, d, F, f, pad, title, label, single, path); full.path = path; full.pinned = (pins[path] || 0) >= 0.99; full.inList = row;
+    var full = fullType(t, d, F, f, pad, title, single, path); full.path = path; full.inList = row;
     if (t1 < 1) { full.blend = t1; full.fw = full.w; full.fh = full.h; full.w = lerp(compact.w, full.w, t.form === 'table' ? Math.min(1, t1 / 0.5) : t1); full.h = lerp(compact.h, full.h, t1); }
     return full;
   }
-  function fullType(t, as, d, F, f, pad, title, label, single, path) {
+  function fullType(t, d, F, f, pad, title, single, path) {
     var th = pad + F * 1.35 + (t.doc ? F * 0.62 : 0);
     if (t.form === 'table') {
       var fr0 = f * 0.9, rows = t.columns.map(function (c) { return { text: c.fk ? c.name + '  → ' + T[c.fk].name + (c.pk ? '  PK' : '') : c.name + '  ' + c.type + (c.pk ? '  PK' : ''), fk: c.fk, pk: c.pk, ch: c.change }; });
       var w0 = Math.max(tw(title, F), max(rows.map(function (r) { return tw(r.text, fr0); }))) + 2 * pad;
       var pkRow = rows.findIndex(function (r) { return r.pk; });
-      return { kind: 'table', t: t, title: title, label: label, F: F, f: f, fr: fr0, rows: rows, pad: pad, th: th, w: w0, h: th + rows.length * fr0 * 1.3 + pad, pkRel: th + Math.max(0, pkRow) * fr0 * 1.3 + fr0 * 0.65, x: 0, y: 0 };
+      return { kind: 'table', t: t, title: title, F: F, f: f, fr: fr0, rows: rows, pad: pad, th: th, w: w0, h: th + rows.length * fr0 * 1.3 + pad, pkRel: th + Math.max(0, pkRow) * fr0 * 1.3 + fr0 * 0.65, x: 0, y: 0 };
     }
     if (single) {
       var fp0 = pointNode(t, t.objects[0], d, f, true, path);
       var fw = Math.max(fp0.w, tw(title, F)) + 2 * pad, fh = th + fp0.h + pad;
       fp0.x = pad; fp0.y = th;
-      return { kind: 'type', flat: true, t: t, title: title, label: label, F: F, f: f, pad: pad, w: fw, h: fh, pts: [fp0], arrows: [], x: 0, y: 0 };
+      return { kind: 'type', t: t, title: title, F: F, f: f, pad: pad, w: fw, h: fh, pts: [fp0], arrows: [], x: 0, y: 0 };
     }
     var pts = t.objects.map(function (o) { return pointNode(t, o, d, f, false, path); });
     var arrows = t.morphisms || [], gap = arrows.length ? F * 1.4 : F * 0.5;
     var idx = {}; t.objects.forEach(function (o, i) { idx[o.id] = i; });
     var cells = autoCells(t);
-    var overRow = arrows.some(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]]; return a.r === b.r && Math.abs(a.c - b.c) > 1; });
-    if (overRow) gap = Math.max(gap, F * 2.6);
-    var fl = F * 0.7;
+    // 行の上を通る矢（同じ行の遠い相手への弧と、自分への弧）があれば、行の上と間を空ける。自分への弧は名札をその上に積む分も
+    var fl = F * 0.7, above = max([F * 1.5].concat(arrows.filter(function (m) { return m.from === m.to; }).map(function (m) { return F * 0.6 + stackH(bundle(arrows, m), fl); })));
+    var overRow = arrows.some(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]]; return m.from === m.to || a.r === b.r && Math.abs(a.c - b.c) > 1; });
+    if (overRow) gap = Math.max(gap, F * 2.6, above + F * 0.4);
+    // 縦の隣への束は名札を縦に積むので、行の間をその高さだけ空ける
+    arrows.forEach(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]], list = bundle(arrows, m); if (list.length > 1 && a.c === b.c && Math.abs(a.r - b.r) === 1) gap = Math.max(gap, stackH(list, fl) + F * 0.4); });
     var colGap = Math.max.apply(null, [gap].concat(arrows.filter(function (m) { return cells[idx[m.from]].c !== cells[idx[m.to]].c; }).map(function (m) { return tw(m.by, fl) + F * 1.0; })));
     var colW = [], rowH = [];
     pts.forEach(function (p, i) { var c = cells[i]; colW[c.c] = Math.max(colW[c.c] || 0, p.w); rowH[c.r] = Math.max(rowH[c.r] || 0, p.h); });
-    var outer = arrows.some(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]]; return a.c === b.c && Math.abs(a.r - b.r) !== 1; });
-    var colX = [], rowY = [], x = pad, y = th + (overRow ? F * 1.5 : 0), c, r;
+    var outer = arrows.some(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]]; return m.from !== m.to && a.c === b.c && Math.abs(a.r - b.r) !== 1; });
+    var colX = [], rowY = [], x = pad, y = th + (overRow ? above : 0), c, r;
     for (c = 0; c < colW.length; c++) { colX[c] = x; x += (colW[c] || 0) + colGap; }
     for (r = 0; r < rowH.length; r++) { rowY[r] = y; y += (rowH[r] || 0) + gap; }
     var w = Math.max(x - colGap + pad + (outer ? colGap : 0), tw(title, F) + 2 * pad), h = y - gap + pad;
     pts.forEach(function (p, i) { var cc = cells[i]; p.x = colX[cc.c] + (colW[cc.c] - p.w) / 2; p.y = rowY[cc.r]; });
-    return { kind: 'type', t: t, title: title, label: label, F: F, f: f, w: w, h: h, pts: pts, cells: cells, colX: colX, colW: colW, rowY: rowY, rowH: rowH, gap: gap, colGap: colGap, pad: pad, arrows: arrows, idx: idx, x: 0, y: 0 };
+    return { kind: 'type', t: t, title: title, F: F, f: f, w: w, h: h, pts: pts, cells: cells, colX: colX, colW: colW, rowY: rowY, colGap: colGap, pad: pad, arrows: arrows, idx: idx, x: 0, y: 0 };
   }
   // 状態の格子。at があればそれ。無ければ遷移から: 列 = 始まりからの最長の歩数、本流は 1 行目、脇に逸れる終わり（失敗・取消）は下の行
   function autoCells(t) {
@@ -415,57 +418,35 @@ function buildStruct(M, open, pins) {
     return cells;
   }
   function pointNode(t, o, d, f, flat, tpath) {
-    var path = tpath + '#' + o.id, name = o.name, pad = f * 0.35, mark = !!(marks[t.id] && marks[t.id][o.id]);
-    if (!o.holds || o.holds === 'unit') return { kind: 'unit', t: t, o: o, path: path, name: name, f: f, mark: mark, w: tw(name, f) + f * 0.9, h: f * 1.5 };
-    var t2 = flat ? 1 : fr(2 * d + 2, path), pinned = (pins[path] || 0) >= 0.99;
-    var compactP = { kind: 'open', compact: true, t: t, o: o, path: path, name: name, f: f, rf: fontAt(d + 1), mark: mark, w: tw(name, f) + 2 * pad, h: pad + f * 1.45 + pad * 0.3 };
+    var path = tpath + '#' + o.id, name = o.name, pad = f * 0.35;
+    if (!o.holds || o.holds === 'unit') return { kind: 'unit', t: t, o: o, path: path, name: name, f: f, w: tw(name, f) + f * 0.9, h: f * 1.5 };
+    var t2 = flat ? 1 : fr(2 * d + 2, path);
+    var compactP = { kind: 'open', compact: true, t: t, o: o, path: path, name: name, f: f, rf: fontAt(d + 1), w: tw(name, f) + 2 * pad, h: pad + f * 1.45 + pad * 0.3 };
     if (o.holds.prim) {
       var fp = f * 0.9, s = o.holds.prim + (o.holds.invariant ? '  ' + o.holds.invariant : '');
-      if (flat) return { kind: 'prim', flat: true, t: t, o: o, path: path, name: name, f: f, fp: fp, s: s, mark: mark, w: tw(s, fp), h: fp * 1.4 };
+      if (flat) return { kind: 'prim', flat: true, t: t, o: o, path: path, name: name, f: f, fp: fp, s: s, w: tw(s, fp), h: fp * 1.4 };
       if (t2 <= 0) return compactP;
-      var fullP = { kind: 'prim', t: t, o: o, path: path, pinned: pinned, name: name, f: f, fp: fp, s: s, mark: mark, w: Math.max(tw(s, fp), tw(name, f)) + 2 * pad, h: f * 1.3 + fp * 1.4 + 2 * pad };
+      var fullP = { kind: 'prim', t: t, o: o, path: path, name: name, f: f, fp: fp, s: s, w: Math.max(tw(s, fp), tw(name, f)) + 2 * pad, h: f * 1.3 + fp * 1.4 + 2 * pad };
       if (t2 < 1) { fullP.blend = t2; fullP.fw = fullP.w; fullP.fh = fullP.h; fullP.w = lerp(compactP.w, fullP.w, t2); fullP.h = lerp(compactP.h, fullP.h, t2); }
       return fullP;
     }
     if (t2 <= 0) return compactP;
-    var fullO = fullPoint(t, o, d, f, flat, name, pad, mark, path); fullO.t = t; fullO.o = o; fullO.path = path; fullO.pinned = pinned; fullO.rf = fontAt(d + 1);
+    var fullO = fullPoint(o, d, f, flat, name, pad, path); fullO.t = t; fullO.o = o; fullO.path = path; fullO.rf = fontAt(d + 1);
     if (t2 < 1) { fullO.blend = t2; fullO.fw = fullO.w; fullO.fh = fullO.h; fullO.w = lerp(compactP.w, fullO.w, t2); fullO.h = lerp(compactP.h, fullO.h, t2); }
     return fullO;
   }
-  function fullPoint(t, o, d, f, flat, name, pad, mark, path) {
-    var rooms = o.holds.parts.map(function (p, i) { return typeNode(T[p.type], p.as, d + 1, roomPath(path, p, i)); }), n = rooms.length, sep = f * 0.9;
+  function fullPoint(o, d, f, flat, name, pad, path) {
     // 部屋は属性の一覧: 縦に左揃え
-    var listed = true; sep = f * 0.2;
-    var row = portrait(sum(rooms.map(function (q) { return q.w; })) + sep * (n - 1), max(rooms.map(function (q) { return q.h; })));
-    var col = portrait(max(rooms.map(function (q) { return q.w; })), sum(rooms.map(function (q) { return q.h; })) + sep * (n - 1));
-    var dir = 'col', cw, ch;
-    if (false) {
-      dir = 'grid';
-      var target = Math.max(max(rooms.map(function (q) { return q.w; })), Math.sqrt(sum(rooms.map(function (q) { return q.w * q.h; }))) * 1.5);
-      var rx0 = 0, ry0 = 0, rowHh = 0, wmax = 0;
-      rooms.forEach(function (q) {
-        if (rx0 > 0 && rx0 + q.w > target) { rx0 = 0; ry0 += rowHh + sep; rowHh = 0; }
-        q.x = rx0; q.y = ry0; rx0 += q.w + sep; rowHh = Math.max(rowHh, q.h); wmax = Math.max(wmax, rx0 - sep);
-      });
-      cw = wmax; ch = ry0 + rowHh;
-    } else {
-      var cur = 0; rooms.forEach(function (q) { q.x = dir === 'row' ? cur : 0; q.y = dir === 'row' ? 0 : cur; cur += (dir === 'row' ? q.w : q.h) + sep; });
-      cw = dir === 'row' ? cur - sep : max(rooms.map(function (q) { return q.w; })); ch = dir === 'row' ? max(rooms.map(function (q) { return q.h; })) : cur - sep;
-    }
-    var inv = o.holds.invariant, fi = f * 0.62, ipad = 0;
-    var iw = cw + 2 * ipad, ih = ch + 2 * ipad;
-    if (flat) return { kind: 'open', flat: true, name: name, f: f, mark: mark, rooms: rooms, listed: listed, dir: dir, sep: sep, cw: cw, ch: ch, inv: inv, fi: fi, ipad: ipad, iw: iw, ih: ih, ox: 0, oy: 0, w: iw, h: ih };
-    return { kind: 'open', name: name, f: f, mark: mark, rooms: rooms, listed: listed, dir: dir, sep: sep, cw: cw, ch: ch, inv: inv, fi: fi, ipad: ipad, iw: iw, ih: ih, ox: pad, oy: pad + f * 1.45, w: Math.max(iw, tw(name, f)) + 2 * pad, h: pad + f * 1.45 + ih + pad };
+    var rooms = o.holds.parts.map(function (p, i) { return typeNode(T[p.type], p.as, d + 1, roomPath(path, p, i)); }), sep = f * 0.2, y = 0;
+    rooms.forEach(function (q) { q.x = 0; q.y = y; y += q.h + sep; });
+    var cw = max(rooms.map(function (q) { return q.w; })), ch = y - sep;
+    if (flat) return { kind: 'open', flat: true, name: name, f: f, rooms: rooms, ox: 0, oy: 0, w: cw, h: ch };
+    return { kind: 'open', name: name, f: f, rooms: rooms, ox: pad, oy: pad + f * 1.45, w: Math.max(cw, tw(name, f)) + 2 * pad, h: pad + f * 1.45 + ch + pad };
   }
 
   // 置く。要素には盤面をまたいで同じ id を付ける（D が変わったとき同じ要素を動かして見せるため）
   var out = { shapes: [], texts: [], arrows: [], boxes: {}, hits: [] };
   var S = function (o) { out.shapes.push(o); }, X = function (o) { out.texts.push(o); }, A = function (o) { out.arrows.push(o); };
-  // 今回の変更: 新・改 は箱の縁（実線・破線）と名前の色、削 は箱ごと薄く名前に打ち消し線。畳んだ箱は中の変更の種類を角の点で出し、開くにつれて消す
-  var chDots = function (id, list, x, y, w, h, F, pad, op) {
-    var kinds = ['新', '改', '削'].filter(function (k) { return list.some(function (c) { return c.ch === k; }); }), d = F * 0.36; if (!kinds.length || op < 0.05) return;
-    kinds.forEach(function (k, i) { S({ id: id + ':cd' + i, k: 'cdot', x: x + w - pad * 0.5 - d - i * d * 1.5, y: y + pad * 0.5, w: d, h: d, i: i, cap: Math.min(w, h) * 0.45, color: chColor(k), op: op, tf: F }); });
-  };
   var regionRight = 0;
   // 描く。ox, oy は親の原点、sc は親からの縮尺（開き具合の積）、op は不透明度（開き具合の積）
   function renderType(n, ox, oy, sc, op, depth) {
@@ -530,64 +511,60 @@ function buildStruct(M, open, pins) {
     if (b < 1 && !p.flat) sc3 = Math.min(sc3, Math.max(0, AY + H - tb3) / fh3);
     var ox3 = AX + (W - (p.fw || p.w) * sc3) / 2, oy3 = p.flat ? AY + (H - fh3 * sc3) / 2 : AY + H - fh3 * sc3;
     if (p.kind === 'prim') { X({ id: path + ':s', x: ox3 + pad, y: oy3 + (pad / sc + p.f * 1.3) * sc3, text: p.s, f: p.fp * sc3, mono: true, fitW: W - pad, op: op3 }); return; }
-    var ix = ox3 + p.ox * sc3, iy = oy3 + p.oy * sc3;
-    var gx = ix + p.ipad * sc3, gy = iy + p.ipad * sc3;
-    p.rooms.forEach(function (q, i) {
-      var rp = q.path;
-      if (i && p.dir !== 'grid' && !p.listed) {
-        var fx = p.f * 0.6 * sc3;
-        if (p.dir === 'row') { var dx = gx + (q.x - p.sep / 2) * sc3; S({ id: rp + ':d', k: 'vdiv', x: dx, y: gy, w: 0, h: p.ch * sc3, op: op3, tf: fx }); X({ id: rp + ':x', x: dx, y: gy + p.ch * sc3 / 2 - fx * 0.6, text: '×', f: fx, cx: dx, color: C.muted, pill: true, op: op3 }); }
-        else { var dy = gy + (q.y - p.sep / 2) * sc3; S({ id: rp + ':d', k: 'hdiv', x: gx, y: dy, w: p.cw * sc3, h: 0, op: op3, tf: fx }); X({ id: rp + ':x', x: gx + p.cw * sc3 / 2, y: dy - fx * 0.6, text: '×', f: fx, cx: gx + p.cw * sc3 / 2, color: C.muted, pill: true, op: op3 }); }
-      }
-      renderType(q, gx, gy, sc3, op3, depth + 1);
-    });
+    var gx = ox3 + p.ox * sc3, gy = oy3 + p.oy * sc3;
+    p.rooms.forEach(function (q) { renderType(q, gx, gy, sc3, op3, depth + 1); });
   }
-  // 矢: 隣なら直線、それ以外は曲線。名札は横の矢なら中央、曲線なら中点
+  // 矢: 隣なら直線、それ以外は曲線。名札は横の矢なら中央、曲線なら中点。自分への遷移は箱の上の小さな弧
+  // 同じ両端の遷移は線を 1 本だけ描き、後のものの名札（と条件）を、前の分の高さずつ線から離れる向き（away）へ積む
   function arrow(n, m, AX, AY, sc, op, id) {
     var a = n.pts[n.idx[m.from]], b = n.pts[n.idx[m.to]], ca = n.cells[n.idx[m.from]], cb = n.cells[n.idx[m.to]];
-    var F = n.F, fl = F * 0.7, pts, lx, ly, mid = false, end = false, curve = false, fitW = n.colGap - F * 0.6;
-    var rev = n.arrows.some(function (q) { return q.from === m.to && q.to === m.from; });
-    if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) {
+    var F = n.F, fl = F * 0.7, pts, lx, ly, mid = false, curve = false, fitW = n.colGap - F * 0.6, away = 1;
+    var rev = n.arrows.some(function (q) { return q.from === m.to && q.to === m.from; }), dups = bundle(n.arrows, m), k = dups.indexOf(m);
+    if (m.from === m.to) {
+      var cx = a.x + a.w / 2, sd = Math.min(a.w / 4, F * 0.6), rise = F * 0.75;
+      pts = [[cx - sd, a.y], [cx - sd, a.y - rise], [cx + sd, a.y - rise], [cx + sd, a.y]]; curve = true; mid = true;
+      lx = cx; ly = a.y - F * 0.6 - stackH([dups[0]], fl); fitW = a.w + n.colGap; away = -1;
+    } else if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) {
       var down = cb.r > ca.r, off = rev ? (down ? -1 : 1) * F * 0.55 : 0, x = n.colX[ca.c] + n.colW[ca.c] / 2 + off; fitW = n.colW[ca.c] / 2 + n.colGap - F * 0.5;
       pts = down ? [[x, a.y + a.h], [x, b.y]] : [[x, a.y], [x, b.y + b.h]];
       // 往復は名札を両方右側に、上下に分ける（左に出すと区画の外へはみ出す）
       ly = (pts[0][1] + pts[1][1]) / 2 - fl * 0.6 + (rev ? (off < 0 ? -fl * 0.7 : fl * 0.7) : 0);
-      lx = n.colX[ca.c] + n.colW[ca.c] / 2 + Math.abs(off) + fl * 0.5;
+      lx = n.colX[ca.c] + n.colW[ca.c] / 2 + Math.abs(off) + fl * 0.5; away = off < 0 ? -1 : 1;
     } else if (ca.r === cb.r && Math.abs(ca.c - cb.c) === 1) {
       var right = cb.c > ca.c, yo = rev ? (right ? -1 : 1) * F * 0.55 : 0, y = n.rowY[ca.r] + Math.min(a.h, b.h) / 2 + yo;
       pts = right ? [[a.x + a.w, y], [b.x, y]] : [[a.x, y], [b.x + b.w, y]];
-      lx = (pts[0][0] + pts[1][0]) / 2; ly = yo > 0 ? y + fl * 0.3 : y - fl * 1.5; mid = true;
+      lx = (pts[0][0] + pts[1][0]) / 2; ly = yo > 0 ? y + fl * 0.3 : y - fl * 1.5; mid = true; away = yo > 0 ? 1 : -1;
     } else if (ca.r === cb.r) {
       // 同じ行の遠い相手: 間の箱を貫かず、上を越える弧
       var sx0 = a.x + a.w / 2, ex0 = b.x + b.w / 2, top = Math.min(a.y, b.y), lift = F * 2.2;
       var c1a = [sx0, top - lift], c2a = [ex0, top - lift];
       pts = [[sx0, a.y], c1a, c2a, [ex0, b.y]]; curve = true; mid = true;
-      lx = (sx0 + ex0) / 2; ly = top - lift * 0.75 - fl * 1.3; fitW = Math.abs(ex0 - sx0) - F;
+      lx = (sx0 + ex0) / 2; ly = top - lift * 0.75 - fl * 1.3; fitW = Math.abs(ex0 - sx0) - F; away = -1;
     } else {
       var sx, sy, ex, ey, c1, c2;
       if (ca.c === cb.c) {
         sx = a.x + a.w; sy = a.y + Math.min(F, a.h / 2); ex = b.x + b.w; ey = b.y + Math.min(F * 0.9, b.h / 2);
         var bulge = n.colGap * 0.7; c1 = [sx + bulge, sy]; c2 = [ex + bulge, ey];
         lx = Math.max(sx, ex) + bulge * 0.75 + fl * 0.2; ly = (sy + ey) / 2 - fl * 0.6; fitW = bulge;
-      } else if (ca.r === cb.r) {
-        var rightw = cb.c > ca.c;
-        sx = rightw ? a.x + a.w : a.x; sy = a.y + Math.min(F, a.h / 2); ex = rightw ? b.x : b.x + b.w; ey = b.y + Math.min(F * 0.9, b.h / 2);
-        c1 = [sx + (ex - sx) * 0.5, sy]; c2 = [ex - (ex - sx) * 0.5, ey]; fitW = Math.abs(ex - sx) - F * 0.4;
       } else {
         var downw = cb.r > ca.r, rightward = cb.c > ca.c;
         sx = a.x + a.w / 2; sy = downw ? a.y + a.h : a.y; ex = rightward ? b.x : b.x + b.w; ey = b.y + Math.min(F * 0.9, b.h / 2);
-        c1 = [sx, sy + (ey - sy) * 0.7]; c2 = [ex - (ex - sx) * 0.35, ey]; fitW = Math.abs(ex - sx) * 0.6;
+        c1 = [sx, sy + (ey - sy) * 0.7]; c2 = [ex - (ex - sx) * 0.35, ey]; fitW = Math.abs(ex - sx) * 0.6; away = downw ? 1 : -1;
       }
       var bz = function (tt) { var u = 1 - tt; return [u * u * u * sx + 3 * u * u * tt * c1[0] + 3 * u * tt * tt * c2[0] + tt * tt * tt * ex, u * u * u * sy + 3 * u * u * tt * c1[1] + 3 * u * tt * tt * c2[1] + tt * tt * tt * ey]; };
       if (ca.c !== cb.c) { var mp = bz(0.5); lx = mp[0]; ly = mp[1] - fl * 0.65; mid = true; }
       pts = [[sx, sy], c1, c2, [ex, ey]]; curve = true;
     }
+    // 縦の隣への束は、積んだ名札の真ん中を線の真ん中に
+    if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) ly -= (stackH(dups, fl) - stackH([dups[0]], fl)) / 2;
+    ly += away > 0 ? stackH(dups.slice(0, k), fl) : -stackH(dups.slice(1, k + 1), fl);
     var P = function (p) { return [AX + p[0] * sc, AY + p[1] * sc]; };
     var ends = [n.path + '#' + m.from, n.path + '#' + m.to], ch = m.change; if (ch === '削') op *= 0.5;
-    A({ id: id, pts: pts.map(P), curve: curve, color: ch ? chColor(ch) : C.fg, dash: ch === '削', head: true, op: op, ends: ends, tf: fl * sc });
+    // 後のものを選んでも 1 本の線が光るよう、線の ends にその id も入れる
+    if (!k) A({ id: id, pts: pts.map(P), curve: curve, color: ch ? chColor(ch) : C.fg, dash: ch === '削', head: true, op: op, ends: ends.concat(dups.slice(1).map(function (q) { return n.path + ':a' + n.arrows.indexOf(q); })), tf: fl * sc });
     var lp = P([lx, ly]), lw = tw(m.by, fl * sc);
-    X({ id: id + ':t', x: lp[0], y: lp[1], text: m.by, f: fl * sc, end: end, cx: mid ? lp[0] : undefined, pill: true, color: ch ? chColor(ch) : C.muted, strike: ch === '削', fitW: fitW * sc, op: op });
-    if (m.when) X({ id: id + ':w', x: lp[0], y: lp[1] + fl * 1.25 * sc, text: whenText(m.when), f: fl * 0.72 * sc, end: end, cx: mid ? lp[0] : undefined, pill: true, color: C.amber, fitW: fitW * 1.3 * sc, op: op });
+    X({ id: id + ':t', x: lp[0], y: lp[1], text: m.by, f: fl * sc, cx: mid ? lp[0] : undefined, pill: true, color: ch ? chColor(ch) : C.muted, strike: ch === '削', fitW: fitW * sc, op: op });
+    if (m.when) X({ id: id + ':w', x: lp[0], y: lp[1] + fl * 1.25 * sc, text: whenText(m.when), f: fl * 0.72 * sc, cx: mid ? lp[0] : undefined, pill: true, color: C.amber, fitW: fitW * 1.3 * sc, op: op });
     out.hits.push({ id: id, x: mid ? lp[0] - lw / 2 : lp[0], y: lp[1], w: lw, h: fl * sc * 1.25, f: fl * sc, op: op, ref: { kind: 'morphism', t: n.t, m: m, path: id }, ends: ends });
   }
 
@@ -603,8 +580,14 @@ function buildStruct(M, open, pins) {
   }
   var F0 = FONT[0], RP = F0 * 0.4, RG = 240, worlds = {};
   var usedAsPart = {}; M.types.forEach(function (t) { (t.objects || []).forEach(function (o) { if (o.holds && o.holds.parts) o.holds.parts.forEach(function (p) { usedAsPart[p.type] = true; }); }); });
+  // 自分を含む型（木）や互いを含む型は、どれも部品なので最上位から辿れず消える。辿れない型は、型の順に最上位にする
+  var reached = {}, reach = function (id) { if (reached[id]) return; reached[id] = true; (T[id].objects || []).forEach(function (o) { if (o.holds && o.holds.parts) o.holds.parts.forEach(function (p) { reach(p.type); }); }); };
+  M.types.forEach(function (t) { if (!usedAsPart[t.id]) reach(t.id); });
+  M.types.forEach(function (t) { if (!reached[t.id]) { usedAsPart[t.id] = false; reach(t.id); } });
+  // 区画は左から 依頼 → 型 → 表（世界をまたぐ線はこの並びを前提に引く）。設計図の worlds の順には依らない
+  var order = ['api', 'domain', 'db'], regions = M.worlds.slice().sort(function (a, b) { return order.indexOf(a.id) - order.indexOf(b.id); });
   var wx = 0, maxH = 0;
-  M.worlds.forEach(function (w) {
+  regions.forEach(function (w) {
     var list = M.types.filter(function (t) { return t.world === w.id && (w.id === 'db' || !usedAsPart[t.id]); });
     var nodes = list.map(function (t) { return typeNode(t, undefined, 1, t.id); });
     var inner;
@@ -624,7 +607,7 @@ function buildStruct(M, open, pins) {
     wx += rw + RG; maxH = Math.max(maxH, rh);
   });
   var top = 100;
-  M.worlds.forEach(function (w) {
+  regions.forEach(function (w) {
     var r = worlds[w.id]; r.y = top;
     S({ id: 'R:' + w.id, k: 'region', x: r.x, y: r.y, w: r.w, h: r.h, r: F0 * 0.3, fit: true });
     X({ id: 'R:' + w.id + ':t', x: r.x + RP, y: r.y + RP, text: r.name, f: F0, bold: true, fitW: r.w });
@@ -632,15 +615,13 @@ function buildStruct(M, open, pins) {
     r.nodes.forEach(function (n) {
       renderType(n, r.x + RP, r.y + RP + F0 * 1.3, 1, 1, 1);
       var bx = r.x + RP + n.x, by = r.y + RP + F0 * 1.3 + n.y;
-      var bb = n.blend === undefined ? 1 : n.blend;
-      out.boxes[n.t.id] = { x: bx, y: by, w: n.w, h: n.h, F: n.F, world: w.id, col: n.dbCol, rows: !!n.rowsDrawn, pkY: n.pkRel && n.childOrigin && n.rowsDrawn ? n.childOrigin[1] + n.pkRel : by + n.h / 2 };
+      out.boxes[n.t.id] = { x: bx, y: by, w: n.w, h: n.h, world: w.id, col: n.dbCol, pkY: n.pkRel && n.childOrigin && n.rowsDrawn ? n.childOrigin[1] + n.pkRel : by + n.h / 2 };
       if (n.dbCol !== undefined && out.dbCols) { var dc = out.dbCols[n.dbCol]; dc.ax = r.x + RP + dc.x; dc.atop = r.y + RP + F0 * 1.3 + dc.top; dc.abottom = r.y + RP + F0 * 1.3 + dc.bottom; }
     });
     regionRight = 0;
   });
   // 世界をまたぐ対応（点線）。区画の間の溝だけを通す。同じ箱に入る線は縦にずらす
   // 同じ箱から出る線は相手の高さ順、同じ箱に入る線は出元の高さ順に並べる（絡まないように）。線はなめらかな曲線
-  var order = ['api', 'domain', 'db'];
   var maps = M.maps.map(function (m) { var a = out.boxes[m.from], b = out.boxes[m.to]; return a && b ? { m: m, a: a, b: b, ltr: order.indexOf(a.world) < order.indexOf(b.world) } : null; }).filter(Boolean);
   var portY = function (box, side, list, me) {
     var same = list.filter(function (e) { return e.box === box && e.side === side; }).sort(function (p, q) { return p.other - q.other; });
@@ -704,17 +685,14 @@ function buildStruct(M, open, pins) {
 // ---------- 流れ: 列が線、箱が処理。U1 の行の積み方をそのまま継承
 function buildFlow(M) {
   var L = {}; M.logic.forEach(function (l) { L[l.id] = l; });
-  var TY = {}; M.types.forEach(function (t) { TY[t.id] = t; });
-  var NAMES = M.types.map(function (t) { return t.name; }).sort(function (a, b) { return b.length - a.length; });
-  var typeOfLabel = function (label) { var base = String(label || '').split('〈')[0].replace(/\s*✓\s*$/, '').replace(/\s*×N.*$/, '').trim(); for (var i = 0; i < NAMES.length; i++) if (base === NAMES[i] || base.slice(-NAMES[i].length) === NAMES[i]) return M.types.find(function (t) { return t.name === NAMES[i]; }); return null; };
-  // ドメインの処理の種類: 出す線が Lifecycle の型なら Transition、Kind なら Decision、それ以外は Computation
+  // ドメインの処理の種類: 出す線が Lifecycle の型なら Transition、Kind なら Decision、それ以外は Computation。線の型は名前で結ぶ道具（labelType）で引く
   var kindOf = function (st) {
     var outs = Object.keys(st.out || {}).length ? st.out : null;
     if (!outs) M.flows.forEach(function (fl) { fl.steps.forEach(function (q) { if (!outs && q.logic === st.logic && Object.keys(q.out || {}).length) outs = q.out; }); });
-    var forms = Object.keys(outs || {}).map(function (k) { var t = typeOfLabel(outs[k].name); return t ? t.form : null; });
+    var forms = Object.keys(outs || {}).map(function (k) { var t = TID[labelType(outs[k].name)]; return t ? t.form : null; });
     return forms.indexOf('lifecycle') >= 0 ? 'Transition' : forms.indexOf('kind') >= 0 ? 'Decision' : 'Computation';
   };
-  var CW = 96, EXW = 112, WIRE = 36, BOX = 68, GAPF = 64, TITLE = 56, TOP = 160, TITLE_Y = 72;
+  var EXW = 112, WIRE = 36, BOX = 68, GAPF = 64, TITLE = 56;
   var out = { shapes: [], texts: [], arrows: [], hits: [], flowRects: {} }, fid = 0;
   var S = function (o) { out.shapes.push(o); }, X = function (o) { out.texts.push(o); }, A = function (o) { out.arrows.push(o); };
   var lineColor = function (k) { return k === 'api' ? C.api : k === 'stored' ? C.stored : C.value; };
@@ -739,7 +717,7 @@ function buildFlow(M) {
   var hasChange = M.logic.some(function (l) { return l.change; }) || M.flows.some(function (f) { return f.steps.some(function (st) { return st.change; }); });
   if (hasChange) row([['今回', null], ['新規', '新'], ['修正', '改'], ['削除', '削']]);
   X({ x: lgx0, y: lgy, text: '✓ は確かめ済みの印、C/R は振る舞い盤面のコマンド・リードモデルの番号', f: LG, color: C.muted }); lgy += 18;
-  TITLE_Y = lgy + 16; TOP = TITLE_Y + 88;
+  var TITLE_Y = lgy + 16, TOP = TITLE_Y + 88;
 
   M.flows.forEach(function (fl) {
     // 列幅: 線の名前が隣とぶつからない幅
@@ -752,12 +730,12 @@ function buildFlow(M) {
     Object.keys(fl.start).forEach(function (k) { alive[k] = true; kinds[k] = fl.columns[k].kind || 'value'; segStart[k] = y; segLabel[k] = fl.start[k]; });
     var closeSeg = function (col, yEnd, head) {
       var k = kinds[col], wid = 'W:' + fl.id + ':' + col + ':' + segStart[col], cname = fl.columns[col].name;
-      S({ id: wid, k: 'wire', x: wx(col), y: segStart[col], w: 0, h: yEnd - segStart[col], anc: 1e9, color: lineColor(k), col: cname, lab: segLabel[col] || '' });
+      S({ id: wid, k: 'wire', x: wx(col), y: segStart[col], w: 0, h: yEnd - segStart[col], color: lineColor(k), col: cname, lab: segLabel[col] || '' });
       if (segLabel[col]) {
-        X({ id: wid + ':t', x: wx(col) + 6, y: segStart[col] + 10, text: segLabel[col], f: 10.5, anc: TITLE, color: labelColor(k), w500: true, fitW: CW - 8, fitH: WIRE, mn: 9, mx: 16 });
+        X({ id: wid + ':t', x: wx(col) + 6, y: segStart[col] + 10, text: segLabel[col], f: 10.5, color: labelColor(k), w500: true, fitW: CW - 8 });
         out.hits.push({ id: wid + ':t', x: wx(col) + 6, y: segStart[col] + 10, w: Math.min(tw(segLabel[col], 10.5), CW - 8), h: 10.5 * 1.25, f: 10.5, ref: { kind: 'wire', fl: fl, col: cname, label: segLabel[col], path: wid } });
       }
-      if (head) A({ pts: [[wx(col), yEnd - 6], [wx(col), yEnd]], anc: 1e9, color: lineColor(k), head: true, onlyHead: true });
+      if (head) A({ pts: [[wx(col), yEnd - 6], [wx(col), yEnd]], color: lineColor(k), head: true, onlyHead: true });
     };
     y += WIRE;
     fl.steps.forEach(function (st) {
@@ -766,16 +744,16 @@ function buildFlow(M) {
       for (i = 0; i < n; i++) if (alive[i] && i >= a && i <= b) closeSeg(i, byTop, true);
       var bx = x0 + a * CW + 8, bw = (b - a + 1) * CW - 16;
       var fb = ++fid;
-      S({ id: 'L:' + fb, k: 'box', x: bx, y: byTop + 3, w: bw, h: 62, bid: fb, rowH: 14, fit: true, op: bop, ch: ch, ref: { kind: 'logic', lg: lg, st: st, fl: fl, path: 'L:' + fb, cols: fl.columns.slice(a, b + 1).map(function (c) { return c.name; }) } });
-      S({ k: lg.layer === 'domain' ? 'dom' : lg.layer === 'usecase' ? 'uc' : 'per', x: bx + 11, y: byTop + 3 + 7 + 3.5, w: 7, h: 7, pid: fb, min: 3, op: bop });
-      X({ x: bx + 11 + 12, y: byTop + 3 + 7, text: lg.layer === 'domain' ? kindOf(st) : lg.layer === 'usecase' ? 'ユースケース' : '永続化', f: 9.5, pid: fb, color: C.muted, ls: true, fitW: bw - 30, fitH: 14, mn: 8, mx: 14, op: bop });
-      if (lg.ref) X({ x: bx + bw - 11, y: byTop + 3 + 7, text: lg.ref, f: 9.5, pid: fb, color: C.muted, mono: true, end: true, fitW: bw / 2, fitH: 14, mn: 8, mx: 14, op: bop });
-      X({ x: bx + 11, y: byTop + 3 + 7 + 14, text: lg.name, f: 12.5, self: fb, w500: true, fitW: bw - 16, rowH: 18, boxH: 62, closedY: byTop + 3 + 31, mn: 8.5, mx: 20, color: chColor(ch), strike: ch === '削', op: bop });
-      if (lg.note) X({ id: 'L:' + fb + ':n', x: bx + 11, y: byTop + 3 + 7 + 14 + 18, text: lg.note, f: 10.5, pid: fb, color: C.muted, fitW: bw - 16, fitH: 15, mn: 9, mx: 16, op: bop });
+      S({ id: 'L:' + fb, k: 'box', x: bx, y: byTop + 3, w: bw, h: 62, fit: true, op: bop, ch: ch, ref: { kind: 'logic', lg: lg, st: st, fl: fl, path: 'L:' + fb, cols: fl.columns.slice(a, b + 1).map(function (c) { return c.name; }) } });
+      S({ k: lg.layer === 'domain' ? 'dom' : lg.layer === 'usecase' ? 'uc' : 'per', x: bx + 11, y: byTop + 3 + 7 + 3.5, w: 7, h: 7, op: bop });
+      X({ x: bx + 11 + 12, y: byTop + 3 + 7, text: lg.layer === 'domain' ? kindOf(st) : lg.layer === 'usecase' ? 'ユースケース' : '永続化', f: 9.5, color: C.muted, ls: true, fitW: bw - 30, op: bop });
+      if (lg.ref) X({ x: bx + bw - 11, y: byTop + 3 + 7, text: lg.ref, f: 9.5, color: C.muted, mono: true, end: true, fitW: bw / 2, op: bop });
+      X({ x: bx + 11, y: byTop + 3 + 7 + 14, text: lg.name, f: 12.5, w500: true, fitW: bw - 16, color: chColor(ch), strike: ch === '削', op: bop });
+      if (lg.note) X({ id: 'L:' + fb + ':n', x: bx + 11, y: byTop + 3 + 7 + 14 + 18, text: lg.note, f: 10.5, color: C.muted, fitW: bw - 16, op: bop });
       if (lg.fails && lg.fails.length) {
         var ex = x0 + n * CW + 4, eh = 44, lines = lg.fails.length, ty = byTop + 12 + (eh - lines * 14) / 2;
-        S({ k: 'exit', x: ex, y: byTop + 12, w: 0, h: eh, anc: 1e9, op: bop });
-        lg.fails.forEach(function (fz, j) { X({ id: 'L:' + fb + ':f' + j, x: ex + 9, y: ty + j * 14, text: '→ ' + fz, f: 10, anc: TITLE, color: C.fail, fitW: EXW, fitH: 14, mn: 9, mx: 16, op: bop }); });
+        S({ k: 'exit', x: ex, y: byTop + 12, w: 0, h: eh, op: bop });
+        lg.fails.forEach(function (fz, j) { X({ id: 'L:' + fb + ':f' + j, x: ex + 9, y: ty + j * 14, text: '→ ' + fz, f: 10, color: C.fail, fitW: EXW, op: bop }); });
       }
       y += BOX;
       // 箱の後: 終わる線を消し、出た線に新しい名前を付け、残りは続く
@@ -807,7 +785,7 @@ var PINNABLE = { type: 1, table: 1, object: 1 };
 // 写しの例外: src/skills/coder/logic/wires.ts の typeOf・statesOf と同じ結び方。変えたらここも直す
 var labelType = function (label) {
   if (!label) return null;
-  var base = label.split('〈')[0].replace(/\s*✓\s*$/, '').replace(/\s*×N.*$/, '').trim();
+  var base = label.split('〈')[0].replace(/\s*×N.*$/, '').replace(/\s*✓\s*$/, '').trim();
   for (var i = 0; i < TYPE_NAMES.length; i++) if (base === TYPE_NAMES[i] || base.slice(-TYPE_NAMES[i].length) === TYPE_NAMES[i]) return MODEL.types.find(function (t) { return t.name === TYPE_NAMES[i]; }).id;
   return null;
 };
@@ -1031,12 +1009,7 @@ class MapView {
         case 'pt': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.hair + ';border-radius:' + n.r + 'px;box-shadow:0 ' + px(1) + ' ' + px(3) + ' rgba(43,51,64,0.10)'; break;
         case 'chip': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.hair + ';border-radius:' + n.r + 'px'; break;
         case 'prim': st += 'background:' + C.surface + ';border:' + px(1) + ' dashed ' + C.muted + ';border-radius:' + n.r + 'px'; break;
-        case 'ring': st += 'border:' + px(1.5) + ' solid ' + C.acc + ';border-radius:' + n.r + 'px'; break;
-        case 'inv': st += 'border:' + px(1.5) + ' dashed ' + C.amber + ';border-radius:' + n.r + 'px'; break;
-        case 'pin': st += 'background:' + C.acc + ';border-radius:50%'; break;
         case 'txt': break;
-        case 'vdiv': st += 'border-left:' + px(1) + ' dashed ' + C.muted; break;
-        case 'hdiv': st += 'border-top:' + px(1) + ' dashed ' + C.muted; break;
         case 'wire': var lw = linked(n) || hl[n.id + ':t']; if (lw) linkedWire[n.id] = 1; st = 'position:absolute;left:' + (n.x - (lw ? 1.25 : 0.75) / s) + 'px;top:' + n.y + 'px;width:' + px(lw ? 2.5 : 1.5) + ';height:' + n.h + 'px;background:' + (lw ? C.acc : n.color); return st;
         case 'box': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.line + ';border-radius:2px;box-shadow:0 ' + px(1) + ' ' + px(2) + ' rgba(43,51,64,0.08)'; break;
         case 'dom': st += 'border:' + px(1.25) + ' solid ' + C.fg + ';border-radius:50%'; break;
@@ -1045,7 +1018,6 @@ class MapView {
         case 'exit': st += 'border-left:' + px(1) + ' dashed ' + C.fail; break;
         case 'sw': st += 'border-top:' + px(1.5) + ' solid ' + n.color; break;
         case 'swdash': st += 'border-top:' + px(1) + ' dashed ' + n.color; break;
-        case 'cdot': { var D = Math.min(Math.max(n.w, 6 / s), n.cap); st = 'position:absolute;left:' + (n.x + n.w + n.i * n.w * 1.5 - D - n.i * D * 1.5) + 'px;top:' + n.y + 'px;width:' + D + 'px;height:' + D + 'px;background:' + n.color + ';border-radius:50%;' + opStyle(n.op); break; }
         case 'rbar': st += 'width:0'; break;
         case 'lgch': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.hair + ';border-radius:2px'; break;
       }
@@ -1056,7 +1028,7 @@ class MapView {
     };
     var shapes = [], texts = [], arrows = [];
     L.shapes.forEach(function (n) {
-      if (view === 'struct' && n.k !== 'region' && Math.max(n.w, n.h) * s < (n.k === 'pin' ? 4 : n.k === 'cdot' ? 0 : n.w === 0 || n.h === 0 ? 10 : 8)) return;
+      if (view === 'struct' && n.k !== 'region' && Math.max(n.w, n.h) * s < (n.w === 0 || n.h === 0 ? 10 : 8)) return;
       if (view === 'struct' && n.tf && n.tf * s < 6.5) return;
       if (!inView(n.x, n.y, n.w, n.h)) return;
       shapes.push({ style: shapeStyle(n) });
@@ -1082,7 +1054,7 @@ class MapView {
       if (view === 'struct' && !a.always && Math.max(bw, bh) * s < 10) return;
       if (view === 'struct' && a.tf && a.tf * s < 6.5) return;
       if (!inView(x0, y0, bw, bh)) return;
-      var on = hl[a.id] || (a.ends && (hl[a.ends[0]] || hl[a.ends[1]])), color = on ? C.acc : a.color, aop = a.op;
+      var on = hl[a.id] || (a.ends && a.ends.some(function (e) { return hl[e]; })), color = on ? C.acc : a.color, aop = a.op;
       if (a.far && !on) { var e0 = a.pts[0], e1 = a.pts[a.pts.length - 1], in0 = inView(e0[0], e0[1], 0, 0), in1 = inView(e1[0], e1[1], 0, 0); if (!in0 || !in1) aop = (aop === undefined ? 1 : aop) * 0.35; }
       var m = 12 / s; x0 -= m; y0 -= m; var w = bw + 2 * m, h = bh + 2 * m;
       var sw = (a.sw || 1.5) * (on ? 1.6 : 1) / s, hl2 = 7 / s, hw = 3.2 / s, pts = a.pts, p1 = pts[pts.length - 2], p2 = pts[pts.length - 1];
@@ -1103,9 +1075,8 @@ class MapView {
         d += ' L' + P(body[body.length - 1]);
       } else d = body.map(function (p, i) { return (i ? 'L' : 'M') + P(p); }).join(' ');
       var head = a.head ? [[p2[0], p2[1]], [bx - uy * hw, by + ux * hw], [bx + uy * hw, by - ux * hw]].map(function (p) { return (p[0] - x0).toFixed(2) + ',' + (p[1] - y0).toFixed(2); }).join(' ') : '';
-      var ps = 'fill:none;stroke:' + color + ';stroke-width:' + (a.dbl ? sw * 3 : sw) + 'px;stroke-linecap:round;stroke-linejoin:round;' + (a.dash && !on ? 'stroke-dasharray:' + (5 / s) + ' ' + (4 / s) + ';' : '');
-      var ps2 = a.dbl ? 'fill:none;stroke:' + C.surface + ';stroke-width:' + (sw * 1.4) + 'px;stroke-linecap:round;stroke-linejoin:round' : 'display:none';
-      arrows.push({ vb: '0 0 ' + w.toFixed(2) + ' ' + h.toFixed(2), style: 'position:absolute;left:' + x0 + 'px;top:' + y0 + 'px;width:' + w + 'px;height:' + h + 'px;overflow:visible;pointer-events:none;' + opStyle(aop), d: d || 'M 0 0', d2: a.dbl ? d : 'M 0 0', ps: ps, ps2: ps2, head: head || '0,0', hs: a.head ? 'fill:' + color + ';stroke:none' : 'display:none' });
+      var ps = 'fill:none;stroke:' + color + ';stroke-width:' + sw + 'px;stroke-linecap:round;stroke-linejoin:round;' + (a.dash && !on ? 'stroke-dasharray:' + (5 / s) + ' ' + (4 / s) + ';' : '');
+      arrows.push({ vb: '0 0 ' + w.toFixed(2) + ' ' + h.toFixed(2), style: 'position:absolute;left:' + x0 + 'px;top:' + y0 + 'px;width:' + w + 'px;height:' + h + 'px;overflow:visible;pointer-events:none;' + opStyle(aop), d: d || 'M 0 0', ps: ps, head: head || '0,0', hs: a.head ? 'fill:' + color + ';stroke:none' : 'display:none' });
     });
     // ホバー: 地図に描けない約束（不変条件）だけを、箱の下に 1 行の注釈として出す
     var hov = this.state.hover, hinv = null;
@@ -1128,14 +1099,14 @@ class MapView {
   // 盤面の中身（世界の div の innerHTML）。順は 箱 → 矢 → 文字
   static markup(v) {
     return v.shapes.map(function (n) { return '<div style="' + n.style + '"></div>'; }).join('') +
-      v.arrows.map(function (a) { return '<svg viewBox="' + a.vb + '" preserveAspectRatio="none" style="' + a.style + '" aria-hidden="true"><path d="' + a.d + '" style="' + a.ps + '"></path><path d="' + a.d2 + '" style="' + a.ps2 + '"></path><polygon points="' + a.head + '" style="' + a.hs + '"></polygon></svg>'; }).join('') +
+      v.arrows.map(function (a) { return '<svg viewBox="' + a.vb + '" preserveAspectRatio="none" style="' + a.style + '" aria-hidden="true"><path d="' + a.d + '" style="' + a.ps + '"></path><polygon points="' + a.head + '" style="' + a.hs + '"></polygon></svg>'; }).join('') +
       v.texts.map(function (t) { return '<div style="' + t.style + '">' + escText(t.text) + '</div>'; }).join('');
   }
   paint() {
     if (!this.el || !this.el.isConnected) return;
-    var v = this.renderVals(), q = this.q;
-    // 盤面は描くたびに innerHTML で作り直す。スマホのピンチで引っかかるなら、最初に疑う所
-    q.world.style.cssText = v.worldStyle; q.world.innerHTML = MapView.markup(v);
+    var v = this.renderVals(), q = this.q, html = MapView.markup(v);
+    // 盤面は中身が変わったときだけ innerHTML で作り直す（カメラは world の transform だけ）。スマホのピンチで引っかかるなら、最初に疑う所
+    q.world.style.cssText = v.worldStyle; if (html !== this.drawn) { this.drawn = html; q.world.innerHTML = html; }
     q.vp.style.cursor = v.cursor; q.pop.style.cssText = v.popStyle; q.pop.textContent = v.popText;
     q.title.textContent = v.title; q.hint.textContent = v.hint;
     q.flow.setAttribute('aria-selected', String(v.isFlow)); q.struct.setAttribute('aria-selected', String(!v.isFlow)); q.flow.disabled = !this.hasFlows();
@@ -1145,7 +1116,7 @@ class MapView {
   attach(el) {
     if (this.el === el) return;
     var self = this, pick = function (name) { return el.querySelector('[data-m="' + name + '"]'); };
-    this.el = el; this.q = { vp: pick('vp'), world: pick('world'), pop: pick('pop'), title: pick('title'), hint: pick('hint'), flow: pick('flow'), struct: pick('struct'), flowDot: pick('flow-dot'), structDot: pick('struct-dot') };
+    this.el = el; this.drawn = ''; this.q = { vp: pick('vp'), world: pick('world'), pop: pick('pop'), title: pick('title'), hint: pick('hint'), flow: pick('flow'), struct: pick('struct'), flowDot: pick('flow-dot'), structDot: pick('struct-dot') };
     var vp = this.q.vp;
     vp.addEventListener('pointerdown', function (e) { self.down(e); });
     vp.addEventListener('pointermove', function (e) { self.move(e); });
@@ -1226,11 +1197,11 @@ return { View: MapView };
 
 <script>
 // 状態は DB だけが持つ。ページは onSnapshot で描き直し、ユーザ操作（要レビュー・承認・判断の回答・付箋へのコメント）だけを answers・reviews・comments に書く
-// 文書の置き場所は fleet/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
+// 文書の置き場所は fleet/db/fleet-db.ts が唯一の定義で、mod が publish のときに DB の fleet/db-paths に置く。ページはそれを読む（知っているのはその 1 つだけ）
 // 写しの例外: ビルドせずに publish するので、required・レビュー待ちの規則は src/fleet/logic/review.ts の写しを持つ。review を変えたらここも直す
 const SHIPS = ['requirement', 'behavior', 'architect', 'coder', 'qa', 'cs', 'security', 'ops']
 const NAME = { requirement: '要求', behavior: '振る舞い', architect: 'アーキテクト', coder: '実装', qa: 'QA', cs: 'CS', security: 'セキュリティ', ops: '運用' }
-const S = { paths: null, model: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, links: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '', documents: {}, drawn: '' }
+const S = { paths: null, model: null, db: undefined, comments: null, loaded: false, ships: {}, asks: {}, decisions: [], answers: {}, reviews: {}, links: {}, requirements: [], behavior: { moments: [], views: [], readModels: [], flows: [], hotspots: [] }, quality: { checks: [], findings: [], charters: [] }, journal: [], threads: {}, replies: {}, peek: null, remarked: '', problems: [], remaining: null, at: 0, locked: false, done: {}, open: null, free: null, drafts: {}, failed: '', unsendable: '', documents: {}, drawn: '', dockDrawn: '', sheetDrawn: '' }
 const $ = id => document.getElementById(id)
 const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '')
@@ -1271,7 +1242,7 @@ const view = ship => {
 // 承認ボタンの文言。何を認めるのかを言う
 const approveLabel = ship => (ship === 'qa' ? 'QA は十分と認める' : '承認する')
 // 図は DB の文字列なので HTML として埋めない。SVG は画像で、それ以外は文字のまま出す
-const fig = diagram => (diagram ? `<div class="fig">${/^\s*<svg\b/.test(diagram) ? svgImage(diagram) : `<pre class="sk">${esc(diagram)}</pre>`}</div>` : '')
+const fig = diagram => (diagram ? `<div class="fig">${/^\s*<svg\b/.test(diagram) ? svgImage(diagram) : `<pre class="sk">${mono(diagram)}</pre>`}</div>` : '')
 const ordered = ask => [...ask.options.filter(o => o.id !== ask.recommended), ...ask.options.filter(o => o.id === ask.recommended)]
 
 // --- 描画
@@ -1294,7 +1265,8 @@ const unready = () => (S.db === null ? `<p class="req wait">${esc(S.failed || '�
 const glyph = cls => {
   const open = 'class="gly" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"'
   if (cls === 's-converged') return `<svg ${open}><path d="m6.5 12.5 3.8 3.8 7.2-8.3" stroke="var(--muted)" stroke-width="2"/></svg>`
-  if (cls === 's-working') return `<svg ${open}><circle cx="12" cy="12" r="8" stroke="var(--line)" stroke-width="2"/><path class="spin" d="M12 4a8 8 0 0 1 8 8" stroke="var(--fg)" stroke-width="2"/></svg>`
+  // 回すのは svg ごと（中の path を回すと WebKit は合成できない）
+  if (cls === 's-working') return `<svg ${open.replace('"gly"', '"gly spin"')}><circle cx="12" cy="12" r="8" stroke="var(--line)" stroke-width="2"/><path d="M12 4a8 8 0 0 1 8 8" stroke="var(--fg)" stroke-width="2"/></svg>`
   if (cls === 's-review') return `<svg ${open}><path d="M3 12s3.2-5.5 9-5.5 9 5.5 9 5.5-3.2 5.5-9 5.5S3 12 3 12Z" stroke="currentColor" stroke-width="1.75"/><circle cx="12" cy="12" r="2.25" fill="currentColor"/></svg>`
   if (cls === 's-stuck') return `<svg ${open}><path d="M12 3.5 22 20.5H2L12 3.5Z" stroke="currentColor" stroke-width="1.75"/><path d="M12 10v5M12 17.8v.01" stroke="currentColor" stroke-width="2"/></svg>`
   return `<svg ${open}><path d="M9.5 8v8M14.5 8v8" stroke="var(--muted)" stroke-width="2"/></svg>`
@@ -1307,7 +1279,7 @@ const shipTile = ship => {
 const sum = (to, count, label) => `<button class="sum" data-act="jump" data-to="${to}"><b>${count}</b>${label}</button>`
 const glance = () => {
   if (unready()) return unready()
-  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
+  const brief = (S.failed || S.unsendable ? `<p class="warn">${esc(S.failed || S.unsendable)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
   const log = decided().map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div>${evidence(d.evidence)}</div>`).join('')
   const sums = `<div class="sums">${sum('remain', S.remaining?.length ?? '–', '残り')}${sum('assumed', S.behavior.hotspots.length, '仮定')}${sum('decided', decided().length, '決定')}</div>`
   return `<header class="band">${brief}${sums}</header><div class="tiles">${SHIPS.map(shipTile).join('')}</div>${toDecide().length > 1 ? decideView() : ''}${linksView()}<div id="remain">${remainingView()}</div><div id="assumed">${assumedView()}</div>
@@ -1332,8 +1304,8 @@ const assumedView = () => {
   const list = S.behavior.hotspots.map(h => glanceRow(`data-act="peek" data-peek="h:${esc(h.question)}"`, 'k-hot', '仮定', h.question, `behavior の仮定: ${h.assumption}`))
   return list.length ? `<div>${head('仮定で進めていること', list.length)}${list.join('')}</div>` : ''
 }
-// 全 ship の成果物へのリンク。URL は DB の文字列なので https 以外は描かない。1 つも無ければ出さない
-const shipLinks = ship => (S.links[ship]?.links ?? []).filter(l => /^https:\/\//.test(l.url))
+// 全 ship の成果物へのリンク。URL は DB の文字列なので https かこの artifact の assets（/_blob/）以外は描かない。1 つも無ければ出さない
+const shipLinks = ship => (S.links[ship]?.links ?? []).filter(l => /^(https:\/\/|\/_blob\/)/.test(l.url))
 const linksView = () => {
   const rows = SHIPS.flatMap(ship => shipLinks(ship).map(l => `<a class="yt" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="ytt"><span>${esc(l.label)}</span><small>${NAME[ship]}</small></span><span class="go" aria-hidden="true">›</span></a>`))
   return rows.length ? `<div>${head('成果物')}${rows.join('')}</div>` : ''
@@ -1448,7 +1420,7 @@ const board = (moments, main) => {
   const at = name => ({ x: x(where[name].col), y: top(`g:${where[name].agg}`) + where[name].k * EM.step, col: where[name].col })
   const card = (kind, title, sketch, change, key, laneKey, i) => {
     const t = top(laneKey)
-    box(`emc${kind === 'policy' ? ' pol' : ''}`, x(i), t, EM.actor - 12, `${tag(change)}<span class="emk">${{ screen: '人', view: '画面（読むだけ）', agent: 'AI', policy: '規則' }[kind]}</span><span class="emt">${esc(title)}</span>${sketch ? `<pre class="emsk">${esc(sketch)}</pre>` : ''}`, key, change === '既')
+    box(`emc${kind === 'policy' ? ' pol' : ''}`, x(i), t, EM.actor - 12, `${tag(change)}<span class="emk">${{ screen: '人', view: '画面（読むだけ）', agent: 'AI', policy: '規則' }[kind]}</span><span class="emt">${esc(title)}</span>${sketch ? `<pre class="emsk">${mono(sketch)}</pre>` : ''}`, key, change === '既')
     return t
   }
   // リードモデルの付箋を積み、出どころの事実から線を引き、読む者（同じ列の画面か、右隣の時点のカード）へ点線を引く
@@ -1562,7 +1534,9 @@ const remark = async (key, button) => {
   document.activeElement?.blur()
   S.db.doc(`${S.paths.comments}/${id}`).set({ ship: 'behavior', on: key, text, at: new Date().toISOString() }).catch(fail)
   const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `behavior の付箋「${key}」へのコメント（id: ${id}）。behavior に回してください:\n${text}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
-  if (!sent.threadId) { S.remarked = `flagship に届いていません（${sent.error?.code ?? 'unknown'}）。コメントは残りました`; renderSheet() }
+  if (sent.threadId) return delivered()
+  S.remarked = `flagship に届いていません（${sent.error?.code ?? 'unknown'}）。コメントは残りました`
+  renderSheet()
 }
 const resolveThread = id => { const t = S.threads[id]; if (t) S.db.doc(`${S.paths.comments}/${id}`).set({ ...t, resolved: true }).catch(fail) }
 // 値は盤面の語の順（コマンドの入力・事実の属性）に並べる
@@ -1614,7 +1588,7 @@ const caseRow = x => `<div class="qrow"><span class="qk ${OUTCOME[x.outcome] ?? 
 const qaVerdict = list => {
   const v = S.quality.verdict
   if (!v) return '<div class="qv"><span class="qvm">判定はまだ</span><span class="cnt">qa がケースを消化しています</span></div>'
-  const drift = v.merge === '可' && list.some(x => x.outcome !== '合格') ? '<p class="warn">判定のあとでケースが増えたか、結果が変わった</p>' : ''
+  const drift = v.merge === '可' && (list.some(x => x.outcome !== '合格') || openFindings().length > 0) ? '<p class="warn">判定のあとで、合格していないケースか未解決の発見が出た</p>' : ''
   return `<div class="qv ${{ 可: 'ok', 条件つき: 'mid', 不可: 'ng' }[v.merge]}"><span class="cnt">マージしてよいか · ${hhmm(v.at)}</span><span class="qvm">${esc(v.merge)}</span><p class="stxt">${esc(v.why)}</p>${drift}</div>`
 }
 const qualityView = () => {
@@ -1656,26 +1630,34 @@ const PAGES = {
   cs: { body: sub => documentPage('cs', sub === 'unasked' ? 'unaskedSpecs' : 'guide'), label: 'ガイドと聞かずに決めた仕様', tabs: () => [['', 'ガイド'], ['unasked', '聞かずに決めた']] },
   ops: { body: () => documentPage('ops', 'operationsDesign'), label: '運用設計書', tabs: () => [['', '運用設計書']] },
 }
-// ページのドック: タブと、レビュー待ちなら承認
-// ship のページの下のドック: ページの切り替えと承認。tabs は [サブページ, 名前] で、'' が最初のページ
+// ship のページの下のドック: ページの切り替え・要レビュー・レビュー待ちなら承認。tabs は [サブページ, 名前] で、'' が最初のページ
 const pageDock = (ship, sub = '') => {
   const page = PAGES[ship]
   const tab = ([to, label]) => `<a href="#${ship}${to ? `.${to}` : ''}"${to === sub ? ' aria-current="page"' : ''}>${esc(label)}</a>`
-  return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${approveAct(ship)}</div>`
+  return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${reviewToggle(ship)}${approveAct(ship)}</div>`
+}
+// ドックの中身: ship のページならそのドック、それ以外は あなたの番 のレール
+const dockHtml = (ship, sub) => {
+  if (PAGES[ship]) return (PAGES[ship].dock ?? pageDock)(ship, sub)
+  const list = items()
+  S.at = Math.max(0, Math.min(S.at, list.length - 1))
+  if (list.length === 0) return '<div class="dnone gut"><span class="h2">あなたの番</span><span class="cnt">なし</span></div>'
+  return `<div class="rail${S.locked ? ' locked' : ''}" id="rail">${list.map(slide).join('')}</div>
+    <div class="nav"><button class="arrow${S.at <= 0 ? ' off' : ''}" data-act="go" data-to="${S.at - 1}" aria-label="前の件">‹</button><span class="navt">${S.at + 1}/${list.length}</span><button class="arrow${S.at >= list.length - 1 ? ' off' : ''}" data-act="go" data-to="${S.at + 1}" aria-label="次の件">›</button></div>`
 }
 const renderDock = (ship, sub) => {
   const dock = $('dock')
   dock.hidden = (ship !== '' && !PAGES[ship]) || !S.db || !S.loaded
   if (dock.hidden) return
-  if (PAGES[ship]) { dock.innerHTML = (PAGES[ship].dock ?? pageDock)(ship, sub); return }
+  // 中身が同じなら作り直さない（作り直すと、レールの位置と打っている欄が置き直される）
+  const html = dockHtml(ship, sub)
+  if (html === S.dockDrawn) return
+  S.dockDrawn = html
   const typing = document.activeElement?.dataset?.free
   const caret = typing && document.activeElement.selectionStart
-  const list = items()
-  S.at = Math.max(0, Math.min(S.at, list.length - 1))
-  if (list.length === 0) { dock.innerHTML = '<div class="dnone gut"><span class="h2">あなたの番</span><span class="cnt">なし</span></div>'; return }
-  dock.innerHTML = `<div class="rail${S.locked ? ' locked' : ''}" id="rail">${list.map(slide).join('')}</div>
-    <div class="nav"><button class="arrow${S.at <= 0 ? ' off' : ''}" data-act="go" data-to="${S.at - 1}" aria-label="前の件">‹</button><span class="navt">${S.at + 1}/${list.length}</span><button class="arrow${S.at >= list.length - 1 ? ' off' : ''}" data-act="go" data-to="${S.at + 1}" aria-label="次の件">›</button></div>`
+  dock.innerHTML = html
   const rail = $('rail')
+  if (!rail) return
   rail.scrollLeft = S.at * rail.clientWidth
   rail.addEventListener('scroll', onScroll, { passive: true })
   const field = typing && rail.querySelector(`[data-free="${CSS.escape(typing)}"]`)
@@ -1706,15 +1688,12 @@ const slide = item => {
     <span class="al">${esc(o.label)}${o.id === ask.recommended ? '<span class="atag">推奨</span>' : ''}</span><span class="ae">${esc(o.consequence)}</span></button>`).join('')
   return `<div class="slide">${question}<div class="acts">${opts}</div><div class="slk"><button data-act="open" data-ask="${esc(item.id)}">詳細</button><button data-act="free" data-ask="${esc(item.id)}">自由回答</button></div></div>`
 }
-const renderSheet = () => {
-  const sheet = $('sheet')
-  // コメントを打っている間は描き直さない（打った字が消えないように）
-  if (S.peek && document.activeElement?.dataset?.free?.startsWith('c:') && !sheet.hidden) return
+// シートの中身: 付箋の中身か、開いた判断の詳細。どちらでもなければ空
+const sheetHtml = () => {
   const peek = S.peek && peekSheet()
-  if (peek) { sheet.hidden = false; sheet.innerHTML = peek; return }
+  if (peek) return peek
   const ask = S.asks[S.open]
-  sheet.hidden = !ask
-  if (!ask) return
+  if (!ask) return ''
   const opts = ask.options.map(o => `<div class="opt2"><div class="ot">${esc(o.label)}${o.id === ask.recommended ? '<span class="otag">推奨</span>' : ''}</div>
     <div class="oc">${esc(o.consequence)}</div><div class="stxt">${esc(o.detail.text)}</div>${fig(o.detail.diagram)}</div>`).join('')
   const ev = ask.evaluation
@@ -1724,10 +1703,21 @@ const renderSheet = () => {
       const cell = ev.cells[k]?.[a] ?? {}
       return `<td class="${o.id === ask.recommended ? 'rec' : ''}"><span class="mk">${esc(cell.rating)}</span><span class="nt">${esc(cell.note)}</span></td>`
     }).join('')}</tr>`).join('')}</table></div></div>` : ''
-  sheet.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="判断の詳細"><div class="sbody gut"><div class="sq">${esc(ask.question)}</div>
+  return `<div class="sheet" role="dialog" aria-modal="true" aria-label="判断の詳細"><div class="sbody gut"><div class="sq">${esc(ask.question)}</div>
     <div class="sec2"><div class="sh">背景</div><div class="stxt">${esc(ask.background.text)}</div>${fig(ask.background.diagram)}</div>
     <div class="sec2"><div class="sh">選択肢ごとの詳細</div>${opts}</div>${table}</div>
     <div class="sfoot gut"><button class="close" data-act="close">閉じる</button></div></div>`
+}
+const renderSheet = () => {
+  const sheet = $('sheet')
+  // コメントを打っている間は描き直さない（打った字が消えないように）
+  if (S.peek && document.activeElement?.dataset?.free?.startsWith('c:') && !sheet.hidden) return
+  const html = sheetHtml()
+  sheet.hidden = !html
+  // 中身が同じなら作り直さない（作り直すと、読んでいた位置が先頭に戻る）。閉じたら忘れるので、開き直すと先頭から
+  if (html === S.sheetDrawn) return
+  S.sheetDrawn = html
+  if (html) sheet.innerHTML = html
 }
 
 // --- 操作
@@ -1761,6 +1751,8 @@ const reviewDoc = ship => S.db.doc(`${S.paths.reviews}/${ship}`)
 const answerDoc = askId => S.db.doc(`${S.paths.answers}/${askId}`)
 const clean = object => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined))
 const fail = error => { S.failed = `書き込めませんでした（${error?.code ?? error}）。もう一度試してください`; render() }
+// 送れたら、読み込んだときの「このビューからは送れない」を消す（送れるかどうかは後から変わる）
+const delivered = () => { if (S.unsendable) { S.unsendable = ''; render() } }
 
 const toggle = ship => {
   const review = S.reviews[ship] ?? {}
@@ -1780,24 +1772,33 @@ const answer = async (askId, body, msg, says, button) => {
   const item = yourTurn().find(i => i.key === `ask:${askId}`)
   if (!item) return
   const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
-  const done = { item, msg, warn: '', thread: null }
-  done.undo = () => {
-    answerDoc(askId).delete().catch(fail)
-    if (done.thread) S.comments.sendToClaude({ threadId: done.thread, text: `判断 ${askId} の回答を取り消します` }).catch(() => {})
-  }
+  const done = { item, msg, warn: '', thread: null, undone: false }
   S.free = null
   finish(item.key, done)
-  answerDoc(askId).set(body).catch(fail)
+  // 同じ文書への書き込みは前のが済んでから（db.d.ts）。取り消しの削除も「届いていない」の印も、この回答の書き込みに続ける
+  let writing = answerDoc(askId).set(body).catch(fail)
+  const write = next => { writing = writing.then(next).catch(fail) }
+  const withdraw = thread => S.comments.sendToClaude({ threadId: thread, text: `判断 ${askId} の回答を取り消します` }).catch(() => {})
+  done.undo = () => {
+    done.undone = true
+    write(() => answerDoc(askId).delete())
+    if (done.thread) withdraw(done.thread)
+  }
   const text = `判断 ${askId}「${S.asks[askId].question}」に${says}`
   const sent = anchor ? await S.comments.sendToClaude({ anchor, text }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
-  if (sent.threadId) done.thread = sent.threadId
-  else {
-    const code = sent.error?.code ?? 'unknown'
-    done.warn = `flagship には届いていません（${code}）。回答は記録しました`
-    S.failed = `判断の回答を flagship に送れませんでした（${code}）`
-    answerDoc(askId).set({ ...body, undelivered: code }).catch(fail)
-    render()
+  // 送っている間に取り消していたら、届いた回答にだけ取り消しを送り、届かなかった印は書かない
+  if (sent.threadId) {
+    delivered()
+    if (done.undone) withdraw(sent.threadId)
+    else done.thread = sent.threadId
+    return
   }
+  if (done.undone) return
+  const code = sent.error?.code ?? 'unknown'
+  done.warn = `flagship には届いていません（${code}）。回答は記録しました`
+  S.failed = `判断の回答を flagship に送れませんでした（${code}）`
+  write(() => answerDoc(askId).set({ ...body, undelivered: code }))
+  render()
 }
 const pick = (askId, optionId, button) => {
   const option = S.asks[askId].options.find(o => o.id === optionId)
@@ -1816,7 +1817,7 @@ const resend = async (askId, button) => {
   const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
   const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `判断 ${askId}「${S.asks[askId].question}」に答えました: ${said(askId, body)}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
   const { undelivered, ...answer } = body
-  if (sent.threadId) { S.failed = ''; answerDoc(askId).set(answer).catch(fail); return }
+  if (sent.threadId) { S.failed = ''; delivered(); answerDoc(askId).set(answer).catch(fail); return }
   S.failed = `判断の回答を flagship に送れませんでした（${sent.error?.code ?? 'unknown'}）。ページを再読み込みすると、送信の許可をもう一度聞かれます`
   render()
 }
@@ -1852,36 +1853,38 @@ document.addEventListener('input', event => { if (event.target.dataset.free) S.d
 addEventListener('hashchange', () => { $('glance').scrollTop = 0; S.peek = null; render() })
 
 // --- DB を読む
+// 読めなくなった購読は止まる（db.d.ts）。どの購読でも同じく、読めないと出す
+const unreadable = error => { S.failed = `fleet のデータを読めません（${error.code}）`; S.db = null; render() }
 const listen = (path, apply) => S.db.collection(path).onSnapshot(snap => {
   apply(Object.fromEntries(snap.docs.map(doc => [doc.id, doc.data()])))
   S.loaded = true
   render()
-}, error => { S.failed = `fleet のデータを読めません（${error.code}）`; S.db = null; render() })
+}, unreadable)
 const start = async () => {
   S.db = (await window.claude?.use('db')) ?? null
   if (!S.db) return render()
   S.comments = await claude.use('comments')
   const canSend = S.comments ? await S.comments.canSendToClaude().catch(error => error?.code ?? 'error') : 'comments なし'
-  if (canSend !== 'available') S.failed = `このビューからは判断の回答を flagship に送れません（${canSend}）`
+  if (canSend !== 'available') S.unsendable = `このビューからは判断の回答を flagship に送れません（${canSend}）`
   const where = await S.db.doc('fleet/db-paths').get().catch(() => null)
   if (!where?.exists) { S.failed = 'DB の置き場所（fleet/db-paths）がまだありません。flagship がこのページを publish し直すと置かれます'; S.db = null; return render() }
   S.paths = where.data()
-  S.db.doc(S.paths.brief).onSnapshot(snap => { S.brief = snap.data()?.brief; S.problems = snap.data()?.problems ?? []; render() }, () => {})
+  S.db.doc(S.paths.brief).onSnapshot(snap => { S.brief = snap.data()?.brief; S.problems = snap.data()?.problems ?? []; render() }, unreadable)
   listen(S.paths.ships, docs => { S.ships = Object.fromEntries(SHIPS.filter(ship => docs[ship]).map(ship => [ship, docs[ship]])) })
   listen(S.paths.asks, docs => { S.asks = docs })
   listen(S.paths.decisions, docs => { S.decisions = Object.entries(docs).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
-  S.db.doc(S.paths.remaining).onSnapshot(snap => { S.remaining = snap.data()?.chunks ?? null; render() }, () => {})
+  S.db.doc(S.paths.remaining).onSnapshot(snap => { S.remaining = snap.data()?.chunks ?? null; render() }, unreadable)
   listen(S.paths.answers, docs => { S.answers = docs })
   listen(S.paths.reviews, docs => { S.reviews = docs })
-  S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, () => {})
-  S.db.doc(S.paths.behavior).onSnapshot(snap => { S.behavior = { moments: [], views: [], readModels: [], flows: [], hotspots: [], ...snap.data() }; render() }, () => {})
+  S.db.doc(S.paths.requirements).onSnapshot(snap => { S.requirements = snap.data()?.requirements ?? []; render() }, unreadable)
+  S.db.doc(S.paths.behavior).onSnapshot(snap => { S.behavior = { moments: [], views: [], readModels: [], flows: [], hotspots: [], ...snap.data() }; render() }, unreadable)
   listen(S.paths.behaviorJournal, docs => { S.journal = Object.values(docs).sort((a, b) => String(b.at).localeCompare(String(a.at))) })
   listen(S.paths.behaviorReplies, docs => { S.replies = docs })
   listen(S.paths.comments, docs => { S.threads = docs })
-  S.db.doc(S.paths.model).onSnapshot(snap => { S.model = snap.data() ?? null; render() }, () => {})
-  S.db.doc(S.paths.quality).onSnapshot(snap => { S.quality = { checks: [], findings: [], charters: [], ...snap.data() }; render() }, () => {})
+  S.db.doc(S.paths.model).onSnapshot(snap => { S.model = snap.data() ?? null; render() }, unreadable)
+  S.db.doc(S.paths.quality).onSnapshot(snap => { S.quality = { checks: [], findings: [], charters: [], ...snap.data() }; render() }, unreadable)
   listen(S.paths.links, docs => { S.links = docs })
-  ;['guide', 'unaskedSpecs', 'operationsDesign'].forEach(name => S.db.doc(S.paths[name]).onSnapshot(snap => { S.documents[name] = snap.data(); render() }, () => {}))
+  ;['guide', 'unaskedSpecs', 'operationsDesign'].forEach(name => S.db.doc(S.paths[name]).onSnapshot(snap => { S.documents[name] = snap.data(); render() }, unreadable))
 }
 render()
 start()

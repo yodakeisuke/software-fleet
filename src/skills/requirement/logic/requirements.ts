@@ -1,4 +1,4 @@
-import type { Requirement, RequirementChange, RequirementKind, Result as Data, Which } from '../../../types/fleet'
+import type { Requirement, RequirementChange, RequirementKind, Which } from '../../../types/fleet'
 import { Result } from '../../../fleet/logic/result'
 
 // --- public interface
@@ -25,10 +25,8 @@ const applied = (draft: { list: Requirement[]; missing: Which[] }, change: Requi
   return { ...draft, list: draft.list.flatMap(r => (same(r, change.which) ? to : [r])) }
 }
 // 問題が 1 つでもあれば何も変えずに、全部を 1 つの文にして失敗にする。なければ区分の順に並べて通す
-const verdict = (draft: { list: Requirement[]; missing: Which[] }, before: readonly Requirement[]) => {
-  const found = [...missing(draft.missing, before), ...duplicated(draft.list), ...untested(draft.list)]
-  return Result.given<Data<Requirement[], string>>(found.length === 0 ? { ok: true, value: sorted(draft.list) } : { ok: false, error: found.join(' / ') })
-}
+const verdict = (draft: { list: Requirement[]; missing: Which[] }, before: readonly Requirement[]) =>
+  Result.checked(draft.list, [...missing(draft.missing, before), ...duplicated(draft.list), ...untested(draft.list)]).and(sorted)
 // 指した要求がない。今の文を忘れた LLM が呼び直せるよう、今ある要求を全部挙げる
 const missing = (which: Which[], before: readonly Requirement[]) =>
   which.length === 0 ? [] : [`見つからない: ${which.map(quoted).join('、')}。今ある要求: ${before.length === 0 ? 'なし' : before.map(quoted).join('、')}`]

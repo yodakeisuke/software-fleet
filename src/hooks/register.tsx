@@ -1,6 +1,6 @@
 import type { EngineInterface, Register } from 'claude-code'
 import type { Engine, FleetTool, ShipName } from '../types/fleet'
-import { allowOwnWrite } from '../fleet/hook/allow-own-write'
+import { allowOwnDb } from '../fleet/hook/allow-own-db'
 import { forbidPreviewServer } from '../fleet/hook/forbid-preview-server'
 import { forbidRawWrite } from '../fleet/hook/forbid-raw-write'
 import { joinFleet } from '../fleet/hook/join-fleet'
@@ -19,7 +19,6 @@ import { reviseModel } from '../skills/coder/tool/revise-model'
 // 組み立て役。$ を engine（関数の束）にして tool・hook に渡す。$ と $.state の鍵はこのファイルにだけ書く
 const fleet = { plugin: 'software-fleet', key: 'fleet' } as const
 const engine = ($: EngineInterface): Engine => ({
-  root: $.plugin.root,
   now: () => $.clock.now(),
   fleet: async () => (await $.state.get(fleet)).value,
   board: async session => { await $.state.set(fleet, session) },
@@ -43,16 +42,16 @@ export const register: Register = on => {
     await joinFleet.published(engine($), { file: e.file_path, dashboard: `${$.plugin.root}/skills/flagship/dashboard.html`, reply: reply.isError === true ? undefined : reply.text })
     return reply
   })
-  on('tool.call', { tool: 'Skill' }, async ($, e, next) => { await joinFleet.skill(engine($), { skill: e.skill, args: e.args ?? '' }, shipTools); return next(e) })
+  on('tool.call', { tool: 'Skill' }, async ($, e, next) => { await joinFleet.skill(engine($), { skill: e.skill, args: e.args ?? '' }, shipTools, flagshipTools); return next(e) })
   on('tool.call', { tool: 'ArtifactData' }, async ($, e, next) => {
     const deny = await forbidRawWrite(engine($), e, next.origin.plugin)
     return deny === undefined ? next(e) : { deny }
-  })
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: 'fleet の DB への書き込みかを確かめられなかった' }))
   on('tool.call', { tool: 'mcp__Claude_Browser__preview_start' }, async ($, e, next) => {
     const deny = await forbidPreviewServer(engine($), e)
     return deny === undefined ? next(e) : { deny }
-  })
-  on('tool.check', { tool: 'ArtifactData' }, async ($, e, next) => (await allowOwnWrite(engine($), e.input, next.origin.plugin, $.plugin.name)) ?? next(e))
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: 'preview_start を確かめられなかった' }))
+  on('tool.check', { tool: 'ArtifactData' }, async ($, e, next) => (await allowOwnDb(engine($), e.input, next.origin.plugin, $.plugin.name)) ?? next(e))
   on('tool.call', { tool: setBrief.tool }, ($, e) => setBrief.run(engine($), e))
   on('tool.call', { tool: askUser.tool }, ($, e) => askUser.run(engine($), e))
   on('tool.call', { tool: recordDecision.tool }, ($, e) => recordDecision.run(engine($), e))

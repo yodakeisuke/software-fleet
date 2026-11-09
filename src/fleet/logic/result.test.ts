@@ -34,6 +34,11 @@ describe('result', () => {
     expect(Result.fail('e').either(() => '', e => `${e}!`)).toBe('e!')
   })
 
+  test('checked は問題がなければ値を通し、あれば全部を 1 つの文にして失敗にする', () => {
+    expect(Result.checked(1, []).either(ok, error)).toEqual({ ok: true, value: 1 })
+    expect(Result.checked(1, ['a', 'b']).either(ok, error)).toEqual({ ok: false, error: 'a / b' })
+  })
+
   test('given に Promise を渡すと、決着を待って包む。拒まれたら、その message で失敗', async () => {
     expect((await Result.given(Promise.resolve(1))).either(ok, error)).toEqual({ ok: true, value: 1 })
     expect((await Result.given(Promise.reject(new Error('no')))).either(ok, error)).toEqual({ ok: false, error: 'no' })

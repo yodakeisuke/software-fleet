@@ -35,6 +35,11 @@ const cases = {
 for (const [name, invalid] of Object.entries(cases)) {
   tester.run(name, plugin.rules[name], { valid: [valid], invalid: invalid.map(code => ({ code, errors: 1 })) })
 }
+// on(...) に直に付ける .catch は engine の登録の代わりの答えなので通す。ほかの .catch は落とす
+tester.run('result-only', plugin.rules['result-only'], {
+  valid: ["on('tool.call', { tool: 'X' }, f).catch(g)"],
+  invalid: ['p.catch(() => 1)', "$.on('tool.call', f).catch(g)"].map(code => ({ code, errors: 1 })),
+})
 // 組み込みルールと無効化コメントの禁止: logic/ の下に置いたファイルへ、この設定のまま掛ける
 describe('組み込みルール', () => {
   const root = fileURLToPath(new URL('..', import.meta.url))

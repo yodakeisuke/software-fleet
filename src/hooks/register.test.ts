@@ -44,6 +44,20 @@ describe('register', () => {
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/flagship/deliverables', doc_id: 'remaining', data: { chunks } })
   })
 
+  test('set-afloat が Skill で呼ばれても（command.run は起きない）flagship の tool を出す。乗るのはダッシュボードの publish のとき', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, state } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:set-afloat', args: '経費精算' })
+    expect(registered).toEqual(['set_brief', 'ask_user', 'record_decision', 'set_remaining'])
+    expect(state.has('fleet')).toBe(false)
+  })
+
+  test('Skill の名前は前後の空白と先頭の / を落として引く（/software-fleet:qa でも qa として乗る）', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, state } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: ' /software-fleet:qa', args: fleet })
+    expect(registered).toEqual(['report_status', 'set_links', 'revise_quality'])
+    expect(state.get('fleet')).toEqual({ url: fleet, role: 'qa' })
+  })
+
   test('behavior の ship になったセッションは revise_behavior を持ち、それで fleet の DB の event model に書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes } = world(on)
     await $.tool.call({ tool: 'Skill', skill: 'software-fleet:behavior', args: fleet })
@@ -53,13 +67,15 @@ describe('register', () => {
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/behavior/journal', data: { note: '申請を足す', changed: '時点 +1 ~0 -0' } })
   })
 
-  test('coder の ship になったセッションは set_links を持ち、それで fleet の DB のその ship のリンクに PR を書く', { timeoutMs: 15000 }, async ($, on) => {
+  test('coder の ship になったセッションは set_links と revise_model を持ち、それで fleet の DB のその ship のリンクに PR を、設計図の文書に設計図を書く', { timeoutMs: 15000 }, async ($, on) => {
     const { registered, writes } = world(on)
     await $.tool.call({ tool: 'Skill', skill: 'software-fleet:coder', args: fleet })
     expect(registered).toEqual(['report_status', 'set_links', 'revise_model'])
     const links = [{ url: 'https://github.com/owner/repo/pull/12', label: 'PR' }]
     expect(await $.tool.call({ tool: 'mcp__software-fleet__set_links', links })).toEqual({ result: 'LinksSet' })
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/ships/links', doc_id: 'coder', data: { links } })
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_model', name: '注文' })).toEqual({ result: 'ModelRevised' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/coder/deliverables', doc_id: 'model', data: { name: '注文' } })
   })
 
   for (const [ship, document, doc_id] of [['cs', 'guide', 'guide'], ['ops', 'operationsDesign', 'operations-design']] as const) {
@@ -80,6 +96,14 @@ describe('register', () => {
     const charter = { aim: '締め後の修正の境界を突く', learned: '締め後でも申請を消せた' }
     expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_quality', charters: [charter] })).toEqual({ result: 'QualityRevised' })
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/qa/deliverables', doc_id: 'quality', data: { checks: [], findings: [], charters: [charter] } })
+  })
+
+  test('requirement の ship になったセッションは revise_requirements を持ち、それで fleet の DB の要求リストに書く', { timeoutMs: 15000 }, async ($, on) => {
+    const { writes } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:requirement', args: fleet })
+    const to = { kind: '機能' as const, change: '新' as const, who: '経理担当は', can: '予算を承認できる', tests: [{ act: '予算を承認する', evidence: '一覧に載る' }] }
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_requirements', changes: [{ op: 'add', to }] })).toEqual({ result: 'RequirementsRevised' })
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/requirement/deliverables', doc_id: 'requirements', data: { requirements: [to] } })
   })
 
   test('ほかの ship は revise_behavior を持たない。LLM が生の ArtifactData で fleet の DB に書くことは拒む', { timeoutMs: 15000 }, async ($, on) => {

@@ -1,6 +1,7 @@
-import type { Model, ModelInput, Result as Data } from '../../../types/fleet'
+import type { Model, ModelInput } from '../../../types/fleet'
 import { Result } from '../../../fleet/logic/result'
 import { Flows } from './flows'
+import { Placement } from './placement'
 import { References } from './references'
 import { Wires } from './wires'
 
@@ -19,10 +20,8 @@ const empty = (): Model => ({ name: '', worlds: [{ id: 'api', name: '境界 · A
 // 渡した集まり（name・worlds・types・maps・logic・flows）はその全体で置き換え、渡さなければ今のまま
 const merged = (current: Model, input: ModelInput): Model => ({ ...current, ...input })
 // 問題が 1 つでもあれば何も書かずに、全部を 1 つの文にして失敗にする
-const verdict = (model: Model) => {
-  const found = [...named(model), ...worlds(model), ...References.problems(model), ...Flows.problems(model), ...Wires.problems(model)]
-  return Result.given<Data<Model, string>>(found.length === 0 ? { ok: true, value: model } : { ok: false, error: found.join(' / ') })
-}
+const verdict = (model: Model) =>
+  Result.checked(model, [...named(model), ...worlds(model), ...References.problems(model), ...Placement.problems(model), ...Flows.problems(model), ...Wires.problems(model)])
 // 設計図には名前がある（最初の呼び出しで name を渡す）
 const named = (model: Model) => (model.name === '' ? ['name がない（この設計図の名前。例: 注文）'] : [])
 // 世界は api・domain・db が 1 つずつ

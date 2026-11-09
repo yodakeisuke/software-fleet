@@ -18,6 +18,8 @@ describe('wires', () => {
     expect(Wires.typeOf(m, '注文〈下書き〉')?.id).toBe('order')
     expect(Wires.typeOf(m, '確定済の注文 ✓')?.id).toBe('order')
     expect(Wires.typeOf(m, '注文の要約 ×N')?.id).toBe('summary')
+    expect(Wires.typeOf(m, '確定済の注文 ✓ ×N')?.id).toBe('order')
+    expect(Wires.typeOf(m, '確定済の注文 ×N ✓')?.id).toBe('order')
     expect(Wires.typeOf(m, '確定した')).toBeUndefined()
   })
 

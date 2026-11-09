@@ -23,4 +23,9 @@ describe('flows', () => {
     expect(Flows.problems(model([{ ...confirm, steps: [{ logic: 'read', span: [0, 1], out: { 5: { name: 'x' } }, drop: [1.5] }] }])))
       .toEqual(['流れ「確定する」の段「read」の列 5 がない（列は 0〜2）', '流れ「確定する」の段「read」の列 1.5 がない（列は 0〜2）'])
   })
+
+  test('start と out の列の鍵は 0・1・2 … の表記だけ（ページは鍵のまま列を引くので、01・1.0・空は列にならない）', () => {
+    expect(Flows.problems(model([{ ...confirm, start: { '01': 'x', '': 'y' } }]))).toEqual(['流れ「確定する」の start の列 01 がない（列は 0〜2）', '流れ「確定する」の start の列  がない（列は 0〜2）'])
+    expect(Flows.problems(model([{ ...confirm, steps: [{ logic: 'read', span: [0, 1], out: { '1.0': { name: 'x' } } }] }]))).toEqual(['流れ「確定する」の段「read」の列 1.0 がない（列は 0〜2）'])
+  })
 })

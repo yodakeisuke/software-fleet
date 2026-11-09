@@ -3,7 +3,7 @@ import { FleetDb } from '../../../fleet/db/fleet-db'
 import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { Remaining } from '../logic/remaining'
 
-const { text, object } = JsonSchema
+const { text, object, list } = JsonSchema
 const limits = Remaining.limits()
 
 // PR マージまでに残っている大きな塊。ダッシュボードの「あなたが判断すること」の下に出る。件数は logic の Remaining が見る
@@ -11,14 +11,10 @@ const spec = {
   name: 'set_remaining',
   description: 'PR マージまでに残っている大きな塊を、今の全体で置き換える。塊はユーザに届く振る舞いの単位で切る（ship や工程では切らない）。終わった塊は外す',
   inputSchema: object({
-    chunks: {
-      type: 'array',
-      description: `大きな塊で ${limits.chunks} 件まで。残りがなければ空`,
-      items: object({
-        what: text('何が残っているか。1 行'),
-        blockedBy: { type: 'array', description: 'この塊を止めているユーザの判断の id（ask_user が返したもの）', items: text() },
-      }, ['what']),
-    },
+    chunks: list(object({
+      what: text('何が残っているか。1 行'),
+      blockedBy: list(text(), 'この塊を止めているユーザの判断の id（ask_user が返したもの）'),
+    }, ['what']), `大きな塊で ${limits.chunks} 件まで。残りがなければ空`),
   }, ['chunks']),
   isDeferred: false,
 }

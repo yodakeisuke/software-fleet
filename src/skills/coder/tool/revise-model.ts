@@ -3,9 +3,7 @@ import { FleetDb } from '../../../fleet/db/fleet-db'
 import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { CodeModel } from '../logic/code-model'
 
-const { text, object } = JsonSchema
-const choice = (values: readonly string[], description?: string): JsonSchemaNode => ({ type: 'string', enum: values, ...(description ? { description } : {}) })
-const list = (items: JsonSchemaNode, description?: string): JsonSchemaNode => ({ type: 'array', ...(description ? { description } : {}), items })
+const { text, object, choice, list } = JsonSchema
 const number: JsonSchemaNode = { type: 'number' }
 const flag = (description: string): JsonSchemaNode => ({ type: 'boolean', description })
 const keyed = (items: JsonSchemaNode, description: string): JsonSchemaNode => ({ type: 'object', description, additionalProperties: items })
@@ -38,7 +36,7 @@ const step = object({
   logic: text('処理の id'), span: list(number, '箱が跨ぐ列 [左, 右]'), out: keyed(ref('wire'), '列の番号 → 箱が出した線（名前が変わる所だけ。確かめ済みは ✓）'), drop: list(number, '箱で終わる列'), change: ref('change'),
 }, ['logic', 'span'], '流れの 1 段 = 箱')
 const flow = object({
-  id: text('鍵'), name: text('ユースケースの名前'), columns: list(ref('wire'), '線。左が API、右が保存'), start: keyed(text(), '列の番号 → 上から入ってくる線の名前'), steps: list(ref('step'), '上から順'), change: ref('change'),
+  id: text('鍵'), name: text('ユースケースの名前'), columns: list(ref('wire'), '線。左が API、右が保存'), start: keyed(text(), '列の番号 → 上から入ってくる線の名前'), steps: list(ref('step'), '上から順'),
 }, ['id', 'name', 'columns', 'start', 'steps'], 'ユースケース = 流れの 1 列')
 
 // コードの中の設計図。ページが「構造」と「流れ」の 2 つの地図に投影する

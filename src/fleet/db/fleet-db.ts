@@ -51,16 +51,16 @@ type Next = (data: Record<string, unknown> | undefined) => { either: <R>(onOk: (
 const put = (engine: Engine, path: string, data: object, done: string) => revise(engine, path, () => Result.given<Data<object, string>>({ ok: true, value: data }), done)
 
 // 文書を 1 つ読み、その中身から新しい中身を作って、読んだ版に固定して書く。間に別の書き込みがあれば DB が拒み、何も書かない
+// 読めなければ（拒まれた・行が壊れている）書かない。ないとみなすと、版を付けずに文書を丸ごと置き換えてしまう
 const revise = async (engine: Engine, path: string, next: Next, done: string): Promise<ToolReply> => {
   const session = await engine.fleet()
   if (session === undefined) return { deny: 'このセッションは fleet に乗っていない' }
   const got = await engine.db(session.url, { action: 'get', ...split(path) })
-  if (got.isError === true) return { deny: got.text ?? `${path} を読めなかった` }
-  const doc = (await stored(got.text ?? '')).either(found => found, () => undefined)
-  return next(doc?.data).either(async data => {
+  if (got.isError === true || got.deny !== undefined) return { deny: got.deny ?? got.text ?? `${path} を読めなかった` }
+  return (await stored(got.text ?? '')).either(doc => next(doc?.data).either(async data => {
     const wrote = await engine.db(session.url, { action: 'set', ...split(path), data, ...(doc === undefined ? {} : { if_version: doc.version }) })
     return (await landed(engine, path, data, wrote)) ? { result: done } : refused(wrote, path)
-  }, async error => ({ deny: error }))
+  }, async error => ({ deny: error })), async error => ({ deny: `${path} を読めなかった（${error}）` }))
 }
 
 // 新しい文書を 1 つ書く。id は時刻から作るので、まだない
@@ -102,8 +102,18 @@ const isSameArtifact = (url: unknown, fleetUrl: string) => {
 // URL の pathname が /artifact/<id> か /code/artifact/<id> そのものなら id を取る。../ などを含む別の形は取らない（fleet とみなして止める）
 const idOf = (url: unknown) => {
   const pathname = typeof url === 'string' ? /^https?:\/\/[^/?#]+(\/[^?#]*)/.exec(url)?.[1] : undefined
-  return pathname === undefined ? undefined : /^\/(code\/)?artifact\/([\w-]+)\/?$/.exec(pathname)?.[2]
+  const id = pathname === undefined ? undefined : /^\/(code\/)?artifact\/([\w-]+)\/?$/.exec(pathname)?.[2]
+  return id === undefined ? undefined : uuidOf(id)
 }
+// engine は 22 文字の base58 の短い id も、それが表す UUID も（前に「なんでも-」が付いても）同じ artifact に解くので、UUID の 32 桁の 16 進にそろえて比べる（別名で禁止をすり抜けさせない）。どちらでもない id はそのまま
+const uuidOf = (id: string) => {
+  const uuid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.exec(id)?.[0]
+  if (uuid !== undefined) return uuid.replaceAll('-', '').toLowerCase()
+  const short = /(?:^|-)([1-9A-HJ-NP-Za-km-z]{22})$/.exec(id)?.[1]
+  return short === undefined ? id : [...short].reduce((n, c) => n * 58n + BigInt(base58.indexOf(c)), 0n).toString(16).padStart(32, '0')
+}
+// Bitcoin の base58 の字の並び
+const base58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 // 読み取りの action。これ以外（書き込みと、将来増える action）はすべて書き込みとみなす
 const isRead = (action: string) => ['get', 'list', 'query', 'profiles'].includes(action)
 // get の結果の文から、文書の版と中身を取り出す。文書がなければ undefined

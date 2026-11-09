@@ -323,6 +323,68 @@ test('流れがまだ無い・型がまだ無い設計図も描け、流れが�
   settle()
 })
 
+test('holds を省いた 1 つだけの対象（unit）の型も描ける', () => {
+  const ok = { id: 'ok', name: '受け付けた', world: 'api', form: 'record', objects: [{ id: 'v', name: '受け付けた' }] }
+  const map = mapOf({ ...MODEL, types: [...MODEL.types, ok] }, 390, 796)
+  for (const s of [0.1, 0.5, 2]) { map.state.cam.struct = { s, tx: 0, ty: 0 }; CoderMap.View.markup(map.renderVals()) }
+  assert(map.L('struct', 0.5).boxes[ok.id])
+})
+
+test('✓ と ×N が両方付いた線も型に結ぶ（Lifecycle の型を出す箱は Transition）', () => {
+  const model = structuredClone(MODEL)
+  model.flows.find(f => f.id === 'reserve').steps[1].out[1].name = '引当済の明細 ✓ ×N'
+  const board = mapOf(model, 1024, 720).L('flow')
+  const box = board.shapes.find(n => n.ref?.kind === 'logic' && n.ref.lg.id === 'reserve')
+  const kind = board.texts.find(t => Math.abs(t.x - (box.x + 23)) < 1e-6 && Math.abs(t.y - (box.y + 7)) < 1e-6)
+  assert.equal(kind.text, 'Transition')
+})
+
+test('自分への遷移は箱の上の弧に名札を出し、同じ両端の遷移は名札をずらして積む', () => {
+  const model = structuredClone(MODEL)
+  model.types.find(t => t.id === 'order').morphisms.push({ from: 'draft', to: 'draft', by: '明細を足す' }, { from: 'draft', to: 'cancelled', by: '期限切れ', when: { type: 'line', at: 'open', all: true } })
+  const map = mapOf(model, 2600, 1600)
+  const draft = map.L('struct', 1).shapes.find(n => n.id === 'order#draft')
+  map.state.cam.struct = { s: 1, tx: 1300 - (draft.x + draft.w / 2), ty: 800 - (draft.y + draft.h / 2) }
+  const texts = map.renderVals().texts
+  const at = text => texts.filter(t => t.text === text).map(t => /left:([^;]+);top:([^;]+);/.exec(t.style).slice(1).join(','))
+  assert.equal(at('明細を足す').length, 1)
+  assert.equal(at('期限切れ').length, 1)
+  assert(at('取り消す').length >= 1 && !at('取り消す').includes(at('期限切れ')[0]))
+})
+
+test('自分を含む型（木）も最上位に描き、その部品は中に描く', () => {
+  const org = { id: 'org', name: '組織', world: 'domain', form: 'value', objects: [{ id: 'v', name: '組織', holds: { parts: [{ type: 'org_name' }, { type: 'org', as: '上位' }] } }] }
+  const orgName = { id: 'org_name', name: '組織名', world: 'domain', form: 'value', objects: [{ id: 'v', name: '組織名', holds: { prim: '文字列' } }] }
+  const map = mapOf({ ...MODEL, types: [...MODEL.types, org, orgName] }, 390, 796)
+  for (const s of [0.1, 0.5, 1, 4]) {
+    const board = map.L('struct', s)
+    assert(board.boxes.org)
+    assert.equal(board.boxes.org_name, undefined)
+    map.state.cam.struct = { s, tx: 0, ty: 0 }
+    map.renderVals()
+  }
+})
+
+test('区画は worlds の並びに依らず、左から 依頼 → 型 → 表', () => {
+  const map = mapOf({ ...MODEL, worlds: [...MODEL.worlds].reverse() }, 390, 796)
+  const x = id => map.L('struct', 0.5).shapes.find(n => n.id === `R:${id}`).x
+  assert(x('api') < x('domain') && x('domain') < x('db'))
+})
+
+test('盤面の中身が同じなら作り直さない', () => {
+  const map = mapOf(MODEL, 390, 796)
+  let built = 0
+  const node = () => ({ style: {}, setAttribute: () => {} })
+  map.el = { isConnected: true }
+  map.q = { vp: node(), pop: node(), title: node(), hint: node(), flow: node(), struct: node(), flowDot: node(), structDot: node(), world: { style: {}, set innerHTML (html) { built++ } } }
+  map.paint()
+  map.paint()
+  assert.equal(built, 1)
+  map.state.cam.struct = { s: 2, tx: 0, ty: 0 }
+  map.paint()
+  assert.equal(built, 2)
+})
+
 test('盤面の文字は HTML として埋めない', () => {
   const map = mapOf({ ...MODEL, worlds: MODEL.worlds.map(w => (w.id === 'domain' ? { ...w, name: '<img src=x onerror=alert(1)>' } : w)) }, 2600, 1600)
   map.state.cam.struct = { s: 0.5, tx: 0, ty: 0 }

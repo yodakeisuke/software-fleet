@@ -1,4 +1,4 @@
-import type { DocumentChange, Result as Data, Section } from '../../types/fleet'
+import type { DocumentChange, Section } from '../../types/fleet'
 import { Result } from './result'
 
 // --- public interface
@@ -23,10 +23,8 @@ const applied = (draft: { list: Section[]; missing: string[] }, change: Document
   return change.after === undefined ? { ...draft, list: [...draft.list, change.to] } : edited(draft, change.after, { offset: 1, removed: 0, sections: [change.to] })
 }
 // 問題が 1 つでもあれば何も変えずに、全部を 1 つの文にして失敗にする
-const verdict = (draft: { list: Section[]; missing: string[] }, before: readonly Section[]) => {
-  const found = [...missing(draft.missing, before), ...duplicated(draft.list), ...misshapen(draft.list)]
-  return Result.given<Data<Section[], string>>(found.length === 0 ? { ok: true, value: draft.list } : { ok: false, error: found.join(' / ') })
-}
+const verdict = (draft: { list: Section[]; missing: string[] }, before: readonly Section[]) =>
+  Result.checked(draft.list, [...missing(draft.missing, before), ...duplicated(draft.list), ...misshapen(draft.list)])
 // 指した章がない。今の見出しを忘れた LLM が呼び直せるよう、今ある見出しを全部挙げる
 const missing = (which: string[], before: readonly Section[]) =>
   (which.length === 0 ? [] : [`見つからない: ${which.join('、')}。今ある章: ${before.length === 0 ? 'なし' : before.map(s => s.heading).join('、')}`])

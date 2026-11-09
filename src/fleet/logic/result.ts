@@ -4,6 +4,7 @@ import type { Result as Data } from '../../types/fleet'
 export const Result = {
   given: <T>(value: T) => given(value),
   fail: <E>(error: E) => fail(error),
+  checked: <T>(value: T, found: readonly string[]) => checked(value, found),
 }
 
 // --- I/O
@@ -34,6 +35,8 @@ const isData = (value: unknown): value is Data<unknown, unknown> => typeof value
 const succeed = <T>(value: T) => wrap<T, never>({ ok: true, value })
 // 失敗の Result
 const fail = <E>(error: E) => wrap<never, E>({ ok: false, error })
+// 問題がなければ値をそのまま通し、あれば全部を 1 つの文にして失敗にする
+const checked = <T>(value: T, found: readonly string[]) => wrap<T, string>(found.length === 0 ? { ok: true, value } : { ok: false, error: found.join(' / ') })
 // 関数の戻りが Result ならそのまま、普通の値なら plain で包む
 const lift = <U, F>(returned: unknown, plain: (value: unknown) => unknown) => (isFluent(returned) ? returned : plain(returned)) as Fluent<U, F>
 // 鎖でつなげる Result かどうか

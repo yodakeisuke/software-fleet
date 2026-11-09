@@ -6,7 +6,7 @@ const EVENTS = ['session.start', 'command.run', 'prompt.submit', 'prompt.edit', 
 const OWN_TOOL = /^mcp__software-fleet__/
 // fleet が tool.call で扱う本体のツール。Skill は合図（ship の専用ツールを登録する）、ArtifactData は fleet の DB への生の書き込みを拒否する、Artifact は flagship のダッシュボードの publish を合図にする、preview_start は dev server を起こすとユーザの確認で fleet が止まるので拒否する
 const FLEET_TOOLS = ['Skill', 'ArtifactData', 'Artifact', 'mcp__Claude_Browser__preview_start']
-// fleet が tool.check で扱う本体のツール。ArtifactData は mod 自身の fleet の DB への書き込みにだけ許可を返す（auto mode の classifier が、ほかのセッションの連絡で始まったターンで判定を付けないため）
+// fleet が tool.check で扱う本体のツール。ArtifactData は mod 自身の fleet の DB の読み書きにだけ許可を返す（auto mode の classifier が、ほかのセッションの連絡で始まったターンで判定を付けず、コメントの通知で始まったターンでは engine が読み取りにも確認を求めるため）
 const CHECKED_TOOLS = ['ArtifactData']
 // 本体のコンテキスト（モデルが読むもの）や会話の流れ・入力欄の提案を変える呼び出し。session.send は fleet の ship 同士の通知に使うので外す
 const CONTEXT_CALLS = ['prompt.submit', 'prompt.compose', 'prompt.suggest', 'session.append', 'session.compact', 'turn.abort']

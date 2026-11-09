@@ -31,9 +31,13 @@ export const joinFleet = {
   },
 
   // ship の合図: Skill software-fleet:<ship> が artifact の URL 付きで呼ばれたら、そのセッションをその ship にし、ship の tool を出す
-  skill: async (engine: Engine, call: { skill: string; args: string }, tools: (ship: ShipName) => readonly FleetTool[]) => {
+  // set-afloat が Skill で呼ばれたときは command.run が起きないので、ここで /set-afloat と同じく flagship の tool を出す（乗るのはダッシュボードの publish のとき）
+  skill: async (engine: Engine, call: { skill: string; args: string }, tools: (ship: ShipName) => readonly FleetTool[], flagshipTools: readonly FleetTool[]): Promise<void> => {
+    // Skill tool は前後の空白と先頭の / を落としてから skill を引くので、同じように落として比べる
+    const name = call.skill.trim().replace(/^\//, '')
+    if (name === 'software-fleet:set-afloat') return joinFleet.afloat(engine, flagshipTools)
     // skill の名前は software-fleet:<ship>
-    const role = Boarding.ships().find(ship => call.skill === `software-fleet:${ship}`)
+    const role = Boarding.ships().find(ship => name === `software-fleet:${ship}`)
     if (role === undefined) return
     await FleetDb.urlOf(call.args).either(url => board(engine, { url, role }, tools(role)), async () => false)
   },

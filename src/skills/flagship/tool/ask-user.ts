@@ -3,7 +3,7 @@ import { FleetDb } from '../../../fleet/db/fleet-db'
 import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { Ask } from '../logic/ask'
 
-const { text, object } = JsonSchema
+const { text, object, choice, list } = JsonSchema
 const limits = Ask.limits()
 // 文と、任意の図
 const explain = (description: string): JsonSchemaNode => object({
@@ -18,20 +18,16 @@ const spec = {
   inputSchema: object({
     question: text('ユーザに決めてほしい問い。fleet の中の略語を知らない人が初見で分かる 1 文'),
     background: explain('何の話で、なぜユーザが決めるのか。図があれば diagram に'),
-    options: {
-      type: 'array',
-      description: `選択肢。${limits.options.min}〜${limits.options.max} 件`,
-      items: object({
-        id: text(),
-        label: text(`ボタンの文言。${limits.label} 文字まで`),
-        consequence: text(`選んだら何が起きるか。${limits.consequence} 文字まで`),
-        detail: explain('この選択肢の詳細'),
-      }, ['id', 'label', 'consequence', 'detail']),
-    },
+    options: list(object({
+      id: text(),
+      label: text(`ボタンの文言。${limits.label} 文字まで`),
+      consequence: text(`選んだら何が起きるか。${limits.consequence} 文字まで`),
+      detail: explain('この選択肢の詳細'),
+    }, ['id', 'label', 'consequence', 'detail']), `選択肢。${limits.options.min}〜${limits.options.max} 件`),
     recommended: text('推奨する選択肢の id'),
     evaluation: object({
-      axes: { type: 'array', items: object({ name: text(), weight: text('重み（高・中・低など）') }, ['name', 'weight']) },
-      cells: { type: 'array', description: 'options と同じ順で、各行は axes と同じ順', items: { type: 'array', items: object({ rating: { type: 'string', enum: ['◎', '○', '△', '×'] }, note: { type: 'string' } }, ['rating', 'note']) } },
+      axes: list(object({ name: text(), weight: text('重み（高・中・低など）') }, ['name', 'weight'])),
+      cells: list(list(object({ rating: choice(['◎', '○', '△', '×']), note: { type: 'string' } }, ['rating', 'note'])), 'options と同じ順で、各行は axes と同じ順'),
     }, ['axes', 'cells'], '複雑な判断だけ付ける評価表'),
   }, ['question', 'background', 'options', 'recommended']),
   isDeferred: false,

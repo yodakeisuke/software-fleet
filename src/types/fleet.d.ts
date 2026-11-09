@@ -18,7 +18,7 @@ export type JsonSchemaNode = {
   $defs?: Readonly<Record<string, JsonSchemaNode>>
 }
 
-// fleet の状態（artifact の DB の文書）。置き場所は fleet/fleet-db.ts、1 文書を書くのは 1 人だけ
+// fleet の状態（artifact の DB の文書）。置き場所は fleet/db/fleet-db.ts、1 文書を書くのは 1 人だけ
 export type ShipName = 'requirement' | 'behavior' | 'architect' | 'coder' | 'qa' | 'cs' | 'security' | 'ops'
 export type Explain = { text: string; diagram?: string }
 export type OptionId = string
@@ -67,8 +67,8 @@ export type ReaderDocument = { sections: Section[] }
 export type DocumentChange = { op: 'add'; after?: string; to: Section } | { op: 'replace'; which: string; to: Section } | { op: 'remove'; which: string }
 export type DocumentInput = { document: DocumentName; changes: DocumentChange[] }
 
-// ページ（ユーザ）が書く
-export type Answer = { choice: OptionId } | { text: string }
+// ページ（ユーザ）が書く。undelivered は回答を flagship に届けられなかった理由（送り直せたら外す）
+export type Answer = ({ choice: OptionId } | { text: string }) & { undelivered?: string }
 export type Review = { required?: boolean; approved_since?: string }
 
 // requirement ship が書く。要求とその裏返しのテスト。kind の順にページが描く（logic がこの順に並べて保存する）
@@ -166,12 +166,12 @@ export type Logic = { id: string; name: string; layer: Layer; note?: string; ref
 export type Wire = { name: string; kind?: 'api' | 'stored' }
 // 流れの 1 段。span は [左の列, 右の列]、out は列 → 箱が出した線、drop は箱で終わる列
 export type Step = { logic: string; span: number[]; out?: Record<string, Wire>; drop?: number[]; change?: Change }
-export type ModelFlow = { id: string; name: string; columns: Wire[]; start: Record<string, string>; steps: Step[]; change?: Change }
+export type ModelFlow = { id: string; name: string; columns: Wire[]; start: Record<string, string>; steps: Step[] }
 export type Model = { name: string; worlds: { id: World; name: string }[]; types: ModelType[]; maps: Mapping[]; logic: Logic[]; flows: ModelFlow[] }
 // 渡した集まりはその全体で置き換え、渡さなければ今のまま
 export type ModelInput = Partial<Model>
 
-// DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
+// DB の文書の置き場所（fleet/db/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
   brief: string; ships: string; links: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
   requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; model: string; guide: string; unaskedSpecs: string; operationsDesign: string; self: string
@@ -187,8 +187,6 @@ export type DbReply = { text?: string; isError?: true; deny?: string }
 export type ToolDeclaration = { name: string; description: string; inputSchema: JsonSchemaNode; isDeferred: boolean }
 export type ToolReply = { result: string } | { deny: string }
 export type Engine = {
-  // plugin のディレクトリ（絶対パス）
-  root: string
   now: () => Promise<number>
   // このセッションが乗っている fleet
   fleet: () => Promise<FleetSession | undefined>
