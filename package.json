@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "oxlint -c src/.oxlintrc.json --deny-warnings --no-error-on-unmatched-pattern src/fleet src/hooks src/skills src/types && npm run lint:disable -- src/fleet src/hooks src/skills src/types && node --test src/lint/*.test.mjs",
+    "lint": "oxlint -c src/.oxlintrc.json --deny-warnings --no-error-on-unmatched-pattern src/fleet src/hooks src/skills src/types && npm run lint:disable -- src/fleet src/hooks src/skills src/types && node --test src/lint/*.test.mjs src/skills/flagship/*.test.mjs",
     "lint:disable": "! grep -rnE '(oxlint|eslint)-disable'",
     "typecheck": "tsc --noEmit -p src"
   },

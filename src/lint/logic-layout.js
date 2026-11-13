@@ -28,9 +28,11 @@ const within = (node, statements) => statements.some(s => s.range[0] <= node.ran
 const inSection = (context, program, section) => placed(context, program).filter(p => p.section === section).map(p => p.statement)
 const rule = (description, check) => ({ meta: { type: 'problem', docs: { description } }, create: context => ({ Program: program => check(context, program) }) })
 
+// on(...).catch(…) は hook が失敗したときの代わりの答えを engine の登録に付けるもので、例外の受け止めではない
+const isRegistration = node => node.type === 'CallExpression' && node.callee.type === 'Identifier' && node.callee.name === 'on'
 // 失敗を投げる・受け止める書き方と、Result を素手で扱う書き方（2 引数の then、.ok での分岐）。Result で返し、Result.given で受ける
 const isMethod = (node, name) => node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && node.callee.property.name === name
-const isThrowing = node => node.type === 'ThrowStatement' || node.type === 'TryStatement' || isMethod(node, 'catch') ||
+const isThrowing = node => node.type === 'ThrowStatement' || node.type === 'TryStatement' || (isMethod(node, 'catch') && !isRegistration(node.callee.object)) ||
   (isMethod(node, 'reject') && node.callee.object.name === 'Promise') || (isMethod(node, 'then') && node.arguments.length > 1) ||
   (node.type === 'MemberExpression' && !node.computed && node.property.name === 'ok')
 

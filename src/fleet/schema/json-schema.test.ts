@@ -38,6 +38,12 @@ describe('json-schema', () => {
     expect(error({ oneOf: [{ type: 'object', required: ['a'] }, { type: 'object', required: ['b', 'c'] }] }, { b: 1 })).toBe('入力.a がない')
   })
 
+  test('印のない oneOf は、型が値に合う形の問題を返す（型の違う形の「型が違う」1 件を選ばない）', () => {
+    const holds: JsonSchemaNode = { oneOf: [{ type: 'string', enum: ['unit'] }, { type: 'object', required: ['prim'], properties: { prim: { type: 'string' }, invariant: { type: 'string' } } }] }
+    expect(error(holds, { prim: '整数', invariant: null })).toBe('入力.invariant は string でなければならない')
+    expect(error(holds, 'none')).toBe('入力 は unit のどれか')
+  })
+
   test('鍵が自由なオブジェクトは、どの項目も additionalProperties を満たす', () => {
     const values: JsonSchemaNode = { type: 'object', additionalProperties: { type: 'string' } }
     expect(error(values, { 金額: '3万円', 用途: '交通費' })).toBe('')
@@ -61,5 +67,17 @@ describe('json-schema', () => {
       { type: 'object', required: ['kind'], properties: { kind: { type: 'string', enum: ['b'] }, y: { type: 'string' } } },
     ] }
     expect(kept(either, { kind: 'b', x: '1', y: '2' })).toEqual({ kind: 'b', y: '2' })
+  })
+})
+
+describe('json-schema: 数・真偽と、鍵が自由なオブジェクトの $ref', () => {
+  test('number と boolean を見分け、additionalProperties の $ref も $defs で解く', () => {
+    const schema: JsonSchemaNode = {
+      type: 'object',
+      properties: { span: { type: 'array', items: { type: 'number' } }, pk: { type: 'boolean' }, out: { type: 'object', additionalProperties: { $ref: '#/$defs/wire' } } },
+      $defs: { wire: { type: 'object', required: ['name'], properties: { name: { type: 'string', minLength: 1 } } } },
+    }
+    expect(error(schema, { span: [0, 2], pk: true, out: { 1: { name: '注文' } } })).toBe('')
+    expect(error(schema, { span: ['0'], pk: 'yes', out: { 1: { label: '注文' } } })).toBe('入力.span[0] は number でなければならない / 入力.pk は boolean でなければならない / 入力.out.1.name がない')
   })
 })

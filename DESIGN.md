@@ -43,7 +43,7 @@
     - フロントエンド: state/hook と component の構造、dir 構造を図示
     - API: 1 つのプロセスの中の実行時のフロー構造と静的な関係構造を図示
     - 仕様の組み合わせを網羅する unit テストを設計
-  - ユーザはコードを読まないので、設計は図で見せる。PR も含めて set_links でダッシュボードにリンクを出す
+  - ユーザはコードを読まないので、設計は図で見せる。型・対応・処理・流れの設計図を revise_model で DB の 1 文書に書き、ページが「構造」と「流れ」の地図に投影する。PR は set_links でダッシュボードにリンクを出す
   - sub agentsを駆使して効率的に行う
 - QA
   - ブラウザから実際の動作確認を行い、証跡を取得する
@@ -121,6 +121,7 @@ src/
 例外（写しを持つもの）
 - dashboard.html はビルドせずに publish するので、レビューの規則（`fleet/logic/review.ts` の required・レビュー待ち）の写しを持つ。review を変えたら dashboard.html も直す
 - 同じく、qa のケースの集め方（`skills/qa/logic/quality.ts` の cases）の写しを持つ。変えたら dashboard.html も直す
+- 同じく、流れの線と構造の型の結び方（`skills/coder/logic/wires.ts` の typeOf・statesOf）の写しを持つ。変えたら dashboard.html の地図も直す
 - DB の置き場所は `fleet/db/fleet-db.ts` の paths が唯一の定義。mod はダッシュボードの publish のときに、それを DB の `fleet/db-paths` に置く。ページはそれを読むので、ページが知っているのはこの 1 つの置き場所だけ
 
 - 候補（未検証）

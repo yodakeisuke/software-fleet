@@ -22,8 +22,13 @@ describe('set-links', () => {
     expect(await written({ links: [] }, 'coder')).toEqual({ at: 'fleet/ships/links/coder', data: { links: [] } })
   })
 
-  test('https の URL でなければ書かずに拒む', async () => {
-    for (const url of ['javascript:alert(1)', 'http://example.com/a', 'example.com/a']) {
+  test('fleet の artifact の asset は、上げたときに返る /_blob/… の url で書ける', async () => {
+    const links = [{ url: '/_blob/4f2a9c', label: '構成図' }]
+    expect(await written({ links })).toEqual({ at: 'fleet/ships/links/architect', data: { links } })
+  })
+
+  test('https の URL か /_blob/… でなければ書かずに拒む', async () => {
+    for (const url of ['javascript:alert(1)', 'http://example.com/a', 'example.com/a', '//example.com/_blob/1', '/x/_blob/1']) {
       expect(await written({ links: [{ url, label: '図' }] })).toHaveProperty('deny', expect.stringContaining('入力.links[0].url は'))
     }
   })

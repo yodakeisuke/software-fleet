@@ -2,7 +2,7 @@ export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
 // tool の入力スキーマ（JSON Schema のうち fleet が使う部分）。mod はこれで入力の形も検査する
 export type JsonSchemaNode = {
-  type?: 'object' | 'array' | 'string'
+  type?: 'object' | 'array' | 'string' | 'number' | 'boolean'
   description?: string
   properties?: Readonly<Record<string, JsonSchemaNode>>
   required?: readonly string[]
@@ -18,7 +18,7 @@ export type JsonSchemaNode = {
   $defs?: Readonly<Record<string, JsonSchemaNode>>
 }
 
-// fleet の状態（artifact の DB の文書）。置き場所は fleet/fleet-db.ts、1 文書を書くのは 1 人だけ
+// fleet の状態（artifact の DB の文書）。置き場所は fleet/db/fleet-db.ts、1 文書を書くのは 1 人だけ
 export type ShipName = 'requirement' | 'behavior' | 'architect' | 'coder' | 'qa' | 'cs' | 'security' | 'ops'
 export type Explain = { text: string; diagram?: string }
 export type OptionId = string
@@ -34,7 +34,9 @@ export type Evaluation = { axes: { name: string; weight: string }[]; cells: Cell
 export type Problem = { problem: string; solution: string }
 export type Fleet = { brief: string; problems?: Problem[] }
 export type Ask = { question: string; background: Explain; options: Option[]; recommended: OptionId; evaluation?: Evaluation }
-export type Decision = { what: string; why: string; closes?: AskId }
+// evidence は根拠を指すポインタ（URL・commit の SHA・DB の文書の id）。supersedes は置き換える前の決定の id（決定は消さず、上書きの決定を足す）
+export type DecisionId = string
+export type Decision = { what: string; why: string; closes?: AskId; evidence?: string; supersedes?: DecisionId }
 // PR マージまでに残っている大きな塊。終わった塊は外す。blockedBy はその塊を止めている判断
 export type Chunk = { what: string; blockedBy?: AskId[] }
 export type Remaining = { chunks: Chunk[] }
@@ -65,8 +67,8 @@ export type ReaderDocument = { sections: Section[] }
 export type DocumentChange = { op: 'add'; after?: string; to: Section } | { op: 'replace'; which: string; to: Section } | { op: 'remove'; which: string }
 export type DocumentInput = { document: DocumentName; changes: DocumentChange[] }
 
-// ページ（ユーザ）が書く
-export type Answer = { choice: OptionId } | { text: string }
+// ページ（ユーザ）が書く。undelivered は回答を flagship に届けられなかった理由（送り直せたら外す）
+export type Answer = ({ choice: OptionId } | { text: string }) & { undelivered?: string }
 export type Review = { required?: boolean; approved_since?: string }
 
 // requirement ship が書く。要求とその裏返しのテスト。kind の順にページが描く（logic がこの順に並べて保存する）
@@ -140,10 +142,39 @@ export type Quality = { verdict?: Verdict; checks: Check[]; findings: Finding[];
 // 渡した分だけ鍵で上書きする（verdict は丸ごと）
 export type QualityInput = { verdict?: Omit<Verdict, 'at'>; checks?: Omit<Check, 'at'>[]; findings?: Finding[]; charters?: Charter[] }
 
-// DB の文書の置き場所（fleet/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
+// coder ship が書く。コードの中の設計図。1 つの JSON をページが「構造」（型の箱と矢）と「流れ」（ユースケースの列と箱）の 2 つの地図に投影する
+// 今回の変更。無印は既存（文脈として描く）
+export type Change = '新' | '改' | '削'
+export type World = 'api' | 'domain' | 'db'
+// 型の形。lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表
+export type Form = 'lifecycle' | 'value' | 'kind' | 'record' | 'table'
+export type Part = { type: string; as?: string }
+export type Holds = 'unit' | { prim: string; invariant?: string } | { parts: Part[]; invariant?: string }
+// 箱の中の箱: 状態・値・選択肢。型の中で id が鍵。holds を省けば unit
+export type ModelObject = { id: string; name: string; at?: number[]; holds?: Holds; change?: Change }
+// all を省けば false（いずれか）
+export type When = { type: string; at: string; all?: boolean }
+export type Morphism = { from: string; to: string; by: string; when?: When; change?: Change }
+export type Column = { name: string; type: string; pk?: boolean; fk?: string; change?: Change }
+export type ModelType = {
+  id: string; name: string; world: World; form: Form; many?: string; doc?: string
+  objects?: ModelObject[]; morphisms?: Morphism[]; columns?: Column[]; change?: Change
+}
+export type Mapping = { from: string; to: string }
+export type Layer = 'domain' | 'usecase' | 'persistence'
+export type Logic = { id: string; name: string; layer: Layer; note?: string; ref?: string; fails?: string[]; change?: Change }
+export type Wire = { name: string; kind?: 'api' | 'stored' }
+// 流れの 1 段。span は [左の列, 右の列]、out は列 → 箱が出した線、drop は箱で終わる列
+export type Step = { logic: string; span: number[]; out?: Record<string, Wire>; drop?: number[]; change?: Change }
+export type ModelFlow = { id: string; name: string; columns: Wire[]; start: Record<string, string>; steps: Step[] }
+export type Model = { name: string; worlds: { id: World; name: string }[]; types: ModelType[]; maps: Mapping[]; logic: Logic[]; flows: ModelFlow[] }
+// 渡した集まりはその全体で置き換え、渡さなければ今のまま
+export type ModelInput = Partial<Model>
+
+// DB の文書の置き場所（fleet/db/fleet-db.ts の paths の形）。1 つの文書は "collection/id"、それ以外は collection
 export type DbPaths = {
   brief: string; ships: string; links: string; asks: string; decisions: string; remaining: string; answers: string; reviews: string; comments: string
-  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; guide: string; unaskedSpecs: string; operationsDesign: string; self: string
+  requirements: string; behavior: string; behaviorJournal: string; behaviorReplies: string; quality: string; model: string; guide: string; unaskedSpecs: string; operationsDesign: string; self: string
 }
 
 // セッションが属する fleet（mod が $.state に持つ）
@@ -156,8 +187,6 @@ export type DbReply = { text?: string; isError?: true; deny?: string }
 export type ToolDeclaration = { name: string; description: string; inputSchema: JsonSchemaNode; isDeferred: boolean }
 export type ToolReply = { result: string } | { deny: string }
 export type Engine = {
-  // plugin のディレクトリ（絶対パス）
-  root: string
   now: () => Promise<number>
   // このセッションが乗っている fleet
   fleet: () => Promise<FleetSession | undefined>
@@ -187,6 +216,7 @@ declare module 'claude-code' {
     'mcp__software-fleet__revise_requirements': { changes: RequirementChange[] }
     'mcp__software-fleet__revise_behavior': BehaviorInput
     'mcp__software-fleet__revise_quality': QualityInput
+    'mcp__software-fleet__revise_model': ModelInput
     'mcp__software-fleet__set_links': Links
     'mcp__software-fleet__revise_document': DocumentInput
     // 本体のブラウザの tool。生成された型は、保存したセッションがつないでいた MCP しか持たないので、ここでも宣言する

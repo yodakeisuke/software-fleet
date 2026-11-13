@@ -1,4 +1,4 @@
-import type { Behavior, BehaviorChanges, Result as Data } from '../../../types/fleet'
+import type { Behavior, BehaviorChanges } from '../../../types/fleet'
 import { Result } from '../../../fleet/logic/result'
 import { Gwt } from './gwt'
 import { References } from './references'
@@ -19,10 +19,8 @@ const revise = (current: Behavior, changes: BehaviorChanges) => verdict(Revision
 // まだ何もない盤面
 const empty = (): Behavior => ({ moments: [], views: [], readModels: [], flows: [], hotspots: [] })
 // 問題が 1 つでもあれば何も変えずに、全部を 1 つの文にして失敗にする
-const verdict = (draft: { model: Behavior; missing: string[] }, before: Behavior) => {
-  const found = [...missing(draft.missing, before), ...Timeline.problems(draft.model), ...References.problems(draft.model), ...Gwt.problems(draft.model)]
-  return Result.given<Data<Behavior, string>>(found.length === 0 ? { ok: true, value: draft.model } : { ok: false, error: found.join(' / ') })
-}
+const verdict = (draft: { model: Behavior; missing: string[] }, before: Behavior) =>
+  Result.checked(draft.model, [...missing(draft.missing, before), ...Timeline.problems(draft.model), ...References.problems(draft.model), ...Gwt.problems(draft.model)])
 // 指したものがない。今の盤面を忘れた LLM が呼び直せるよう、今ある鍵を全部挙げる
 const missing = (pointed: string[], before: Behavior) => (pointed.length === 0 ? [] : [`見つからない: ${pointed.join('、')}。今あるもの: ${keys(before)}`])
 // 今ある鍵。時点はコマンド名、画面は画面の名前、問いは問いの文

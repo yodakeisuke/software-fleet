@@ -4,9 +4,9 @@ import { JsonSchema } from '../schema/json-schema'
 import { Boarding } from '../logic/boarding'
 import { Review } from '../logic/review'
 
-const { text, object } = JsonSchema
+const { text, object, choice, tag } = JsonSchema
 // state の値で分かれる形の 1 つ
-const state = (name: string, fields: Record<string, JsonSchemaNode>) => object({ state: { type: 'string', enum: [name] }, ...fields }, ['state', ...Object.keys(fields)])
+const state = (name: string, fields: Record<string, JsonSchemaNode>) => object({ state: tag(name), ...fields }, ['state', ...Object.keys(fields)])
 
 // ship の今。全 ship が使う
 const spec = {
@@ -20,7 +20,7 @@ const spec = {
         state('working', { doing: text('今していること。1 行') }),
         state('converged', {}),
         state('stuck', { reason: text('なぜ進めないか。1 行') }),
-        state('waiting', { on: { type: 'string', enum: [...Boarding.ships(), 'flagship'], description: '誰を待っているか。ユーザの判断が要るときも flagship。ここに書いても相手には届かないので、メッセージで伝える' }, what: text('何を待っているか。1 行') }),
+        state('waiting', { on: choice([...Boarding.ships(), 'flagship'], '誰を待っているか。ユーザの判断が要るときも flagship。ここに書いても相手には届かないので、メッセージで伝える'), what: text('何を待っているか。1 行') }),
       ],
     },
   }, ['status']),
@@ -36,9 +36,8 @@ const run = async (engine: Engine, input: unknown) => {
   const where = FleetDb.paths()
   return JsonSchema.check<{ status: Status }>(spec.inputSchema, input).either(async ({ status }) => {
     const doc = Review.since(status, now)
-    const wrote = await FleetDb.put(engine, `${where.ships}/${ship}`, doc, 'StatusReported')
-    const review = (await FleetDb.read(engine, `${where.reviews}/${ship}`)) as ReviewDoc | undefined
-    return 'result' in wrote && Review.awaiting(ship as ShipName, doc, review) ? { result: 'StatusReported, awaiting review' } : wrote
+    const [wrote, review] = await Promise.all([FleetDb.put(engine, `${where.ships}/${ship}`, doc, 'StatusReported'), FleetDb.read(engine, `${where.reviews}/${ship}`)])
+    return 'result' in wrote && Review.awaiting(ship as ShipName, doc, review as ReviewDoc | undefined) ? { result: 'StatusReported, awaiting review' } : wrote
   }, async error => ({ deny: error }))
 }
 

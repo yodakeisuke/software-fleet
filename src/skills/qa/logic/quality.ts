@@ -1,4 +1,4 @@
-import type { Behavior, CaseRef, Quality as QualityDoc, QualityInput, Requirement, Result as Data, Verdict } from '../../../types/fleet'
+import type { Behavior, CaseRef, Quality as QualityDoc, QualityInput, Requirement, Verdict } from '../../../types/fleet'
 import { Result } from '../../../fleet/logic/result'
 
 // --- public interface
@@ -43,10 +43,8 @@ const same = (a: CaseRef, b: CaseRef) => a.ship === b.ship && a.of === b.of && a
 const upsert = <T>(list: readonly T[], given: readonly T[], key: (a: T, b: T) => boolean) =>
   given.reduce((acc, item) => (acc.some(old => key(old, item)) ? acc.map(old => (key(old, item) ? item : old)) : [...acc, item]), [...list])
 // 問題が 1 つでもあれば何も書かずに、全部を 1 つの文にして失敗にする
-const verdict = (next: QualityDoc, input: QualityInput, all: readonly CaseRef[]) => {
-  const found = [...(input.checks ?? []).flatMap(check => missing(check, all)), ...premature(next, input, all)]
-  return Result.given<Data<QualityDoc, string>>(found.length === 0 ? { ok: true, value: next } : { ok: false, error: found.join(' / ') })
-}
+const verdict = (next: QualityDoc, input: QualityInput, all: readonly CaseRef[]) =>
+  Result.checked(next, [...(input.checks ?? []).flatMap(check => missing(check, all)), ...premature(next, input, all)])
 // 結果は今あるケースにだけ付ける。見つからなければ、呼び直せるよう近くのケースを挙げる
 const missing = (check: CaseRef, all: readonly CaseRef[]) => {
   if (all.some(c => same(c, check))) return []

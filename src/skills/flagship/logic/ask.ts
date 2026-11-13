@@ -1,4 +1,4 @@
-import type { Ask as AskDoc, Result as Data } from '../../../types/fleet'
+import type { Ask as AskDoc } from '../../../types/fleet'
 import { Result } from '../../../fleet/logic/result'
 
 // --- public interface
@@ -8,13 +8,11 @@ export const Ask = {
 }
 
 // --- operations
-const of = (ask: AskDoc) => verdict(ask, [...count(ask), ...duplicated(ask), ...unknownRecommended(ask), ...long(ask), ...misshapen(ask)])
+const of = (ask: AskDoc) => Result.checked(ask, [...count(ask), ...duplicated(ask), ...unknownRecommended(ask), ...long(ask), ...misshapen(ask)])
 
 // --- business rules
 // スマホのドックに収まるのは、選択肢 2〜4 件、ボタンの文言と「選んだら何が起きるか」はそれぞれ 20 文字まで
 const limits = () => ({ options: { min: 2, max: 4 }, label: 20, consequence: 20 })
-// 問題がなければ通し、あれば全部を 1 つの文にして失敗にする
-const verdict = (ask: AskDoc, found: string[]) => Result.given<Data<AskDoc, string>>(found.length === 0 ? { ok: true, value: ask } : { ok: false, error: found.join(' / ') })
 // 選択肢の数が範囲の外
 const count = (ask: AskDoc) => {
   const { min, max } = limits().options

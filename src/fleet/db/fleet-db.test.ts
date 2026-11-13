@@ -21,6 +21,22 @@ describe('fleet-db', () => {
     expect(FleetDb.isFleet('https://claude.ai/artifact/other?u=https://claude.ai/artifact/abc', fleet)).toBe(false)
   })
 
+  test('1 つの artifact の別の綴り（/code の有無・短い id と UUID・前に付く「なんでも-」・www・UUID の大文字）は同じ artifact とみなす', () => {
+    const short = 'https://claude.ai/artifact/Xdh4TCp6mGzNCcJNPhfmud'
+    const aliases = [
+      'https://claude.ai/code/artifact/f8119f81-a6c3-4689-9d1d-71460740590c',
+      'https://claude.ai/artifact/f8119f81-a6c3-4689-9d1d-71460740590c',
+      'https://claude.ai/artifact/x-Xdh4TCp6mGzNCcJNPhfmud',
+      'https://www.claude.ai/artifact/Xdh4TCp6mGzNCcJNPhfmud',
+      'https://claude.ai/code/artifact/F8119F81-A6C3-4689-9D1D-71460740590C',
+    ]
+    for (const alias of aliases) {
+      expect([FleetDb.isFleet(alias, short), FleetDb.isFleet(short, alias), FleetDb.isSameArtifact(alias, short), FleetDb.isSameArtifact(short, alias)]).toEqual([true, true, true, true])
+    }
+    expect(FleetDb.isFleet('https://claude.ai/artifact/Xdh4TCp6mGzNCcJNPhfmuX', short)).toBe(false)
+    expect(FleetDb.isSameArtifact('https://claude.ai/code/artifact/f8119f81-a6c3-4689-9d1d-71460740590d', short)).toBe(false)
+  })
+
   test('宛先の id が取れなければ fleet とみなす', () => {
     expect(FleetDb.isFleet('https://claude.ai/artifact/other/../abc', 'https://claude.ai/artifact/abc')).toBe(true)
     expect(FleetDb.isFleet(undefined, fleet)).toBe(true)
@@ -50,7 +66,7 @@ describe('fleet-db', () => {
   test('書く前に今の版を読み、その版に固定して書く。なければ版を付けずに作る', async () => {
     const calls: DbCall[] = []
     const engine = (found: string): Engine => ({
-      root: '/p', now: async () => 0, fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
+      now: async () => 0, fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
       db: async (_url, call) => { calls.push(call); return { text: call.action === 'get' ? found : 'ok' } },
     })
     expect(await FleetDb.put(engine(got), 'fleet/qa', { state: 'converged' }, 'done')).toEqual({ result: 'done' })
@@ -59,11 +75,22 @@ describe('fleet-db', () => {
     expect(calls.at(-1)).toEqual({ action: 'set', collection: 'fleet/user/reviews', doc_id: 'qa', data: {} })
   })
 
+  test('今の版を読めなければ（拒まれた・行が壊れている）、ないとみなして丸ごと置き換えずに拒む', async () => {
+    const calls: DbCall[] = []
+    const engine = (found: DbReply): Engine => ({
+      now: async () => 0, fleet: async () => ({ url: fleet, role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
+      db: async (_url, call) => { calls.push(call); return call.action === 'get' ? found : { text: 'ok' } },
+    })
+    expect(await FleetDb.put(engine({ deny: '読むことを許さない' }), 'fleet/qa', {}, 'done')).toEqual({ deny: '読むことを許さない' })
+    expect(await FleetDb.put(engine({ text: '{"id":' }), 'fleet/qa', {}, 'done')).toEqual({ deny: expect.stringContaining('fleet/qa を読めなかった') })
+    expect(calls.map(call => call.action)).toEqual(['get', 'get'])
+  })
+
   test('書き込み（put・create）が失敗と返っても、読み直して書こうとした中身（鍵の並びによらない）になっていれば書けたとみなす。なっていなければ失敗を返す', async () => {
     const sent = async (write: typeof FleetDb.create, lands: boolean, failure: DbReply = { text: 'db write failed (network error)', isError: true }) => {
       let held = got
       const engine: Engine = {
-        root: '/p', now: async () => 0, fleet: async () => ({ url: fleet, role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
+        now: async () => 0, fleet: async () => ({ url: fleet, role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
         // 書き込みは、届いても届かなくても失敗が返る。DB は鍵を並べ替えて持つ
         db: async (_url, call) => {
           if (call.action === 'get') return { text: held }

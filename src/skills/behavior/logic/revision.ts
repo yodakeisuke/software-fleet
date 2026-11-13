@@ -43,7 +43,8 @@ const placed = (draft: Draft, { axis, moments, change }: { axis: string | undefi
 // 足す after は入れる軸の中で探すので、見つからなければその軸を言う（ほかの軸の時点を指す誤りに気づけるように）
 const searched = (axis: string | undefined, change: MomentChange) => (change.op !== 'add' ? '' : axis === undefined ? '本流の' : `流れ「${axis}」の`)
 // 足すは after の直後（省けば先頭）、直すはその場、消すは取り除く
-const spliced = (moments: Moment[], at: number, change: MomentChange) => (change.op === 'add' ? [...moments.slice(0, at + 1), change.to, ...moments.slice(at + 1)] : swapped(moments, at, change.op === 'replace' ? [change.to] : []))
+const spliced = (moments: Moment[], at: number, change: MomentChange) =>
+  (change.op === 'add' ? moments.toSpliced(at + 1, 0, change.to) : moments.toSpliced(at, 1, ...(change.op === 'replace' ? [change.to] : [])))
 // 軸の時点を差し替える
 const withMoments = (draft: Draft, axis: string | undefined, moments: Moment[]) =>
   ({ ...draft, model: axis === undefined ? { ...draft.model, moments } : { ...draft.model, flows: draft.model.flows.map(flow => (flow.name === axis ? { ...flow, moments } : flow)) } })
@@ -60,11 +61,9 @@ const keyed = <K extends 'views' | 'readModels' | 'hotspots' | 'flows'>(draft: D
   if (change.op === 'add') return { ...draft, model: { ...draft.model, [list]: [...items, change.to] } }
   const at = items.findIndex(item => keyOf(item) === change.which)
   if (at < 0) return lost(draft, `${what}「${change.which}」`)
-  return { ...draft, model: { ...draft.model, [list]: swapped(items, at, change.op === 'replace' ? [change.to] : []) } }
+  return { ...draft, model: { ...draft.model, [list]: items.toSpliced(at, 1, ...(change.op === 'replace' ? [change.to] : [])) } }
 }
 // 名乗りは、渡したときだけ置き換える
 const named = (draft: Draft, identity: Identity | undefined) => (identity === undefined ? draft : { ...draft, model: { ...draft.model, identity } })
 // 指したものが見つからない
 const lost = (draft: Draft, what: string) => ({ ...draft, missing: [...draft.missing, what] })
-// 並びの at の 1 件を items に差し替える（items が空なら取り除く）
-const swapped = <T>(list: T[], at: number, items: T[]) => [...list.slice(0, at), ...items, ...list.slice(at + 1)]
