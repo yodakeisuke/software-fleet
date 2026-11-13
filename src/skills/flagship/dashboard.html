@@ -382,7 +382,7 @@ const shipTile = ship => {
 const sum = (to, count, label) => `<button class="sum" data-act="jump" data-to="${to}"><b>${count}</b>${label}</button>`
 const glance = () => {
   if (unready()) return unready()
-  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">flagship が依頼をまとめています</p>')
+  const brief = (S.failed ? `<p class="warn">${esc(S.failed)}</p>` : '') + (S.brief ? `<h1 class="req">${esc(S.brief)}</h1>` : '<p class="req wait">依頼をまとめています</p>')
   const log = S.decisions.map(d => `<div class="logi"><div class="lt">${esc(d.what)}</div><div class="lw">${esc(d.why)}</div></div>`).join('')
   const sums = `<div class="sums">${sum('remain', S.remaining?.length ?? '–', '残り')}${sum('assumed', S.behavior.hotspots.length, '仮定')}${sum('decided', S.decisions.length, '決定')}</div>`
   return `<header class="band">${brief}${sums}</header><div class="tiles">${SHIPS.map(shipTile).join('')}</div>${toDecide().length > 1 ? decideView() : ''}${linksView()}<div id="remain">${remainingView()}</div><div id="assumed">${assumedView()}</div>

@@ -162,6 +162,9 @@ export type Engine = {
   // このセッションが乗っている fleet
   fleet: () => Promise<FleetSession | undefined>
   board: (session: FleetSession) => Promise<void>
+  // flagship なしの単独で起きた ship（ダッシュボードを publish するまでの間、役割だけを覚える）
+  alone: () => Promise<ShipName | undefined>
+  goAlone: (ship: ShipName) => Promise<void>
   // LLM が呼べる tool を出す
   offer: (tool: ToolDeclaration) => Promise<void>
   // ArtifactData で fleet の DB を読み書きする
@@ -172,7 +175,7 @@ export type FleetTool = { tool: string; spec: ToolDeclaration; run: (engine: Eng
 
 declare module 'claude-code' {
   interface PluginState {
-    'software-fleet': { fleet: FleetSession }
+    'software-fleet': { fleet: FleetSession; alone: ShipName }
   }
   // mod が登録する専用 tool の入力
   interface McpToolInputs {

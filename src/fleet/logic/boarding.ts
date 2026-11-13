@@ -5,6 +5,7 @@ import { Result } from './result'
 export const Boarding = {
   ships: () => ships(),
   join: (aboard: FleetSession | undefined, wanted: FleetSession) => join(aboard, wanted),
+  publisher: (alone: ShipName | undefined) => publisher(alone),
 }
 
 // --- business rules
@@ -14,5 +15,7 @@ const ships = (): readonly ShipName[] => ['requirement', 'behavior', 'architect'
 const join = (aboard: FleetSession | undefined, wanted: FleetSession) =>
   Result.given<Data<FleetSession, string>>(aboard !== undefined ? { ok: false, error: `すでに ${aboard.role} として乗っている` }
     : isRole(wanted.role) ? { ok: true, value: wanted } : { ok: false, error: `fleet の役割ではない: ${wanted.role}` })
+// ダッシュボードを publish して fleet を起こした者の役割。単独で起きた ship はその ship、そうでなければ flagship
+const publisher = (alone: ShipName | undefined): Role => alone ?? 'flagship'
 // flagship か ship のどれか
 const isRole = (role: string): role is Role => role === 'flagship' || (ships() as readonly string[]).includes(role)

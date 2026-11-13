@@ -18,4 +18,9 @@ describe('boarding', () => {
     expect(join(qa, { url: 'https://claude.ai/artifact/other', role: 'ops' })).toBe('すでに qa として乗っている')
     expect(join(qa, qa)).toBe('すでに qa として乗っている')
   })
+
+  test('fleet を起こした者は flagship。単独で起きた ship なら、その ship', () => {
+    expect(Boarding.publisher(undefined)).toBe('flagship')
+    expect(Boarding.publisher('coder')).toBe('coder')
+  })
 })
