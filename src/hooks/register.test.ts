@@ -90,4 +90,29 @@ describe('register', () => {
     expect(raw).toEqual({ deny: 'fleet の DB は専用の tool（mcp__software-fleet__*）で書く。生の ArtifactData では書かない' })
     expect(writes).toEqual([])
   })
+
+  test('ユーザが /software-fleet:<ship> を fleet の URL 付きで打つと、そのセッションがその ship として乗る', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, state } = world(on)
+    on('command.run', async () => ({}))
+    expect(await $.command.run({ command: 'software-fleet:qa', args: `${fleet} 経費精算` } as CommandRunInput)).not.toHaveProperty('context')
+    expect(registered).toEqual(['report_status', 'set_links', 'revise_quality'])
+    expect(state.get('fleet')).toEqual({ url: fleet, role: 'qa' })
+  })
+
+  test('URL なしで打つと fleet なしの単独で起きる。後からダッシュボードを publish すると、その ship として乗り、set_brief も持つ', { timeoutMs: 15000 }, async ($, on) => {
+    const { registered, writes, state } = world(on)
+    on('command.run', async () => ({}))
+    // 実物の結果は core が text（LLM が読む文）を付ける
+    on('tool.call', { tool: 'Artifact' }, async () => ({ result: '', text: `published ${fleet}` }))
+    const ran = await $.command.run({ command: 'software-fleet:coder', args: '経費精算' } as CommandRunInput)
+    // 指示が名指しするダッシュボードのファイル
+    const dashboard = /\S+\/skills\/flagship\/dashboard\.html/.exec(ran.context?.[0] ?? '')?.[0]
+    expect(ran.context).toHaveLength(1)
+    expect(registered).toEqual([])
+    await $.tool.call({ tool: 'Artifact', file_path: dashboard })
+    expect(state.get('fleet')).toEqual({ url: fleet, role: 'coder' })
+    expect(registered).toEqual(['set_brief', 'report_status', 'set_links'])
+    expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet', doc_id: 'db-paths' })
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__set_brief', brief: '経費精算を作る' })).toEqual({ result: 'BriefSet' })
+  })
 })

@@ -5,7 +5,7 @@ import { allowOwnWrite } from './allow-own-write'
 
 const fleet = 'https://claude.ai/artifact/abc'
 const engine = (session: FleetSession | undefined): Engine => ({
-  root: '/p', now: async () => 0, fleet: async () => session, board: async () => {}, offer: async () => {}, db: async () => ({ text: '' }),
+  root: '/p', now: async () => 0, fleet: async () => session, board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {}, db: async () => ({ text: '' }),
 })
 const onBoard = engine({ url: fleet, role: 'flagship' })
 const allowed = { decision: 'allow', reason: 'fleet の専用 tool による fleet の DB への書き込み' }

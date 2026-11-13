@@ -50,7 +50,7 @@ describe('fleet-db', () => {
   test('書く前に今の版を読み、その版に固定して書く。なければ版を付けずに作る', async () => {
     const calls: DbCall[] = []
     const engine = (found: string): Engine => ({
-      root: '/p', now: async () => 0, fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'qa' }), board: async () => {}, offer: async () => {},
+      root: '/p', now: async () => 0, fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
       db: async (_url, call) => { calls.push(call); return { text: call.action === 'get' ? found : 'ok' } },
     })
     expect(await FleetDb.put(engine(got), 'fleet/qa', { state: 'converged' }, 'done')).toEqual({ result: 'done' })
@@ -63,7 +63,7 @@ describe('fleet-db', () => {
     const sent = async (write: typeof FleetDb.create, lands: boolean, failure: DbReply = { text: 'db write failed (network error)', isError: true }) => {
       let held = got
       const engine: Engine = {
-        root: '/p', now: async () => 0, fleet: async () => ({ url: fleet, role: 'qa' }), board: async () => {}, offer: async () => {},
+        root: '/p', now: async () => 0, fleet: async () => ({ url: fleet, role: 'qa' }), board: async () => {}, alone: async () => undefined, goAlone: async () => {}, offer: async () => {},
         // 書き込みは、届いても届かなくても失敗が返る。DB は鍵を並べ替えて持つ
         db: async (_url, call) => {
           if (call.action === 'get') return { text: held }

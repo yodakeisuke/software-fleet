@@ -17,11 +17,15 @@ import { reviseQuality } from '../skills/qa/tool/revise-quality'
 
 // 組み立て役。$ を engine（関数の束）にして tool・hook に渡す。$ と $.state の鍵はこのファイルにだけ書く
 const fleet = { plugin: 'software-fleet', key: 'fleet' } as const
+const alone = { plugin: 'software-fleet', key: 'alone' } as const
+const dashboard = ($: EngineInterface) => `${$.plugin.root}/skills/flagship/dashboard.html`
 const engine = ($: EngineInterface): Engine => ({
   root: $.plugin.root,
   now: () => $.clock.now(),
   fleet: async () => (await $.state.get(fleet)).value,
   board: async session => { await $.state.set(fleet, session) },
+  alone: async () => (await $.state.get(alone)).value,
+  goAlone: async ship => { await $.state.set(alone, ship) },
   offer: async tool => { await $.tool.register(tool) },
   db: async (url, call) => {
     const reply = await $.tool.call({ tool: 'ArtifactData', url, ...call })
@@ -34,13 +38,20 @@ const flagshipTools = [setBrief, askUser, recordDecision, setRemaining]
 // ship は全員 report_status と set_links を持ち、成果物の tool はその ship だけが持つ
 const deliverableTools: Partial<Record<ShipName, readonly FleetTool[]>> = { requirement: [reviseRequirements], behavior: [reviseBehavior], qa: [reviseQuality], cs: [reviseDocument], ops: [reviseDocument] }
 const shipTools = (ship: ShipName) => [reportStatus, setLinks, ...(deliverableTools[ship] ?? [])]
+// 単独で起きた ship は flagship がいないので、依頼の要約も自分で出す
+const aloneTools = (ship: ShipName) => [setBrief, ...shipTools(ship)]
 
 export const register: Register = on => {
   on('command.run', { command: 'software-fleet:set-afloat' }, async ($, e, next) => { await joinFleet.afloat(engine($), flagshipTools); return next(e) })
   on('tool.call', { tool: 'Artifact' }, async ($, e, next) => {
     const reply = await next(e)
-    await joinFleet.published(engine($), { file: e.file_path, dashboard: `${$.plugin.root}/skills/flagship/dashboard.html`, reply: reply.isError === true ? undefined : reply.text })
+    await joinFleet.published(engine($), { file: e.file_path, dashboard: dashboard($), reply: reply.isError === true ? undefined : reply.text }, aloneTools)
     return reply
+  })
+  on('command.run', { command: /^software-fleet:/ }, async ($, e, next) => {
+    const note = await joinFleet.typed(engine($), e, shipTools, dashboard($))
+    const reply = await next(e)
+    return note === undefined ? reply : { ...reply, context: [...(reply.context ?? []), note] }
   })
   on('tool.call', { tool: 'Skill' }, async ($, e, next) => { await joinFleet.skill(engine($), { skill: e.skill, args: e.args ?? '' }, shipTools); return next(e) })
   on('tool.call', { tool: 'ArtifactData' }, async ($, e, next) => {

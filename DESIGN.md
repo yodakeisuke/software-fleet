@@ -16,7 +16,7 @@
 
 ## fleet構造
 ### flagship
-- shipsの起動
+- ships の起動。依頼に要る ship を、要るときに起こす（全部とは限らない）。ユーザが名指しした ship も起こす
 - ships間で議論が収束しなかった場合の調停
 - 無視できないトレードオフや、リスクを伴う判断のみユーザへエスカレーションする
 - PR マージまでに残っている大きな塊を示す。ダッシュボードはそれと、ユーザが判断することの一覧と、behavior が仮定で進めていることを分けて最初に見せる
@@ -60,6 +60,10 @@
 
 ### skill の構成
 - `src/skills/` の直下に flagship と各 ship を1フォルダずつ並べる（requirement / behavior / architect / coder / qa / cs / security / ops）。skill 名は `software-fleet:<フォルダ名>`。flagship だけは起動コマンドを兼ねるので `set-afloat`（ユーザが `/set-afloat <依頼>` と打つ）
+- ship の起こし方は 3 つ。役割は起動のコマンドか Skill で、fleet は artifact の URL で決まる
+  - flagship が起こす: 別セッションに「Skill `software-fleet:<ship>` を URL 付きで呼べ」と指示する
+  - ユーザが自分のセッションで既存の fleet に乗る: `/software-fleet:<ship> <ダッシュボードの URL>`
+  - flagship なしの単独: `/software-fleet:<ship> <依頼>`（URL なし）。最初はダッシュボードも専用 tool もなく、成果物はブランチ・自前の artifact・チャットに出し、ユーザへの問いはそのセッションで直接聞く。他の ship と共有するか、スマホで見たくなったときだけ、その ship がダッシュボードを publish する（共有に要るのは画面ではなく DB で、DB は artifact に付いている）。そこで専用 tool が出て、依頼の要約（set_brief）と、それまでの成果物を出し直す。他の ship は上の方法でその URL に乗る
 - cs はヘルプガイドを skill `help-guide-driven-dev` で書く。前提: その skill がユーザの環境に入っていること（`npx skills add yodakeisuke/help-guide-driven-dev`）
 
 ## ui指針
@@ -87,7 +91,8 @@
   - LLM が生の ArtifactData で fleet の DB に書くことは、mod が tool.call で拒否する。見分けは next.origin.plugin（LLM は "engine"、mod の呼び出しは plugin 名）
   - 前提: settings の permissions.allow に `ArtifactData` を入れる。mod の中からの ArtifactData は、auto モードの判定が「依頼にない操作」として止めるため。設定は起動時に読まれるので、足す前に起動したセッションには効かない
 - fleet のセッションが preview_start で dev server を起こすことを mod が tool.call で拒否する。ユーザの確認を出してセッションを止めるため。url で開くだけなら通す
-- ship の合図: 同梱 skill の呼び出し（tool.call の Skill）で、そのセッションがどの ship かを mod が知る
+- ship の合図: 同梱 skill の呼び出し（tool.call の Skill）か、ユーザが打った /command（command.run）で、そのセッションがどの ship かを mod が知る
+  - 単独で起きた ship は、役割だけを $.state に覚え、ダッシュボードを publish したら乗る。skill の本文は flagship がいる前提なので、その差だけを mod が command.run の context で伝える
   - skill.prompt は Skill tool 経由では発火しない。start_session の指示に書いた /command は実行されない
 ### コードの置き場所
 指針
