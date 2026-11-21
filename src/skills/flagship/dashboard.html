@@ -12,6 +12,7 @@
   --em-rm:oklch(0.5 0.07 165);--em-cmd:oklch(0.5 0.07 240);--em-ev:oklch(0.58 0.09 65);--em-pol:oklch(0.5 0.07 305);
   --em-rm-bg:oklch(0.89 0.035 165);--em-cmd-bg:oklch(0.88 0.035 240);--em-ev-bg:oklch(0.88 0.055 75);--em-pol-bg:oklch(0.93 0.02 305);
   --em-hot:oklch(0.55 0.09 355);--em-hot-bg:oklch(0.93 0.03 355);
+  --cm-edge:oklch(0.62 0.02 240);--cm-api:oklch(0.5 0.15 315);--cm-db:oklch(0.5 0.13 245);--cm-add:oklch(0.5 0.1 155);--cm-mod:oklch(0.52 0.11 65);--cm-add-bg:oklch(0.94 0.05 155);--cm-mod-bg:oklch(0.94 0.06 85);
   --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -23,7 +24,8 @@
   --shadow:oklch(0 0 0 / .35);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
   --em-rm:oklch(0.74 0.07 165);--em-cmd:oklch(0.74 0.07 240);--em-ev:oklch(0.78 0.08 70);--em-pol:oklch(0.74 0.07 305);
   --em-rm-bg:oklch(0.36 0.04 165);--em-cmd-bg:oklch(0.36 0.04 240);--em-ev-bg:oklch(0.4 0.05 70);--em-pol-bg:oklch(0.32 0.03 305);
-  --em-hot:oklch(0.76 0.07 355);--em-hot-bg:oklch(0.35 0.04 355)}}
+  --em-hot:oklch(0.76 0.07 355);--em-hot-bg:oklch(0.35 0.04 355);
+  --cm-edge:oklch(0.55 0.02 240);--cm-api:oklch(0.8 0.11 315);--cm-db:oklch(0.8 0.09 240);--cm-add:oklch(0.78 0.11 155);--cm-mod:oklch(0.8 0.1 75);--cm-add-bg:oklch(0.34 0.05 155);--cm-mod-bg:oklch(0.36 0.05 80)}}
 :root[data-theme="dark"]{
   --bg:oklch(0.21 0.018 240);--dim:oklch(0.25 0.021 240);--surface:oklch(0.3 0.024 240);--fg:oklch(0.94 0.006 240);--muted:oklch(0.76 0.015 240);
   --line:oklch(0.35 0.021 240);--acc:oklch(0.8 0.08 240);--on-acc:oklch(0.2 0.024 240);
@@ -33,7 +35,8 @@
   --shadow:oklch(0 0 0 / .35);--scrim:oklch(0 0 0 / .5);color-scheme:dark;
   --em-rm:oklch(0.74 0.07 165);--em-cmd:oklch(0.74 0.07 240);--em-ev:oklch(0.78 0.08 70);--em-pol:oklch(0.74 0.07 305);
   --em-rm-bg:oklch(0.36 0.04 165);--em-cmd-bg:oklch(0.36 0.04 240);--em-ev-bg:oklch(0.4 0.05 70);--em-pol-bg:oklch(0.32 0.03 305);
-  --em-hot:oklch(0.76 0.07 355);--em-hot-bg:oklch(0.35 0.04 355)}
+  --em-hot:oklch(0.76 0.07 355);--em-hot-bg:oklch(0.35 0.04 355);
+  --cm-edge:oklch(0.55 0.02 240);--cm-api:oklch(0.8 0.11 315);--cm-db:oklch(0.8 0.09 240);--cm-add:oklch(0.78 0.11 155);--cm-mod:oklch(0.8 0.1 75);--cm-add-bg:oklch(0.34 0.05 155);--cm-mod-bg:oklch(0.36 0.05 80)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -294,24 +297,86 @@ a.le{color:var(--acc)}
 .qb small{font-size:11.5px;color:var(--muted)}
 .qshots{display:flex;gap:6px;overflow-x:auto;padding-top:4px}
 .qshots img{height:96px;border-radius:3px;box-shadow:0 0 0 1px var(--line);background:var(--surface)}
-/* coder: 設計図の地図。幅いっぱいに、上の帯（名前・流れと構造・倍率）と盤面。盤面の色は地図の写しのまま（暗い表示でも紙の地図として明るい） */
+/* coder: 設計図の地図。幅いっぱいに、上の帯（戻る・題名・今いる場所・構造と流れ）と盤面。2 つの面は同じ設計図の投影で、重ねて置き、片方だけ見せる
+   色は 2 つの軸に分ける: どの世界か = 字と線の色（API・保存。ドメインは無彩）、今回の変更 = 蛍光ペンの塗り（新・改。削は薄く） */
 .app:has(.cmap){max-width:none}
 .glance:has(> .cmap){padding:0;overflow:hidden}
 .cmap{flex:1;min-height:0;display:flex;flex-direction:column}
-.chead{flex:none;height:48px;display:flex;align-items:center;gap:14px;background:var(--chrome);color:var(--on-chrome)}
-.chead a{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
-.chead small{font-size:12px;color:var(--on-chrome2)}
-.chead b{font-size:16px;line-height:24px;font-weight:600;overflow:hidden;text-overflow:ellipsis}
-.ctabs{flex:none;display:grid;grid-template-columns:repeat(2,88px);gap:3px;height:36px;padding:3px;border-radius:3px;background:color-mix(in oklch,var(--on-chrome) 8%,transparent)}
-.ctabs button{font-size:14px;text-align:center;border-radius:3px;color:var(--on-chrome)}
-.ctabs button[aria-selected="true"]{font-weight:600;background:var(--fill);color:var(--on-fill)}
-.ctabs button:disabled{opacity:.4;cursor:default}
-.ctabs i{display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--fill);vertical-align:middle}
-.chint{margin-left:auto;font-size:12px;color:var(--on-chrome2);font-variant-numeric:tabular-nums}
-.cvp{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;background:#F0F2F5;color:#2B3340;font-size:14px;line-height:1.4}
-.cfit{position:absolute;right:16px;bottom:16px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #D2D6DD;border-radius:3px;background:#FDFDFE;color:#5E6675;box-shadow:0 1px 2px rgba(43,51,64,0.08)}
+.chead{flex:none;height:48px;display:flex;align-items:center;gap:12px;background:var(--chrome);color:var(--on-chrome)}
+.chead>a{flex:none;display:flex;align-items:center;min-height:44px;font-size:12px;color:var(--on-chrome2);white-space:nowrap}
+.chead>button{flex:0 1 auto;min-width:0;min-height:44px;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumbs{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;font-size:13px;color:var(--on-chrome2)}
+.crumbs::-webkit-scrollbar{display:none}
+.crumbs button{min-height:44px;white-space:nowrap}
+.crumbs button:last-child{color:var(--on-chrome);font-weight:600}
+.cmap[data-view="flow"] .crumbs{visibility:hidden}
+.ctabs{flex:none;display:grid;grid-template-columns:repeat(2,60px);gap:3px;height:36px;padding:3px;border-radius:3px;background:color-mix(in oklch,var(--on-chrome) 8%,transparent)}
+.ctabs a{display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:3px;color:var(--on-chrome)}
+.ctabs a[aria-current]{font-weight:600;background:var(--fill);color:var(--on-fill)}
+.ctabs a[aria-disabled]{opacity:.4;pointer-events:none}
+.cvp{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--bg);font-size:14px;line-height:1.4}
+.cvp svg{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.cvp svg.drag{cursor:grabbing}
+.cmap[data-view="flow"] [data-m^="struct-"],.cmap:not([data-view="flow"]) [data-m^="flow-"]{visibility:hidden;pointer-events:none}
+/* 構造: 枠 = 型、離れて並ぶ箱 = どれか 1 つ、罫線で割った行 = 全部そろう、矢 = 遷移。線は画面上 1px */
+.cvp text{fill:var(--fg)}
+.cvp text.hide{display:none}
+.cvp .mid{dominant-baseline:central}
+.cvp .frame-r{fill:none;stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.cvp .row-r{fill:transparent;stroke:none}
+.cvp .cat:not(.row)>.frame-r{fill:var(--surface)}
+.cvp .frame-r,.cvp .row-r,.cvp .obj-r{transform-box:fill-box;transform-origin:0 0}
+.cvp .born{animation:cborn .24s ease-out}@keyframes cborn{from{opacity:0}}
+.cvp .hair{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.cvp .obj-r{fill:var(--surface);stroke:var(--cm-edge);stroke-width:1;vector-effect:non-scaling-stroke}
+.cvp .mor{fill:none;stroke:var(--cm-edge);stroke-width:1;vector-effect:non-scaling-stroke}
+.cvp .mor.auto{stroke-dasharray:4 3}
+.cvp .head{fill:var(--cm-edge)}
+.cvp .mor.hot:not(.ch-new):not(.ch-mod){stroke:var(--fg)}.cvp .mor.hot{stroke-width:1.75}.cvp .head.hot:not(.ch-new):not(.ch-mod),.cvp .ml.hot{fill:var(--fg)}.cvp .dim{opacity:.22}
+.cvp .ti,.cvp .nm{font-weight:600}
+.cvp .row .ti{font-weight:400}
+.cvp .form{fill:var(--muted);font-weight:400}
+.cvp .ml{fill:var(--muted);stroke:var(--bg);paint-order:stroke;stroke-linejoin:round}
+.cvp .prim{fill:var(--muted);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.cvp .floor .rest,.cvp .floor .form{display:none}
+.cvp .wl{fill:var(--muted);font-weight:600;letter-spacing:.04em}
+.cvp .wl.api{fill:var(--cm-api)}.cvp .wl.db{fill:var(--cm-db)}
+/* 今回の変更は蛍光ペンで塗る: 箱と行は地、矢は太い下敷き、名札と題名は字の裏。世界の色（字と線そのものの色）とは別の見え方にする */
+.cvp .chg{font-weight:600}
+.cvp .ch-new>text>.chg,.cvp text.ch-new>.chg{fill:var(--cm-add)}.cvp .ch-mod>text>.chg,.cvp text.ch-mod>.chg{fill:var(--cm-mod)}
+.cvp .cat.ch-new>.frame-r,.cvp .cat.ch-new>.row-r,.cvp .ch-new>.obj-r{fill:var(--cm-add-bg)}.cvp .cat.ch-mod>.frame-r,.cvp .cat.ch-mod>.row-r,.cvp .ch-mod>.obj-r{fill:var(--cm-mod-bg)}
+.cvp .hl{fill:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.cvp .hl.ch-new{stroke:var(--cm-add-bg)}.cvp .hl.ch-mod{stroke:var(--cm-mod-bg)}.cvp .hl.ch-del{stroke:none}
+.cvp .fn{paint-order:stroke;stroke-width:5px;stroke-linejoin:round;stroke:none}
+.cvp .ml.ch-new,.cvp .fn.ch-new{stroke:var(--cm-add-bg)}.cvp .ml.ch-mod,.cvp .fn.ch-mod{stroke:var(--cm-mod-bg)}
+.cvp g.ch-del>rect,.cvp path.ch-del,.cvp polygon.ch-del{opacity:.5}.cvp g.ch-del>text,.cvp text.ch-del{fill:var(--muted)}
+/* 世界をまたぐ対応と、流れの面から来た型は、縁を濃くするだけ */
+.cvp .linked>.frame-r,.cvp .linked>.row-r{stroke:var(--acc);stroke-width:1.5}
+/* 流れ: 線 = 値、箱 = 処理。色は外の世界に触れる所だけ（API の値と、保存の値・保存の箱）。両面で同じ色が同じ世界を指す */
+.cvp .wire{fill:none;stroke:var(--cm-edge);stroke-width:1;vector-effect:non-scaling-stroke}
+.cvp .wire.io{stroke-width:1.5}.cvp .wire.api{stroke:var(--cm-api)}.cvp .wire.stored{stroke:var(--cm-db)}
+.cvp .wire.hot{stroke-width:2}.cvp .wire.hot:not(.io){stroke:var(--fg)}
+.cvp .hit{fill:none;stroke:transparent;stroke-width:14;vector-effect:non-scaling-stroke;pointer-events:stroke}
+.cvp .cap,.cvp .fail,.cvp .wn{fill:var(--muted)}.cvp .bn,.cvp .fn,.cvp .wn.io{font-weight:600}
+.cvp .wn.api{fill:var(--cm-api)}.cvp .wn.stored,.cvp .cap.stored{fill:var(--cm-db)}.cvp .wn.hot:not(.io){fill:var(--fg)}
+.cvp .same>.obj-r{stroke:var(--acc);stroke-width:1.5}
+@media (hover:hover){
+  .cvp .cat:not(.row):not(.linked):not(.ch-new):not(.ch-mod):hover>.frame-r{stroke:var(--cm-edge)}.cvp .pt:not(.ch-new):not(.ch-mod):hover>.obj-r{stroke:var(--acc)}.cvp .row[data-inv]:hover>.row-r{fill:var(--dim)}
+  .cvp .box:not(.ch-new):not(.ch-mod):not(.same):hover>.obj-r{stroke:var(--fg)}.cvp [data-inv]:hover,.cvp [data-doc]:hover{cursor:help}
+}
+/* 吹き出し: 図に描かない 1 つ奥の情報（意図・不変条件・処理の補足）。線を押して留めたときだけ、構造の面への入口が付く */
+.cvp .tip{position:absolute;z-index:2;width:max-content;max-width:min(300px,calc(100% - 32px));padding:10px 12px;border-radius:3px;background:var(--surface);box-shadow:0 4px 16px var(--shadow),0 0 0 1px var(--line);pointer-events:none;display:grid;gap:6px}
+.cvp .tip p{margin:0;font-size:14px;line-height:1.45;font-weight:600}
+.cvp .tip p.doc{font-size:13px;font-weight:400}
+.cvp .tip.pinned{pointer-events:auto}
+.cvp .tip button{justify-self:start;min-height:40px;font-size:13px;font-weight:600;color:var(--acc)}
+/* 凡例: 語がそのまま見本。世界は字の色、変更は塗り。左下に 1 行で、その面に出ている色だけ */
+.cleg{position:absolute;z-index:1;left:max(8px,env(safe-area-inset-left,0px));bottom:6px;margin:0;display:flex;gap:10px;padding:5px 7px;border-radius:3px;background:color-mix(in oklch,var(--bg) 88%,transparent);font-size:11px;font-weight:600;line-height:1;pointer-events:none}
+.cleg [data-k="api"]{color:var(--cm-api)}.cleg [data-k="db"]{color:var(--cm-db)}
+.cleg [data-k="new"],.cleg [data-k="mod"]{margin-block:-2px;padding:2px 4px;border-radius:2px}
+.cleg [data-k="new"]{color:var(--cm-add);background:var(--cm-add-bg)}.cleg [data-k="mod"]{color:var(--cm-mod);background:var(--cm-mod-bg)}
+.cleg [data-k="new"],.cleg [hidden]+[data-k="mod"]{margin-left:6px}
 .cdock{width:100%;max-width:520px;margin:0 auto}
-@media (prefers-reduced-motion:reduce){.spin,.tfill{animation:none}.knob,.act{transition:none}}
+@media (prefers-reduced-motion:reduce){.spin,.tfill{animation:none}.knob,.act{transition:none}.cvp .born{animation:none}}
 </style>
 
 <div class="app" id="app" lang="ja">
@@ -321,877 +386,782 @@ a.le{color:var(--acc)}
 </div>
 
 <script id="coder-map">
-// coder の設計図（DB の model）を「構造」と「流れ」の 2 つの地図に投影する。座標は固定、カメラだけで見る。文字の大きさは入れ子の深さで決まり、画面上 10px を切った箱は中を描かず、6.5px を切った文字は消える
-// 地図の見た目と操作は Design artifact（https://claude.ai/artifact/Xdh4TCp6mGzNCcJNPhfmud）で固めたものの写し。ページの他の部分と名前がぶつからないよう 1 つの関数に閉じる
-const CoderMap = (function () {
-var MODEL = null;
-var C = { bg: '#F0F2F5', dim: '#E6E9EE', surface: '#FDFDFE', fg: '#2B3340', muted: '#5E6675', line: '#D2D6DD', hair: '#B8BEC8', acc: '#3F5577', amber: '#8A6A2E',
-  api: '#8A5F1E', stored: '#3E6B9F', value: '#2B3340', valueLabel: '#5E6675', fail: '#A24C3B', uc: '#7A5694', add: '#2E7D5B', mod: '#9C3F7A' };
-var MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
-var tw = function (s, f) { var n = 0; for (var i = 0; i < s.length; i++) n += s.charCodeAt(i) < 0x2000 ? 0.6 : 1; return f * n; };
-var sum = function (a) { return a.reduce(function (x, y) { return x + y; }, 0); };
-var max = function (a) { return Math.max.apply(null, a); };
-// 今回の変更。change: 新 | 改 | 削 が要素（型・対象・遷移・列・処理・流れの段）に付き、無印は既存。新 = add の実線の縁、改 = mod の破線の縁、削 = 薄く打ち消し線
-var chColor = function (ch) { return ch === '新' ? C.add : ch === '改' ? C.mod : ch === '削' ? C.muted : undefined; };
-// ---------- 構造: 型の入れ子を下から積む（寸法）→ 置く（座標）。
-// 倍率に連れて箱が連続的に膨らむ。段 k（型 d の対象は 2d+1、対象 d の部屋は 2d+2）ごとに開き具合 open[k] ∈ [0,1] を持ち、
-// 箱の大きさは「名前だけの大きさ」と「中身の大きさ」をその比率で補間し、中身はその比率で縮小して薄く描く。兄弟はそれに合わせて連続的に動く
-// pins[path] ∈ [0,1] は、その箱を倍率に関わらず開いておく指定（タップで固定）。開き具合はその大きい方
-function buildStruct(M, open, pins) {
-  pins = pins || {};
-  var fr = function (k, path) { var v = open[k]; v = v === undefined ? 0 : v; return Math.max(0, Math.min(1, Math.max(v, pins[path] || 0))); };
-  var roomPath = function (path, p, i) { var tt = T[p.type], lab = p.as && p.as !== tt.name ? p.as + ': ' + tt.name : tt.name; return path + '/' + (lab.replace(/[^\w　-鿿]/g, '') || i); };
-  var lerp = function (a, b, t) { return a + (b - a) * t; };
-  var T = {}; M.types.forEach(function (t) { T[t.id] = t; });
-  var FONT = [96, 44, 26, 13, 6.5, 3];
-  var fontAt = function (d) { return FONT[Math.min(d, FONT.length - 1)]; };
-  // 同じ両端の遷移の束（線は 1 本、名札は積む）と、積んだ名札（と条件）の高さ
-  var bundle = function (list, m) { return list.filter(function (q) { return q.from === m.from && q.to === m.to; }); };
-  var stackH = function (list, fl) { return sum(list.map(function (q) { return fl * (q.when ? 2.15 : 1.25); })); };
+// coder の設計図（DB の model）を「構造」と「流れ」の 2 つの面に投影する。どの設計図も同じ 1 つの描画器で描き、設計図ごとの分岐は持たない
+// 見た目と操作は Design artifact（https://claude.ai/artifact/TM7cKue7aoHLe1YfDSVpCm）で固めたものの写し。ページの他の部分と名前がぶつからないよう 1 つの関数に閉じる
+// 配置（Structure・Flow: DOM に触れない計算）と、描画と操作（structFace・flowFace）を分ける。DB の文字列は文字としてだけ入れ、HTML として解釈しない
+const CoderMap = (() => {
+const NS = 'http://www.w3.org/2000/svg';
+const fill = (e, attrs, kids) => { for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); for (const k of kids) e.append(k); return e; };
+const el = (tag, attrs = {}, kids = []) => fill(document.createElement(tag), attrs, kids);
+const sv = (tag, attrs = {}, kids = []) => fill(document.createElementNS(NS, tag), attrs, kids);
+const tspan = (text, cls) => sv('tspan', { class: cls }, [text]);
+const textWidth = (s, f) => f * [...s].reduce((a, ch) => a + (ch.charCodeAt(0) < 0x2000 ? .6 : 1), 0);
+const max = a => Math.max(0, ...a), sum = a => a.reduce((x, y) => x + y, 0);
+const sizeOf = e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; };
+const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const CH = { 新: 'ch-new', 改: 'ch-mod', 削: 'ch-del' }, chOf = change => (change ? ' ' + CH[change] : '');
+const WORLDS = ['api', 'domain', 'db']; // 区画は worlds の並びに依らず、左（上）から 境界 → ドメイン → 保存
 
-  function typeNode(t, as, d, path) {
-    var F = fontAt(d), f = F * 0.85, pad = F * 0.4;
-    var label = as && as !== t.name ? as + ': ' + t.name : t.name, title = label + (t.many ? '  ×N ' + t.many : '');
-    var single = t.form !== 'kind' && t.objects && t.objects.length === 1 && t.objects[0].name === t.name;
-    var t1 = fr(single ? 2 * d + 2 : 2 * d + 1, path);
-    var row = d > 1;
-    if (row) t1 = Math.max(0, (t1 - 0.6) / 0.4);
-    var compact = { kind: 'type', compact: true, asText: row, t: t, path: path, title: title, F: F, f: f, pad: pad, rf: t.form === 'table' ? f * 0.9 : single ? (t.objects[0].holds && t.objects[0].holds.prim ? f * 0.9 : fontAt(d + 1)) : f, w: row ? tw(title, F) + F * 0.4 : tw(title, F) + 2 * pad, h: row ? F * 1.3 : pad + F * 1.35 + pad * 0.4, pts: [], arrows: [], x: 0, y: 0 };
-    if (t1 <= 0) return compact;
-    var full = fullType(t, d, F, f, pad, title, single, path); full.path = path; full.inList = row;
-    if (t1 < 1) { full.blend = t1; full.fw = full.w; full.fh = full.h; full.w = lerp(compact.w, full.w, t.form === 'table' ? Math.min(1, t1 / 0.5) : t1); full.h = lerp(compact.h, full.h, t1); }
-    return full;
-  }
-  function fullType(t, d, F, f, pad, title, single, path) {
-    var th = pad + F * 1.35 + (t.doc ? F * 0.62 : 0);
-    if (t.form === 'table') {
-      var fr0 = f * 0.9, rows = t.columns.map(function (c) { return { text: c.fk ? c.name + '  → ' + T[c.fk].name + (c.pk ? '  PK' : '') : c.name + '  ' + c.type + (c.pk ? '  PK' : ''), fk: c.fk, pk: c.pk, ch: c.change }; });
-      var w0 = Math.max(tw(title, F), max(rows.map(function (r) { return tw(r.text, fr0); }))) + 2 * pad;
-      var pkRow = rows.findIndex(function (r) { return r.pk; });
-      return { kind: 'table', t: t, title: title, F: F, f: f, fr: fr0, rows: rows, pad: pad, th: th, w: w0, h: th + rows.length * fr0 * 1.3 + pad, pkRel: th + Math.max(0, pkRow) * fr0 * 1.3 + fr0 * 0.65, x: 0, y: 0 };
-    }
-    if (single) {
-      var fp0 = pointNode(t, t.objects[0], d, f, true, path);
-      var fw = Math.max(fp0.w, tw(title, F)) + 2 * pad, fh = th + fp0.h + pad;
-      fp0.x = pad; fp0.y = th;
-      return { kind: 'type', t: t, title: title, F: F, f: f, pad: pad, w: fw, h: fh, pts: [fp0], arrows: [], x: 0, y: 0 };
-    }
-    var pts = t.objects.map(function (o) { return pointNode(t, o, d, f, false, path); });
-    var arrows = t.morphisms || [], gap = arrows.length ? F * 1.4 : F * 0.5;
-    var idx = {}; t.objects.forEach(function (o, i) { idx[o.id] = i; });
-    var cells = autoCells(t);
-    // 行の上を通る矢（同じ行の遠い相手への弧と、自分への弧）があれば、行の上と間を空ける。自分への弧は名札をその上に積む分も
-    var fl = F * 0.7, above = max([F * 1.5].concat(arrows.filter(function (m) { return m.from === m.to; }).map(function (m) { return F * 0.6 + stackH(bundle(arrows, m), fl); })));
-    var overRow = arrows.some(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]]; return m.from === m.to || a.r === b.r && Math.abs(a.c - b.c) > 1; });
-    if (overRow) gap = Math.max(gap, F * 2.6, above + F * 0.4);
-    // 縦の隣への束は名札を縦に積むので、行の間をその高さだけ空ける
-    arrows.forEach(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]], list = bundle(arrows, m); if (list.length > 1 && a.c === b.c && Math.abs(a.r - b.r) === 1) gap = Math.max(gap, stackH(list, fl) + F * 0.4); });
-    var colGap = Math.max.apply(null, [gap].concat(arrows.filter(function (m) { return cells[idx[m.from]].c !== cells[idx[m.to]].c; }).map(function (m) { return tw(m.by, fl) + F * 1.0; })));
-    var colW = [], rowH = [];
-    pts.forEach(function (p, i) { var c = cells[i]; colW[c.c] = Math.max(colW[c.c] || 0, p.w); rowH[c.r] = Math.max(rowH[c.r] || 0, p.h); });
-    var outer = arrows.some(function (m) { var a = cells[idx[m.from]], b = cells[idx[m.to]]; return m.from !== m.to && a.c === b.c && Math.abs(a.r - b.r) !== 1; });
-    var colX = [], rowY = [], x = pad, y = th + (overRow ? above : 0), c, r;
-    for (c = 0; c < colW.length; c++) { colX[c] = x; x += (colW[c] || 0) + colGap; }
-    for (r = 0; r < rowH.length; r++) { rowY[r] = y; y += (rowH[r] || 0) + gap; }
-    var w = Math.max(x - colGap + pad + (outer ? colGap : 0), tw(title, F) + 2 * pad), h = y - gap + pad;
-    pts.forEach(function (p, i) { var cc = cells[i]; p.x = colX[cc.c] + (colW[cc.c] - p.w) / 2; p.y = rowY[cc.r]; });
-    return { kind: 'type', t: t, title: title, F: F, f: f, w: w, h: h, pts: pts, cells: cells, colX: colX, colW: colW, rowY: rowY, colGap: colGap, pad: pad, arrows: arrows, idx: idx, x: 0, y: 0 };
-  }
-  // 状態の格子。at があればそれ。無ければ遷移から: 列 = 始まりからの最長の歩数、本流は 1 行目、脇に逸れる終わり（失敗・取消）は下の行
-  function autoCells(t) {
-    var objs = t.objects, ms = t.morphisms || [];
-    if (!ms.length || objs.some(function (o) { return o.at; })) return objs.map(function (o, i) { return o.at ? { c: o.at[0], r: o.at[1] } : { c: i, r: 0 }; });
-    var idx = {}; objs.forEach(function (o, i) { idx[o.id] = i; });
-    var outs = objs.map(function () { return []; }), ins = objs.map(function () { return 0; });
-    ms.forEach(function (m) { if (idx[m.from] !== undefined && idx[m.to] !== undefined && m.from !== m.to) { outs[idx[m.from]].push(idx[m.to]); ins[idx[m.to]]++; } });
-    var rank = objs.map(function () { return 0; }), seen = {};
-    var walk = function (i, depth, path) { if (path[i]) return; path[i] = true; if (depth > rank[i] || !seen[i]) { rank[i] = Math.max(rank[i], depth); seen[i] = true; outs[i].forEach(function (j) { walk(j, depth + 1, path); }); } path[i] = false; };
-    objs.forEach(function (o, i) { if (!ins[i]) walk(i, 0, {}); });
-    objs.forEach(function (o, i) { if (!seen[i]) { rank[i] = 0; } });
-    var sinks = objs.map(function (o, i) { return !outs[i].length; }), far = -1; objs.forEach(function (o, i) { if (sinks[i] && rank[i] > far) far = rank[i]; });
-    var cells = [], used = {};
-    objs.forEach(function (o, i) {
-      var r = sinks[i] && rank[i] < far ? 1 : 0, c = sinks[i] && rank[i] < far ? Math.max(0, rank[i] - 1) : rank[i];
-      while (used[c + ',' + r]) r++;
-      used[c + ',' + r] = true; cells.push({ c: c, r: r });
-    });
-    return cells;
-  }
-  function pointNode(t, o, d, f, flat, tpath) {
-    var path = tpath + '#' + o.id, name = o.name, pad = f * 0.35;
-    if (!o.holds || o.holds === 'unit') return { kind: 'unit', t: t, o: o, path: path, name: name, f: f, w: tw(name, f) + f * 0.9, h: f * 1.5 };
-    var t2 = flat ? 1 : fr(2 * d + 2, path);
-    var compactP = { kind: 'open', compact: true, t: t, o: o, path: path, name: name, f: f, rf: fontAt(d + 1), w: tw(name, f) + 2 * pad, h: pad + f * 1.45 + pad * 0.3 };
-    if (o.holds.prim) {
-      var fp = f * 0.9, s = o.holds.prim + (o.holds.invariant ? '  ' + o.holds.invariant : '');
-      if (flat) return { kind: 'prim', flat: true, t: t, o: o, path: path, name: name, f: f, fp: fp, s: s, w: tw(s, fp), h: fp * 1.4 };
-      if (t2 <= 0) return compactP;
-      var fullP = { kind: 'prim', t: t, o: o, path: path, name: name, f: f, fp: fp, s: s, w: Math.max(tw(s, fp), tw(name, f)) + 2 * pad, h: f * 1.3 + fp * 1.4 + 2 * pad };
-      if (t2 < 1) { fullP.blend = t2; fullP.fw = fullP.w; fullP.fh = fullP.h; fullP.w = lerp(compactP.w, fullP.w, t2); fullP.h = lerp(compactP.h, fullP.h, t2); }
-      return fullP;
-    }
-    if (t2 <= 0) return compactP;
-    var fullO = fullPoint(o, d, f, flat, name, pad, path); fullO.t = t; fullO.o = o; fullO.path = path; fullO.rf = fontAt(d + 1);
-    if (t2 < 1) { fullO.blend = t2; fullO.fw = fullO.w; fullO.fh = fullO.h; fullO.w = lerp(compactP.w, fullO.w, t2); fullO.h = lerp(compactP.h, fullO.h, t2); }
-    return fullO;
-  }
-  function fullPoint(o, d, f, flat, name, pad, path) {
-    // 部屋は属性の一覧: 縦に左揃え
-    var rooms = o.holds.parts.map(function (p, i) { return typeNode(T[p.type], p.as, d + 1, roomPath(path, p, i)); }), sep = f * 0.2, y = 0;
-    rooms.forEach(function (q) { q.x = 0; q.y = y; y += q.h + sep; });
-    var cw = max(rooms.map(function (q) { return q.w; })), ch = y - sep;
-    if (flat) return { kind: 'open', flat: true, name: name, f: f, rooms: rooms, ox: 0, oy: 0, w: cw, h: ch };
-    return { kind: 'open', name: name, f: f, rooms: rooms, ox: pad, oy: pad + f * 1.45, w: Math.max(cw, tw(name, f)) + 2 * pad, h: pad + f * 1.45 + ch + pad };
-  }
-
-  // 置く。要素には盤面をまたいで同じ id を付ける（D が変わったとき同じ要素を動かして見せるため）
-  var out = { shapes: [], texts: [], arrows: [], boxes: {}, hits: [] };
-  var S = function (o) { out.shapes.push(o); }, X = function (o) { out.texts.push(o); }, A = function (o) { out.arrows.push(o); };
-  var regionRight = 0;
-  // 描く。ox, oy は親の原点、sc は親からの縮尺（開き具合の積）、op は不透明度（開き具合の積）
-  function renderType(n, ox, oy, sc, op, depth) {
-    var path = n.path, AX = ox + n.x * sc, AY = oy + n.y * sc, W = n.w * sc, H = n.h * sc, F = n.F * sc, pad = n.pad * sc, rx = Math.min(F * 1.2, W / 2, H / 2), ch = n.t.change;
-    if (ch === '削') op *= 0.45;
-    var btf = n.inList ? (n.rf || n.f) * sc : F;
-    if (n.t.many) S({ id: path + ':back', k: 'back', x: AX + F * 0.2, y: AY + F * 0.2, w: W, h: H, r: rx, op: op, tf: btf });
-    var shp = { id: path, k: n.asText ? 'txt' : depth % 2 ? 'cat' : 'cat2', x: AX, y: AY, w: W, h: H, r: rx, fit: true, op: op, ch: ch, tf: btf, ref: { kind: n.t.form === 'table' ? 'table' : 'type', t: n.t, path: path, open: 0, inner: (n.rf || (n.kind === 'table' ? n.f * 0.9 : n.f)) * sc } }; S(shp);
-    var fitW = depth === 1 && regionRight ? regionRight - AX - pad : W - pad;
-    // 名前: 閉じているときは箱の中央、開くにつれて左上の見出し位置へ
-    var b = n.compact ? 0 : (n.blend === undefined ? 1 : n.blend), ttw = tw(n.title, F); shp.ref.open = b;
-    if (n.inList) { shp.op = op * Math.max(0, Math.min(1, (b - 0.25) / 0.5)); }
-    if (n.asText || n.inList) X({ id: path + ':t', x: lerp(AX + F * 0.2, AX + pad, n.inList ? b : 0), y: lerp(AY + F * 0.1, AY + pad, n.inList ? b : 0), text: n.title, f: F, w500: true, fitW: W, op: op, color: chColor(ch), strike: ch === '削' });
-    else X({ id: path + ':t', x: lerp(AX + W / 2 - ttw / 2, AX + pad, b), y: lerp(AY + (H - F * 1.25) / 2, AY + pad, b), text: n.title, f: F, bold: true, mono: n.kind === 'table', fitW: fitW, op: op, color: chColor(ch), strike: ch === '削' });
-    // 中身は開き具合 0.3 までは見せず、そこから 1 へ向けてフェードイン（小さすぎる中身のゴミを出さない）
-    var fade = Math.max(0, (b - 0.15) / 0.85), sc2 = sc * b, op2 = op * fade;
-    if (n.compact || op2 < 0.05) return;
-    if (n.t.doc && b >= 0.99) X({ id: path + ':doc', x: AX + pad, y: AY + pad + F * 1.3, text: n.t.doc, f: F * 0.5, color: C.muted, fitW: W - 2 * pad, op: op });
-    // 中身は、開き具合で縮めた全体を題名の下に収めて育てる（題名に被らない。横は中央）
-    var fh0 = n.fh || n.h, titleBottom = lerp(AY + (H - F * 1.25) / 2, AY + pad, b) + F * 1.3;
-    if (b < 1) sc2 = Math.min(sc2, Math.max(0, AY + H - titleBottom) / fh0);
-    var ox2 = AX + (W - (n.fw || n.w) * sc2) / 2, oy2 = AY + H - fh0 * sc2;
-    n.childOrigin = [ox2, oy2];
-    if (n.kind === 'table') {
-      var rf = n.fr * sc, rh = rf * 1.3, ry0 = Math.max(AY + n.th * sc, titleBottom), ropz = b < 1 ? op : op2, slot = 0;
-      n.childOrigin = [AX, AY];
-      // 育つ途中は、上から順に入る所まで見せる（途中の行を飛ばさない）
-      var stop = false;
-      n.rows.forEach(function (row, i) {
-        if (stop) return;
-        if (b < 1 && tw(row.text, rf) > W - pad * 1.5) { stop = true; return; }
-        var ry = ry0 + slot * rh; if (ry + rh > AY + H - pad * 0.5) { stop = true; return; } slot++;
-        X({ id: path + ':r' + i, x: AX + pad, y: ry, text: row.text, f: rf, mono: true, color: row.ch ? chColor(row.ch) : row.fk ? C.stored : C.fg, strike: row.ch === '削', fitW: W - pad, op: row.ch === '削' ? ropz * 0.5 : ropz });
-        if (row.ch === '新' || row.ch === '改') S({ id: path + ':rc' + i, k: 'rbar', ch: row.ch, x: AX + pad * 0.3, y: ry, w: 0, h: rf * 1.25, op: ropz });
-        if (row.fk) (out.fks = out.fks || []).push({ from: n.t.id, to: row.fk, i: i, y: ry + rf * 0.65, op: ropz });
-      });
-      n.rowsDrawn = slot > 0;
-      return;
-    }
-    n.arrows.forEach(function (m, i) { arrow(n, m, ox2, oy2, sc2, op2, path + ':a' + i); });
-    n.pts.forEach(function (p) { renderPoint(p, ox2, oy2, sc2, op2, depth); });
-  }
-  function renderPoint(p, ox, oy, sc, op, depth) {
-    var path = p.path, AX = ox + p.x * sc, AY = oy + p.y * sc, W = p.w * sc, H = p.h * sc, f = p.f * sc, ch = p.flat ? undefined : p.o.change;
-    if (ch === '削') op *= 0.45;
-    if (p.flat && p.kind === 'prim') { X({ id: path + ':s', x: AX, y: AY, text: p.s, f: p.fp * sc, mono: true, fitW: W + p.fp * sc, op: op }); return; }
-    if (p.kind === 'unit') {
-      S({ id: path, k: 'chip', x: AX, y: AY, w: W, h: H, r: H / 2, op: op, ch: ch, tf: f });
-      X({ id: path + ':t', x: AX + W / 2, y: AY + H * 0.15, text: p.name, f: f, cx: AX + W / 2, fitW: W, op: op, color: chColor(ch), strike: ch === '削' });
-      return;
-    }
-    var rx = f * 0.4, pad = f * 0.35;
-    if (!p.flat) {
-      var shp = { id: path, k: p.kind === 'prim' ? 'prim' : 'pt', x: AX, y: AY, w: W, h: H, r: rx, fit: true, op: op, ch: ch, tf: f, ref: { kind: 'object', t: p.t, o: p.o, path: path, open: 0, inner: (p.kind === 'prim' ? p.fp : p.rf || p.f * 0.5) * sc } }; S(shp);
-      var pb = p.compact ? 0 : (p.blend === undefined ? 1 : p.blend), ntw = tw(p.name, f); shp.ref.open = pb;
-      X({ id: path + ':t', x: lerp(AX + W / 2 - ntw / 2, AX + pad, pb), y: lerp(AY + (H - f * 1.25) / 2, AY + pad, pb), text: p.name, f: f, bold: true, fitW: W - pad, op: op, color: chColor(ch), strike: ch === '削' });
-      if (p.compact) return;
-    }
-    var b = p.blend === undefined ? 1 : p.blend, sc3 = sc * b, op3 = op * Math.max(0, (b - 0.15) / 0.85);
-    if (op3 < 0.05) return;
-    var fh3 = p.fh || p.h, tb3 = lerp(AY + (H - f * 1.25) / 2, AY + pad, b) + f * 1.3;
-    if (b < 1 && !p.flat) sc3 = Math.min(sc3, Math.max(0, AY + H - tb3) / fh3);
-    var ox3 = AX + (W - (p.fw || p.w) * sc3) / 2, oy3 = p.flat ? AY + (H - fh3 * sc3) / 2 : AY + H - fh3 * sc3;
-    if (p.kind === 'prim') { X({ id: path + ':s', x: ox3 + pad, y: oy3 + (pad / sc + p.f * 1.3) * sc3, text: p.s, f: p.fp * sc3, mono: true, fitW: W - pad, op: op3 }); return; }
-    var gx = ox3 + p.ox * sc3, gy = oy3 + p.oy * sc3;
-    p.rooms.forEach(function (q) { renderType(q, gx, gy, sc3, op3, depth + 1); });
-  }
-  // 矢: 隣なら直線、それ以外は曲線。名札は横の矢なら中央、曲線なら中点。自分への遷移は箱の上の小さな弧
-  // 同じ両端の遷移は線を 1 本だけ描き、後のものの名札（と条件）を、前の分の高さずつ線から離れる向き（away）へ積む
-  function arrow(n, m, AX, AY, sc, op, id) {
-    var a = n.pts[n.idx[m.from]], b = n.pts[n.idx[m.to]], ca = n.cells[n.idx[m.from]], cb = n.cells[n.idx[m.to]];
-    var F = n.F, fl = F * 0.7, pts, lx, ly, mid = false, curve = false, fitW = n.colGap - F * 0.6, away = 1;
-    var rev = n.arrows.some(function (q) { return q.from === m.to && q.to === m.from; }), dups = bundle(n.arrows, m), k = dups.indexOf(m);
-    if (m.from === m.to) {
-      var cx = a.x + a.w / 2, sd = Math.min(a.w / 4, F * 0.6), rise = F * 0.75;
-      pts = [[cx - sd, a.y], [cx - sd, a.y - rise], [cx + sd, a.y - rise], [cx + sd, a.y]]; curve = true; mid = true;
-      lx = cx; ly = a.y - F * 0.6 - stackH([dups[0]], fl); fitW = a.w + n.colGap; away = -1;
-    } else if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) {
-      var down = cb.r > ca.r, off = rev ? (down ? -1 : 1) * F * 0.55 : 0, x = n.colX[ca.c] + n.colW[ca.c] / 2 + off; fitW = n.colW[ca.c] / 2 + n.colGap - F * 0.5;
-      pts = down ? [[x, a.y + a.h], [x, b.y]] : [[x, a.y], [x, b.y + b.h]];
-      // 往復は名札を両方右側に、上下に分ける（左に出すと区画の外へはみ出す）
-      ly = (pts[0][1] + pts[1][1]) / 2 - fl * 0.6 + (rev ? (off < 0 ? -fl * 0.7 : fl * 0.7) : 0);
-      lx = n.colX[ca.c] + n.colW[ca.c] / 2 + Math.abs(off) + fl * 0.5; away = off < 0 ? -1 : 1;
-    } else if (ca.r === cb.r && Math.abs(ca.c - cb.c) === 1) {
-      var right = cb.c > ca.c, yo = rev ? (right ? -1 : 1) * F * 0.55 : 0, y = n.rowY[ca.r] + Math.min(a.h, b.h) / 2 + yo;
-      pts = right ? [[a.x + a.w, y], [b.x, y]] : [[a.x, y], [b.x + b.w, y]];
-      lx = (pts[0][0] + pts[1][0]) / 2; ly = yo > 0 ? y + fl * 0.3 : y - fl * 1.5; mid = true; away = yo > 0 ? 1 : -1;
-    } else if (ca.r === cb.r) {
-      // 同じ行の遠い相手: 間の箱を貫かず、上を越える弧
-      var sx0 = a.x + a.w / 2, ex0 = b.x + b.w / 2, top = Math.min(a.y, b.y), lift = F * 2.2;
-      var c1a = [sx0, top - lift], c2a = [ex0, top - lift];
-      pts = [[sx0, a.y], c1a, c2a, [ex0, b.y]]; curve = true; mid = true;
-      lx = (sx0 + ex0) / 2; ly = top - lift * 0.75 - fl * 1.3; fitW = Math.abs(ex0 - sx0) - F; away = -1;
-    } else {
-      var sx, sy, ex, ey, c1, c2;
-      if (ca.c === cb.c) {
-        sx = a.x + a.w; sy = a.y + Math.min(F, a.h / 2); ex = b.x + b.w; ey = b.y + Math.min(F * 0.9, b.h / 2);
-        var bulge = n.colGap * 0.7; c1 = [sx + bulge, sy]; c2 = [ex + bulge, ey];
-        lx = Math.max(sx, ex) + bulge * 0.75 + fl * 0.2; ly = (sy + ey) / 2 - fl * 0.6; fitW = bulge;
-      } else {
-        var downw = cb.r > ca.r, rightward = cb.c > ca.c;
-        sx = a.x + a.w / 2; sy = downw ? a.y + a.h : a.y; ex = rightward ? b.x : b.x + b.w; ey = b.y + Math.min(F * 0.9, b.h / 2);
-        c1 = [sx, sy + (ey - sy) * 0.7]; c2 = [ex - (ex - sx) * 0.35, ey]; fitW = Math.abs(ex - sx) * 0.6; away = downw ? 1 : -1;
-      }
-      var bz = function (tt) { var u = 1 - tt; return [u * u * u * sx + 3 * u * u * tt * c1[0] + 3 * u * tt * tt * c2[0] + tt * tt * tt * ex, u * u * u * sy + 3 * u * u * tt * c1[1] + 3 * u * tt * tt * c2[1] + tt * tt * tt * ey]; };
-      if (ca.c !== cb.c) { var mp = bz(0.5); lx = mp[0]; ly = mp[1] - fl * 0.65; mid = true; }
-      pts = [[sx, sy], c1, c2, [ex, ey]]; curve = true;
-    }
-    // 縦の隣への束は、積んだ名札の真ん中を線の真ん中に
-    if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) ly -= (stackH(dups, fl) - stackH([dups[0]], fl)) / 2;
-    ly += away > 0 ? stackH(dups.slice(0, k), fl) : -stackH(dups.slice(1, k + 1), fl);
-    var P = function (p) { return [AX + p[0] * sc, AY + p[1] * sc]; };
-    var ends = [n.path + '#' + m.from, n.path + '#' + m.to], ch = m.change; if (ch === '削') op *= 0.5;
-    // 後のものを選んでも 1 本の線が光るよう、線の ends にその id も入れる
-    if (!k) A({ id: id, pts: pts.map(P), curve: curve, color: ch ? chColor(ch) : C.fg, dash: ch === '削', head: true, op: op, ends: ends.concat(dups.slice(1).map(function (q) { return n.path + ':a' + n.arrows.indexOf(q); })), tf: fl * sc });
-    var lp = P([lx, ly]), lw = tw(m.by, fl * sc);
-    X({ id: id + ':t', x: lp[0], y: lp[1], text: m.by, f: fl * sc, cx: mid ? lp[0] : undefined, pill: true, color: ch ? chColor(ch) : C.muted, strike: ch === '削', fitW: fitW * sc, op: op });
-    if (m.when) X({ id: id + ':w', x: lp[0], y: lp[1] + fl * 1.25 * sc, text: whenText(m.when), f: fl * 0.72 * sc, cx: mid ? lp[0] : undefined, pill: true, color: C.amber, fitW: fitW * 1.3 * sc, op: op });
-    out.hits.push({ id: id, x: mid ? lp[0] - lw / 2 : lp[0], y: lp[1], w: lw, h: fl * sc * 1.25, f: fl * sc, op: op, ref: { kind: 'morphism', t: n.t, m: m, path: id }, ends: ends });
-  }
-
-  function pack(nodes, cols, gap) {
-    var hs = [], xs = [], x = 0, i;
-    for (i = 0; i < cols; i++) { hs.push(0); }
-    var placed = nodes.map(function (n) { var k = 0; for (i = 1; i < cols; i++) if (hs[i] < hs[k]) k = i; return { n: n, col: k, y: hs[k], h: (hs[k] += n.h + gap) }; });
-    var colW = []; for (i = 0; i < cols; i++) colW.push(0);
-    placed.forEach(function (p) { colW[p.col] = Math.max(colW[p.col], p.n.w); });
-    for (i = 0; i < cols; i++) { xs.push(x); x += colW[i] + gap; }
-    placed.forEach(function (p) { p.n.x = xs[p.col]; p.n.y = p.y; });
-    return { w: x - gap, h: max(hs) - gap };
-  }
-  var F0 = FONT[0], RP = F0 * 0.4, RG = 240, worlds = {};
-  var usedAsPart = {}; M.types.forEach(function (t) { (t.objects || []).forEach(function (o) { if (o.holds && o.holds.parts) o.holds.parts.forEach(function (p) { usedAsPart[p.type] = true; }); }); });
-  // 自分を含む型（木）や互いを含む型は、どれも部品なので最上位から辿れず消える。辿れない型は、型の順に最上位にする
-  var reached = {}, reach = function (id) { if (reached[id]) return; reached[id] = true; (T[id].objects || []).forEach(function (o) { if (o.holds && o.holds.parts) o.holds.parts.forEach(function (p) { reach(p.type); }); }); };
-  M.types.forEach(function (t) { if (!usedAsPart[t.id]) reach(t.id); });
-  M.types.forEach(function (t) { if (!reached[t.id]) { usedAsPart[t.id] = false; reach(t.id); } });
-  // 区画は左から 依頼 → 型 → 表（世界をまたぐ線はこの並びを前提に引く）。設計図の worlds の順には依らない
-  var order = ['api', 'domain', 'db'], regions = M.worlds.slice().sort(function (a, b) { return order.indexOf(a.id) - order.indexOf(b.id); });
-  var wx = 0, maxH = 0;
-  regions.forEach(function (w) {
-    var list = M.types.filter(function (t) { return t.world === w.id && (w.id === 'db' || !usedAsPart[t.id]); });
-    var nodes = list.map(function (t) { return typeNode(t, undefined, 1, t.id); });
-    var inner;
-    if (w.id === 'db') {
-      var byId = {}; nodes.forEach(function (n) { byId[n.t.id] = n; });
-      var rank = {}, rk = function (id, seen) { if (rank[id] !== undefined) return rank[id]; if (seen[id]) return 0; seen[id] = true; var r = 0; (T[id].columns || []).forEach(function (c) { if (c.fk && byId[c.fk]) r = Math.max(r, rk(c.fk, seen) + 1); }); rank[id] = r; return r; };
-      nodes.forEach(function (n) { rk(n.t.id, {}); });
-      var maxR = max(nodes.map(function (n) { return rank[n.t.id]; })), cols = [];
-      for (var r = maxR; r >= 0; r--) cols.push(nodes.filter(function (n) { return rank[n.t.id] === r; }));
-      var gapY = FONT[1] * 0.7, gapX = FONT[1] * 4, cx0 = 0, colH = cols.map(function (col) { return sum(col.map(function (n) { return n.h; })) + gapY * (col.length - 1); }), Hc = max(colH);
-      out.dbCols = [];
-      cols.forEach(function (col, i) { var cw = max(col.map(function (n) { return n.w; })), y = (Hc - colH[i]) / 2, y0 = y; col.forEach(function (n) { n.x = cx0; n.y = y; n.dbCol = i; y += n.h + gapY; }); out.dbCols.push({ x: cx0, w: cw, top: y0, bottom: y - gapY }); cx0 += cw + gapX; });
-      inner = { w: cx0 - gapX, h: Hc };
-    } else inner = pack(nodes, 1, FONT[1] * 0.7);
-    var rw = Math.max(inner.w + 2 * RP, tw(w.name, F0) + 2 * RP), rh = RP + F0 * 1.3 + inner.h + RP;
-    worlds[w.id] = { x: wx, y: 0, w: rw, h: rh, nodes: nodes, name: w.name };
-    wx += rw + RG; maxH = Math.max(maxH, rh);
-  });
-  var top = 100;
-  regions.forEach(function (w) {
-    var r = worlds[w.id]; r.y = top;
-    S({ id: 'R:' + w.id, k: 'region', x: r.x, y: r.y, w: r.w, h: r.h, r: F0 * 0.3, fit: true });
-    X({ id: 'R:' + w.id + ':t', x: r.x + RP, y: r.y + RP, text: r.name, f: F0, bold: true, fitW: r.w });
-    regionRight = r.x + r.w;
-    r.nodes.forEach(function (n) {
-      renderType(n, r.x + RP, r.y + RP + F0 * 1.3, 1, 1, 1);
-      var bx = r.x + RP + n.x, by = r.y + RP + F0 * 1.3 + n.y;
-      out.boxes[n.t.id] = { x: bx, y: by, w: n.w, h: n.h, world: w.id, col: n.dbCol, pkY: n.pkRel && n.childOrigin && n.rowsDrawn ? n.childOrigin[1] + n.pkRel : by + n.h / 2 };
-      if (n.dbCol !== undefined && out.dbCols) { var dc = out.dbCols[n.dbCol]; dc.ax = r.x + RP + dc.x; dc.atop = r.y + RP + F0 * 1.3 + dc.top; dc.abottom = r.y + RP + F0 * 1.3 + dc.bottom; }
-    });
-    regionRight = 0;
-  });
-  // 世界をまたぐ対応（点線）。区画の間の溝だけを通す。同じ箱に入る線は縦にずらす
-  // 同じ箱から出る線は相手の高さ順、同じ箱に入る線は出元の高さ順に並べる（絡まないように）。線はなめらかな曲線
-  var maps = M.maps.map(function (m) { var a = out.boxes[m.from], b = out.boxes[m.to]; return a && b ? { m: m, a: a, b: b, ltr: order.indexOf(a.world) < order.indexOf(b.world) } : null; }).filter(Boolean);
-  var portY = function (box, side, list, me) {
-    var same = list.filter(function (e) { return e.box === box && e.side === side; }).sort(function (p, q) { return p.other - q.other; });
-    var i = same.indexOf(me), n = same.length, span = Math.min(box.h - 40, 36 * (n - 1));
-    return box.y + Math.min(box.h / 2, 50) + (n > 1 ? (i / (n - 1) - 0.5) * span : 0);
-  };
-  var ports = [];
-  maps.forEach(function (e) { ports.push({ box: e.a, side: e.ltr ? 'r' : 'l', other: e.b.y, e: e, kind: 's' }); ports.push({ box: e.b, side: e.ltr ? 'l' : 'r', other: e.a.y, e: e, kind: 't' }); });
-  var oi = 0;
-  maps.forEach(function (e) {
-    var a = e.a, b = e.b, ltr = e.ltr, sx = ltr ? a.x + a.w : a.x, tx = ltr ? b.x : b.x + b.w, i = oi;
-    var sp = ports.find(function (p) { return p.e === e && p.kind === 's'; }), tp = ports.find(function (p) { return p.e === e && p.kind === 't'; });
-    var sy = portY(a, sp.side, ports, sp), ty = portY(b, tp.side, ports, tp), pts;
-    if (a.world !== 'domain' && b.world !== 'domain') {
-      // 区画を飛び越える線は、区画の間の溝を上がり、区画の上を渡って、向こうの溝を下りる（角は丸める）
-      var g1 = (worlds.api.x + worlds.api.w + worlds.domain.x) / 2 + (ltr ? -24 : 24) - i * 18, g2 = (worlds.domain.x + worlds.domain.w + worlds.db.x) / 2 + (ltr ? 24 : -24) + i * 18, yy = top - 60 - i * 22;
-      var ga = ltr ? g1 : g2, gb = ltr ? g2 : g1;
-      pts = [[sx, sy], [ga, sy], [ga, yy], [gb, yy], [gb, ty], [tx, ty]]; oi++;
-      A({ id: 'map:' + e.m.from + '>' + e.m.to, pts: pts, round: 60, color: C.hair, dash: true, head: true, sw: 1, always: true, ends: [e.m.from, e.m.to], far: true });
-      return;
-    }
-    var dx = (tx - sx) * 0.5; pts = [[sx, sy], [sx + dx, sy], [tx - dx, ty], [tx, ty]];
-    A({ id: 'map:' + e.m.from + '>' + e.m.to, pts: pts, curve: true, color: C.hair, dash: true, head: true, sw: 1, always: true, ends: [e.m.from, e.m.to], far: true });
-  });
-  // 外部キーの矢: 参照する表の行から、参照される表（右）へ
-  M.types.forEach(function (t) {
-    if (t.form !== 'table') return;
-    (t.columns || []).forEach(function (c, i) {
-      if (!c.fk) return; var a = out.boxes[t.id], b = out.boxes[c.fk]; if (!a || !b) return;
-      var k = (out.fks || []).find(function (q) { return q.from === t.id && q.i === i; });
-      var sx = a.x + a.w, sy = k ? k.y : a.y + a.h / 2, tx = b.x, ty = b.pkY, dx = Math.max(40, (tx - sx) * 0.5);
-      if (b.col !== undefined && a.col !== undefined && b.col - a.col > 1 && out.dbCols) {
-        // 間の列の表を避け、上か下（近い方）を回る。列の間の溝を上下する
-        var mids = out.dbCols.slice(a.col + 1, b.col), topY = Math.min.apply(null, mids.map(function (d) { return d.atop; })) - 30, botY = Math.max.apply(null, mids.map(function (d) { return d.abottom; })) + 30;
-        var yy = Math.abs((sy + ty) / 2 - topY) < Math.abs((sy + ty) / 2 - botY) ? topY : botY, g1 = sx + 40 + i * 14, g2 = tx - 40 - i * 14;
-        A({ id: 'fk:' + t.id + ':' + c.name, pts: [[sx, sy], [g1, sy], [g1, yy], [g2, yy], [g2, ty], [tx, ty]], round: 40, color: C.stored, head: true, sw: 1, always: true, ends: [t.id, c.fk], op: k ? k.op : undefined });
-        return;
-      }
-      A({ id: 'fk:' + t.id + ':' + c.name, pts: [[sx, sy], [sx + dx, sy], [tx - dx, ty], [tx, ty]], curve: true, color: C.stored, head: true, sw: 1, always: true, ends: [t.id, c.fk], op: k ? k.op : undefined });
-    });
-  });
-  // 凡例: 区画をまたぐ点線の意味（構造の盤面で唯一の、見ただけでは分からない線）
-  S({ id: 'lg:l', k: 'swdash', x: 0, y: top - 104, w: 48, h: 0, color: C.hair });
-  X({ id: 'lg:t', x: 60, y: top - 120, text: '世界をまたぐ対応: 依頼 → 型 → 表', f: 26, color: C.muted });
-  // 今回の変更の見本（流れの凡例と同じ描き方）。変更が無ければ出さない
-  if (M.types.some(function (t) { return t.change || (t.objects || []).some(function (o) { return o.change; }) || (t.morphisms || []).some(function (m) { return m.change; }) || (t.columns || []).some(function (c) { return c.change; }); })) {
-    var lx = 60 + tw('世界をまたぐ対応: 依頼 → 型 → 表', 26) + 80;
-    X({ id: 'lg:c', x: lx, y: top - 120, text: '今回の変更', f: 26, color: C.muted }); lx += tw('今回の変更', 26) + 24;
-    [['追加', '新'], ['修正', '改'], ['削除', '削']].forEach(function (it, i) {
-      var del = it[1] === '削';
-      S({ id: 'lg:c' + i, k: 'lgch', ch: it[1], x: lx, y: top - 116, w: 24, h: 24, op: del ? 0.45 : undefined }); lx += 34;
-      X({ id: 'lg:ct' + i, x: lx, y: top - 120, text: it[0], f: 26, color: chColor(it[1]), strike: del, op: del ? 0.6 : undefined }); lx += tw(it[0], 26) + 36;
-    });
-  }
-  out.w = wx - RG; out.h = top + maxH + 40; out.top = top;
-  // ホームはドメインの最上位の型。まだ無ければ盤面全体
-  var homeT = M.types.find(function (t) { return t.world === 'domain' && !usedAsPart[t.id]; }); out.home = homeT ? out.boxes[homeT.id] : { x: 0, y: top, w: out.w, h: maxH };
-  return out;
-}
-
-// ---------- 流れ: 列が線、箱が処理。U1 の行の積み方をそのまま継承
-function buildFlow(M) {
-  var L = {}; M.logic.forEach(function (l) { L[l.id] = l; });
-  // ドメインの処理の種類: 出す線が Lifecycle の型なら Transition、Kind なら Decision、それ以外は Computation。線の型は名前で結ぶ道具（labelType）で引く
-  var kindOf = function (st) {
-    var outs = Object.keys(st.out || {}).length ? st.out : null;
-    if (!outs) M.flows.forEach(function (fl) { fl.steps.forEach(function (q) { if (!outs && q.logic === st.logic && Object.keys(q.out || {}).length) outs = q.out; }); });
-    var forms = Object.keys(outs || {}).map(function (k) { var t = TID[labelType(outs[k].name)]; return t ? t.form : null; });
-    return forms.indexOf('lifecycle') >= 0 ? 'Transition' : forms.indexOf('kind') >= 0 ? 'Decision' : 'Computation';
-  };
-  var EXW = 112, WIRE = 36, BOX = 68, GAPF = 64, TITLE = 56;
-  var out = { shapes: [], texts: [], arrows: [], hits: [], flowRects: {} }, fid = 0;
-  var S = function (o) { out.shapes.push(o); }, X = function (o) { out.texts.push(o); }, A = function (o) { out.arrows.push(o); };
-  var lineColor = function (k) { return k === 'api' ? C.api : k === 'stored' ? C.stored : C.value; };
-  var labelColor = function (k) { return k === 'api' ? C.api : k === 'stored' ? C.stored : C.valueLabel; };
-  var x0 = 40, maxY = 0;
-  // 凡例（盤面の左上）
-  var LG = 11, lgy = 20, lgx = 40, lgx0 = 40;
-  var row = function (items) {
-    lgx = lgx0;
-    items.forEach(function (it) {
-      var w = tw(it[0], LG);
-      if (it[1] === null) { X({ x: lgx, y: lgy, text: it[0], f: LG * 0.9, bold: true }); lgx += w + 10; return; }
-      if (it[1] === 'dom' || it[1] === 'uc' || it[1] === 'per') { S({ k: it[1], x: lgx, y: lgy + 4, w: 7, h: 7 }); lgx += 12; }
-      else if (it[1] === '新' || it[1] === '改' || it[1] === '削') { var del = it[1] === '削'; S({ k: 'lgch', ch: it[1], x: lgx, y: lgy + 2, w: 10, h: 10, op: del ? 0.45 : undefined }); lgx += 15; X({ x: lgx, y: lgy, text: it[0], f: LG, color: chColor(it[1]), strike: del, op: del ? 0.6 : undefined }); lgx += w + 16; return; }
-      else { S({ k: it[1] === C.fail ? 'swdash' : 'sw', x: lgx, y: lgy + 7, w: 18, h: 0, color: it[1] }); lgx += 24; }
-      X({ x: lgx, y: lgy, text: it[0], f: LG, color: C.muted }); lgx += w + 16;
-    });
-    lgy += 18;
-  };
-  row([['線', null], ['API の求めと返事', C.api], ['保存されている値', C.stored], ['途中の値', C.value], ['失敗', C.fail]]);
-  row([['箱', null], ['ドメイン（Transition / Decision / Computation）', 'dom'], ['ユースケース', 'uc'], ['永続化', 'per']]);
-  var hasChange = M.logic.some(function (l) { return l.change; }) || M.flows.some(function (f) { return f.steps.some(function (st) { return st.change; }); });
-  if (hasChange) row([['今回', null], ['新規', '新'], ['修正', '改'], ['削除', '削']]);
-  X({ x: lgx0, y: lgy, text: '✓ は確かめ済みの印、C/R は振る舞い盤面のコマンド・リードモデルの番号', f: LG, color: C.muted }); lgy += 18;
-  var TITLE_Y = lgy + 16, TOP = TITLE_Y + 88;
-
-  M.flows.forEach(function (fl) {
-    // 列幅: 線の名前が隣とぶつからない幅
-    var names = fl.columns.map(function (c) { return c.name; }).concat(Object.keys(fl.start).map(function (k) { return fl.start[k]; }));
-    fl.steps.forEach(function (st) { Object.keys(st.out || {}).forEach(function (k) { names.push(st.out[k].name); }); });
-    var CW = Math.max(96, max(names.map(function (nm) { return tw(nm, 10.5); })) + 16);
-    var n = fl.columns.length, wx = function (i) { return x0 + i * CW + CW / 2; };
-    X({ x: x0, y: TITLE_Y, text: fl.name, f: TITLE, bold: true });
-    var alive = {}, kinds = {}, segStart = {}, segLabel = {}, y = TOP, i;
-    Object.keys(fl.start).forEach(function (k) { alive[k] = true; kinds[k] = fl.columns[k].kind || 'value'; segStart[k] = y; segLabel[k] = fl.start[k]; });
-    var closeSeg = function (col, yEnd, head) {
-      var k = kinds[col], wid = 'W:' + fl.id + ':' + col + ':' + segStart[col], cname = fl.columns[col].name;
-      S({ id: wid, k: 'wire', x: wx(col), y: segStart[col], w: 0, h: yEnd - segStart[col], color: lineColor(k), col: cname, lab: segLabel[col] || '' });
-      if (segLabel[col]) {
-        X({ id: wid + ':t', x: wx(col) + 6, y: segStart[col] + 10, text: segLabel[col], f: 10.5, color: labelColor(k), w500: true, fitW: CW - 8 });
-        out.hits.push({ id: wid + ':t', x: wx(col) + 6, y: segStart[col] + 10, w: Math.min(tw(segLabel[col], 10.5), CW - 8), h: 10.5 * 1.25, f: 10.5, ref: { kind: 'wire', fl: fl, col: cname, label: segLabel[col], path: wid } });
-      }
-      if (head) A({ pts: [[wx(col), yEnd - 6], [wx(col), yEnd]], color: lineColor(k), head: true, onlyHead: true });
-    };
-    y += WIRE;
-    fl.steps.forEach(function (st) {
-      var lg = L[st.logic], a = st.span[0], b = st.span[1], byTop = y, ch = st.change || lg.change, bop = ch === '削' ? 0.45 : undefined;
-      // 箱に入る線は箱の上で切り、三角を付ける。覆われない線はそのまま通す
-      for (i = 0; i < n; i++) if (alive[i] && i >= a && i <= b) closeSeg(i, byTop, true);
-      var bx = x0 + a * CW + 8, bw = (b - a + 1) * CW - 16;
-      var fb = ++fid;
-      S({ id: 'L:' + fb, k: 'box', x: bx, y: byTop + 3, w: bw, h: 62, fit: true, op: bop, ch: ch, ref: { kind: 'logic', lg: lg, st: st, fl: fl, path: 'L:' + fb, cols: fl.columns.slice(a, b + 1).map(function (c) { return c.name; }) } });
-      S({ k: lg.layer === 'domain' ? 'dom' : lg.layer === 'usecase' ? 'uc' : 'per', x: bx + 11, y: byTop + 3 + 7 + 3.5, w: 7, h: 7, op: bop });
-      X({ x: bx + 11 + 12, y: byTop + 3 + 7, text: lg.layer === 'domain' ? kindOf(st) : lg.layer === 'usecase' ? 'ユースケース' : '永続化', f: 9.5, color: C.muted, ls: true, fitW: bw - 30, op: bop });
-      if (lg.ref) X({ x: bx + bw - 11, y: byTop + 3 + 7, text: lg.ref, f: 9.5, color: C.muted, mono: true, end: true, fitW: bw / 2, op: bop });
-      X({ x: bx + 11, y: byTop + 3 + 7 + 14, text: lg.name, f: 12.5, w500: true, fitW: bw - 16, color: chColor(ch), strike: ch === '削', op: bop });
-      if (lg.note) X({ id: 'L:' + fb + ':n', x: bx + 11, y: byTop + 3 + 7 + 14 + 18, text: lg.note, f: 10.5, color: C.muted, fitW: bw - 16, op: bop });
-      if (lg.fails && lg.fails.length) {
-        var ex = x0 + n * CW + 4, eh = 44, lines = lg.fails.length, ty = byTop + 12 + (eh - lines * 14) / 2;
-        S({ k: 'exit', x: ex, y: byTop + 12, w: 0, h: eh, op: bop });
-        lg.fails.forEach(function (fz, j) { X({ id: 'L:' + fb + ':f' + j, x: ex + 9, y: ty + j * 14, text: '→ ' + fz, f: 10, color: C.fail, fitW: EXW, op: bop }); });
-      }
-      y += BOX;
-      // 箱の後: 終わる線を消し、出た線に新しい名前を付け、残りは続く
-      (st.drop || []).forEach(function (d) { delete alive[d]; });
-      Object.keys(st.out || {}).forEach(function (k) { alive[k] = true; kinds[k] = st.out[k].kind || 'value'; });
-      for (i = 0; i < n; i++) if (alive[i]) {
-        if (i >= a && i <= b || st.out && st.out[i]) { segStart[i] = y; segLabel[i] = st.out && st.out[i] ? st.out[i].name : ''; }
-      }
-      y += WIRE;
-    });
-    for (i = 0; i < n; i++) if (alive[i]) closeSeg(i, y, true);
-    maxY = Math.max(maxY, y);
-    out.flowRects[fl.id] = { x: x0 - 20, y: TITLE_Y - 24, w: n * CW + EXW + 40, h: y - (TITLE_Y - 24) };
-    if (!out.home) out.home = { x: x0 - 20, y: TITLE_Y - 24, w: n * CW + EXW + 40, h: 0 };
-    x0 += n * CW + EXW + GAPF;
-  });
-  out.w = x0 - GAPF + 40; out.h = maxY + 40; out.home.h = maxY - out.home.y;
-  return out;
-}
-// ---------- 名前で結ぶ道具。ホバーは不変条件だけ、押すのは開閉だけで、名札のカードは無い
-var TID = {}, TYPE_NAMES = [];
-// 設計図を差し替える。名前で結ぶ道具は、その設計図の型を見る
-var useModel = function (m) { MODEL = m; TID = {}; m.types.forEach(function (t) { TID[t.id] = t; }); TYPE_NAMES = m.types.map(function (t) { return t.name; }).sort(function (a, b) { return b.length - a.length; }); };
-var objName = function (t, id) { var o = t.objects.find(function (x) { return x.id === id; }); return o ? o.name : id; };
-// 遷移の条件を文にする: 「明細のいずれかが出荷済」
-var whenText = function (w) { var t = TID[w.type]; return t.name + (t.many ? (w.all ? 'の全て' : 'のいずれか') : '') + 'が' + objName(t, w.at); };
-var PINNABLE = { type: 1, table: 1, object: 1 };
 // 流れと構造を名前で結ぶ。線の名前は「…型名〈状態｜状態〉 ✓ ×N」の形。型名は末尾一致で最長のもの
 // 写しの例外: src/skills/coder/logic/wires.ts の typeOf・statesOf と同じ結び方。変えたらここも直す
-var labelType = function (label) {
-  if (!label) return null;
-  var base = label.split('〈')[0].replace(/\s*×N.*$/, '').replace(/\s*✓\s*$/, '').trim();
-  for (var i = 0; i < TYPE_NAMES.length; i++) if (base === TYPE_NAMES[i] || base.slice(-TYPE_NAMES[i].length) === TYPE_NAMES[i]) return MODEL.types.find(function (t) { return t.name === TYPE_NAMES[i]; }).id;
-  return null;
+const typeOf = (M, label) => { const base = label.split('〈')[0].replace(/\s*×N.*$/, '').replace(/\s*✓\s*$/, '').trim(); return [...M.types].sort((a, b) => b.name.length - a.name.length).find(t => base === t.name || base.endsWith(t.name)); };
+const statesOf = label => { const m = /〈([^〉]*)〉/.exec(label); return m ? m[1].split('｜').map(s => s.trim()) : []; };
+// 全部が同じ印（全部が新規など）なら、印は何も区別しないので描かない
+const typesPlain = M => M.types.length > 0 && !!M.types[0].change && M.types.every(t => t.change === M.types[0].change);
+const flowsPlain = M => { const marks = M.flows.flatMap(f => f.steps.map(st => st.change || M.logic.find(l => l.id === st.logic).change)); return !!marks[0] && marks.every(m => m === marks[0]); };
+// 凡例は、その面のその設計図に出ている色だけ。畳んだ箱は中の変更を「改」で告げるので、構造はどの変更でも「改」が出うる
+const legendOf = (M, face) => {
+  const flow = face === 'flow', off = flow ? flowsPlain(M) : typesPlain(M), text = JSON.stringify(flow ? [M.logic, M.flows] : M.types);
+  return { api: flow ? text.includes('"kind":"api"') : M.types.some(t => t.world === 'api'), db: flow ? text.includes('"kind":"stored"') : M.types.some(t => t.world === 'db'), new: !off && text.includes('"change":"新"'), mod: !off && text.includes(flow ? '"change":"改"' : '"change"') };
 };
-var labelStates = function (label) { var m = /〈([^〉]*)〉/.exec(label || ''); return m ? m[1].split('｜').map(function (s) { return s.trim(); }) : []; };
-// 流れの要素 → 構造の的（型 id と状態名）
-var structTarget = function (ref) {
-  if (ref.kind === 'wire') { var T = ref.label ? labelType(ref.label) : labelType(ref.col); return T ? { T: T, states: labelStates(ref.label) } : null; }
-  if (ref.kind === 'logic') { var ts = ref.cols.map(labelType).filter(Boolean); return ts.length ? { T: ts[0], states: [], all: ts } : null; }
-  return null;
-};
-// 構造の要素 → 構造の的（表はドメインの型へ、遷移は両端の状態へ）
-var structOf = function (ref) {
-  var t = ref.t;
-  if (ref.kind === 'table') { var m = MODEL.maps.find(function (x) { return x.to === t.id && TID[x.from].world === 'domain'; }); return m ? { T: m.from, states: [] } : null; }
-  if (ref.kind === 'object') return { T: t.id, states: [ref.o.name] };
-  if (ref.kind === 'morphism') return { T: t.id, states: [objName(t, ref.m.from), objName(t, ref.m.to)] };
-  return { T: t.id, states: [] };
-};
-// 的 → それに触れる流れの id
-var flowsOf = function (tg) {
-  if (!tg) return [];
-  var scored = MODEL.flows.map(function (fl, i) {
-    var names = fl.columns.map(function (c) { return c.name; }).concat(Object.keys(fl.start).map(function (k) { return fl.start[k]; }));
-    fl.steps.forEach(function (st) { Object.keys(st.out || {}).forEach(function (k) { names.push(st.out[k].name); }); });
-    var sc = 0;
-    names.forEach(function (nm) { if (labelType(nm) !== tg.T) return; var st = labelStates(nm); if (tg.states.length && st.some(function (s) { return tg.states.indexOf(s) >= 0; })) sc = Math.max(sc, 2); else if (!tg.states.length || !st.length) sc = Math.max(sc, 1); });
-    return { id: fl.id, sc: sc, i: i };
-  }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc || a.i - b.i; });
-  return scored.map(function (x) { return x.id; });
-};
-// 線や箱が的に触れるか
-var wireHits = function (n, tg) { var T = n.lab ? labelType(n.lab) : labelType(n.col); if (T !== tg.T) return false; var st = labelStates(n.lab); return !tg.states.length || !st.length || st.some(function (s) { return tg.states.indexOf(s) >= 0; }); };
-// ---------- 地図。カメラ（移動・拡大）に連れて盤面を組み直す。段 k は倍率 LEVELS[k] から 1.6 倍までの帯で 0 → 1 に開く
-var LEVELS = [0, 0, 0.12, 0.18, 0.26, 0.34, 0.5, 0.65, 1.0, 1.5];
-var openFor = function (s) { var o = []; for (var k = 0; k < LEVELS.length; k++) { if (k < 2) { o.push(1); continue; } var a = LEVELS[k], b = a * 1.6; var t = (Math.log(s) - Math.log(a)) / (Math.log(b) - Math.log(a)); t = Math.max(0, Math.min(1, t)); o.push(Math.round((t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2) * 50) / 50); } return o; };
-var escText = function (s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); };
 
-// 1 つの地図。設計図は setModel で受け、attach した要素（ページの .cmap）に絶対配置の div と svg で描く。描くのは状態が変わった次のフレーム
-class MapView {
-  constructor() {
-    this.state = { view: 'struct', cam: {}, sel: null, hover: null };
-    this.ptrs = {}; this.nptr = 0; this.drag = null; this.pinch = null; this.moved = false; this.vp = null; this.lastTap = 0; this.anchor = null;
-    this.layouts = {}; this.keys = []; this.pins = {}; this.pinT = {}; this.pinTo = {}; this.lastL = {};
-    this.el = null; this.json = ''; this._paint = 0;
-  }
-  setState(p) { Object.assign(this.state, p); this.schedule(); }
-  schedule() { var self = this; if (!this.el || this._paint) return; this._paint = requestAnimationFrame(function () { self._paint = 0; self.paint(); }); }
-  hasFlows() { return MODEL.flows.length > 0; }
-  // 設計図が書き換わったら盤面を組み直す。見ている場所（カメラ）と固定は残し、選んだもの・ホバーは外す
-  setModel(m) {
-    var json = JSON.stringify(m); if (json === this.json) return;
-    this.json = json; useModel(m); this.layouts = {}; this.keys = []; this.lastL = {};
-    this.setState({ sel: null, hover: null, view: this.state.view === 'flow' && !this.hasFlows() ? 'struct' : this.state.view });
-  }
-  pinKey() { var self = this; return Object.keys(this.pins).sort().map(function (k) { return k + '=' + self.pins[k].toFixed(2); }).join(';'); }
-  L(view, s) {
-    if (view !== 'struct') { if (!this.layouts.flow) this.layouts.flow = buildFlow(MODEL); return this.layouts.flow; }
-    var key = openFor(s).join(',') + '|' + this.pinKey();
-    if (!this.layouts[key]) { this.layouts[key] = buildStruct(MODEL, openFor(s), this.pins); this.keys.push(key); if (this.keys.length > 48) delete this.layouts[this.keys.shift()]; }
-    return this.layouts[key];
-  }
-  viewport(el) { if (el) { var r = el.getBoundingClientRect(); this.vp = { w: r.width, h: r.height }; } return this.vp || { w: window.innerWidth, h: Math.max(240, window.innerHeight - 48) }; }
-  // 流れの 1 本: 収まるならその倍率、読めない（線の名前 10.5px が 8px 未満）なら読める倍率で左上を揃える
-  fitFlow(q) { var f = this.fitRect(q.x, q.y, q.w, q.h), min = 8 / 10.5; if (f.s >= min) return f; return { s: min, tx: 16 - q.x * min, ty: 12 - q.y * min }; }
-  fitRect(x, y, w, h) { var v = this.viewport(), s = Math.min(v.w / w, v.h / h) * 0.92; return { s: s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; }
-  clampS(s) { var l = this.L(this.state.view, LEVELS[2]), v = this.viewport(); return Math.min(16, Math.max(Math.min(v.w / l.w, v.h / l.h) * 0.4, s)); }
-  camOf(view) {
-    var c = this.state.cam[view]; if (c) return c;
-    var v = this.viewport();
-    if (view === 'flow') { var lf = this.L('flow'), h = lf.home; return this.fitFlow(h); }
-    // ホームの箱は開いたまま。幅に収まるならその倍率で中央に、収まらなければ左端を揃えて名前と最初の状態を見せる（右は寄せて見る）
-    // ホームの型が開いたまま丸ごと収まる最大の倍率を二分で探す（開くほど育つので単調ではないが、十分）
-    var s0 = LEVELS[3] * 1.6, fits = function (sc) { var hb0 = this.L('struct', sc).home; return hb0.w * sc <= v.w - 24 && hb0.h * sc <= v.h - 24; }.bind(this), s = s0, l, hb;
-    if (fits(s0)) { var lo = s0, hi = 1; for (var k = 0; k < 6; k++) { var mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; } s = lo; }
-    l = this.L('struct', s); hb = l.home;
-    var tx = hb.w * s <= v.w - 24 ? v.w / 2 - (hb.x + hb.w / 2) * s : 16 - hb.x * s;
-    return { s: s, tx: tx, ty: 12 - l.top * s };
-  }
-  // 盤面が組み替わる（倍率・固定）とき、操作点（カーソル・ピンチの中心・押した所・画面中央）の下にある箱を、新しい盤面でも同じ場所に留める
-  setCam(view, c) {
-    var cam = {}; for (var k in this.state.cam) cam[k] = this.state.cam[k];
-    if (view === 'struct') {
-      var c0 = this.camOf(view), from = this.lastL.struct || this.L(view, c0.s), to = this.L(view, c.s);
-      if (from !== to) {
-        var v = this.viewport(), ap = this.anchor || [v.w / 2, v.h / 2];
-        var wx = (ap[0] - c0.tx) / c0.s, wy = (ap[1] - c0.ty) / c0.s, best = null;
-        from.shapes.forEach(function (n) { if (n.fit && wx >= n.x && wx <= n.x + n.w && wy >= n.y && wy <= n.y + n.h && (!best || n.w * n.h < best.w * best.h)) best = n; });
-        if (best) {
-          var toMap = {}; to.shapes.forEach(function (n) { if (n.fit) toMap[n.id] = n; });
-          var nb = null, base = best.id; for (;;) { if (toMap[base]) { nb = toMap[base]; break; } var i = Math.max(base.lastIndexOf('/'), base.lastIndexOf('#')); if (i < 0) break; base = base.slice(0, i); }
-          if (nb) {
-            var fx = nb.id === best.id ? (wx - best.x) / best.w : 0.5, fy = nb.id === best.id ? (wy - best.y) / best.h : 0.5;
-            var sx = wx * c.s + c.tx, sy = wy * c.s + c.ty;
-            c = { s: c.s, tx: sx - (nb.x + fx * nb.w) * c.s, ty: sy - (nb.y + fy * nb.h) * c.s };
-          }
-        }
+// ---------- 構造の配置。文法は 3 つ: 枠 = 型、離れて並ぶ箱 = どれか 1 つ（状態・種類）、1 つの箱を罫線で割った行 = 全部そろう（組）。矢 = 遷移
+// 寸法は入れ子 1 段ごとに .5 倍の世界単位。開く深さ OPEN より深い箱は名前だけの大きさに畳む（場所は、いま読めるものにだけ使う）
+const unitAt = d => 64 * Math.pow(.5, d), DEEP = 7, MAXS = 14; // DEEP より深い入れ子と、自分を含む型は、名前だけの行にする
+const openAt = D => (D <= 0 ? 0 : 14 / unitAt(D)); // 深さ D の箱が開く（中身が読める）倍率
+const partsOf = o => (o.holds && o.holds.parts) || [];
+const Structure = () => {
+  let M, T, OPEN = 0, plain = false, inner = {}, memo = { shelf: {}, wrap: {} }; // 折り返しの並びは、全部開いた図で一度決めて、どの段でも変えない
+  const use = model => { M = model; T = Object.fromEntries(M.types.map(t => [t.id, t])); plain = typesPlain(M); inner = {}; memo = { shelf: {}, wrap: {} }; };
+  const shutBox = n => { if (n.within) { n.change = n.within; n.minW += textWidth(' ' + n.within, n.ft); } if (n.d === 1 && !OPEN) { n.minW += textWidth(n.label + n.many, n.ft * .2); n.ft *= 1.2; } n.w = n.minW + n.ft * .4; n.h = 2 * n.pad * .7 + n.ft * 1.4; n.leaf = true; return n; };
+  // 型の中（状態・矢・列・部品の型）に今回の変更があるか
+  const innerOf = (t, seen = []) => {
+    if (seen.includes(t.id)) return false; if (t.id in inner) return inner[t.id];
+    const sub = [...seen, t.id];
+    return (inner[t.id] = (t.objects || []).some(o => o.change || partsOf(o).some(p => T[p.type].change || innerOf(T[p.type], sub))) || (t.morphisms || []).some(m => m.change) || (t.columns || []).some(c => c.change));
+  };
+  const sized = (n, top) => { n.w = Math.max(2 * n.pad + n.rec.w, n.minW); n.h = top + n.rec.h + n.pad; n.rec.w = n.w - 2 * n.pad; n.rec.rows.forEach(r => { r.w = n.rec.w; }); return n; };
+  const stack = rows => { let y = 0; rows.forEach(r => { r.x = 0; r.y = y; y += r.h; }); return { kind: 'rec', rows, w: max(rows.map(r => r.w)), h: y, x: 0, y: 0 }; };
+  // 1 行だけの行（表の列）
+  const line = (label, right, d, change, bold) => {
+    const F = unitAt(d), ft = F * .6, pad = F * .28;
+    return { kind: 'frame', row: true, line: true, d, F, ft, pad, label, many: '', prim: right, change, bold, x: 0, y: 0, w: 2 * pad + textWidth(label + (change ? ' ' + change : ''), ft) + ft * 2 + textWidth(right, ft), h: 2 * pad + ft * 1.4 };
+  };
+  // at の無い状態機械: 戻る矢を除いた最長経路の段を列にする（流れは左から右）
+  const ranked = (objs, arrows, idx) => {
+    const n = objs.length, out = objs.map(() => []), rank = Array(n).fill(0), state = Array(n).fill(0), fwd = [];
+    arrows.forEach(m => out[idx[m.from]].push(idx[m.to]));
+    const visit = i => { state[i] = 1; for (const j of out[i]) { if (state[j] === 1) continue; fwd.push([i, j]); if (!state[j]) visit(j); } state[i] = 2; };
+    for (let i = 0; i < n; i++) if (!state[i]) visit(i);
+    for (let k = 0; k < n; k++) for (const [i, j] of fwd) rank[j] = Math.max(rank[j], rank[i] + 1);
+    // 本筋（いちばん長い道筋）を 1 行目に一直線に置く。同点は書いた順
+    const main = new Set(); let cur = rank.indexOf(Math.max(...rank));
+    while (cur >= 0) { main.add(cur); const c = cur; cur = fwd.filter(([i, j]) => j === c && rank[i] === rank[c] - 1).map(e => e[0]).sort((x, y) => x - y)[0] ?? -1; }
+    // 残りは列ごとに 2 行目から。矢の交差が最小、次に矢が短くなる行を総当たりで選ぶ。同点は書いた順
+    const cols = []; rank.forEach((c, i) => { if (!main.has(i)) (cols[c] ||= []).push(i); });
+    const side = cols.filter(Boolean), R = Math.max(0, ...side.map(c => c.length)), row = rank.map(() => 0);
+    const E = arrows.map(m => [idx[m.from], idx[m.to]]);
+    const turn = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+    const cost = () => {
+      const P = rank.map((c, i) => [c, row[i]]); let x = 0, len = 0;
+      for (const [i, j] of E) len += Math.abs(row[i] - row[j]);
+      for (let a = 0; a < E.length; a++) for (let b = a + 1; b < E.length; b++) {
+        const [p, q] = E[a], [u, v] = E[b]; if (p === u || p === v || q === u || q === v) continue;
+        if (turn(P[p], P[q], P[u]) * turn(P[p], P[q], P[v]) < 0 && turn(P[u], P[v], P[p]) * turn(P[u], P[v], P[q]) < 0) x++;
       }
-      this.lastL.struct = to;
-    }
-    cam[view] = c; this.setState({ cam: cam, hover: null });
-  }
-  flyTo(view, c, about) {
-    var self = this, from = this.camOf(view), t0 = performance.now(), dur = 360, ap = about ? this.anchor : null;
-    if (this._fly) cancelAnimationFrame(this._fly);
-    var step = function (now) {
-      var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3), s = Math.exp(Math.log(from.s) + (Math.log(c.s) - Math.log(from.s)) * e), nc;
-      if (ap) { var cur = self.camOf(view), q = s / cur.s; nc = { s: s, tx: ap[0] - (ap[0] - cur.tx) * q, ty: ap[1] - (ap[1] - cur.ty) * q }; }
-      else nc = { s: s, tx: from.tx + (c.tx - from.tx) * e, ty: from.ty + (c.ty - from.ty) * e };
-      self.setCam(view, nc);
-      if (k < 1) self._fly = requestAnimationFrame(step); else self._fly = 0;
+      return x * 100 + len;
     };
-    this._fly = requestAnimationFrame(step);
-  }
-  zoomAt(k, px, py, fly) { var view = this.state.view, c = this.camOf(view), s = this.clampS(c.s * k), q = s / c.s, nc = { s: s, tx: px - (px - c.tx) * q, ty: py - (py - c.ty) * q }; this.anchor = [px, py]; if (fly) this.flyTo(view, nc, true); else this.setCam(view, nc); }
-  // 固定: 押した箱を倍率に関わらず開いておく。もう一度押すと戻す。開き具合は 240ms で滑らかに動かす
-  togglePin(path) {
-    var self = this; this.pinTo[path] = this.pinTo[path] ? 0 : 1; if (this.pinT[path] === undefined) { this.pinT[path] = 0; this.pins[path] = 0; }
-    if (this._pin) return;
-    var last = performance.now();
-    var step = function (now) {
-      var dt = Math.min(240, now - last) / 240, busy = false; last = now;
-      Object.keys(self.pinTo).forEach(function (k) {
-        var to = self.pinTo[k], t = self.pinT[k]; t = to > t ? Math.min(to, t + dt) : Math.max(to, t - dt); self.pinT[k] = t;
-        if (t !== to) busy = true;
-        if (t === 0 && to === 0) { delete self.pins[k]; delete self.pinT[k]; delete self.pinTo[k]; }
-        else self.pins[k] = Math.round((t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2) * 50) / 50;
+    let best = Infinity, keep = null, tries = 0;
+    const place = (k, n, taken) => {
+      if (tries > 50000) return;
+      if (k === side.length) { tries++; const c = cost(); if (c < best) { best = c; keep = [...row]; } return; }
+      if (n === side[k].length) return place(k + 1, 0, 0);
+      for (let r = 1; r <= R; r++) if (!(taken >> r & 1)) { row[side[k][n]] = r; place(k, n + 1, taken | 1 << r); }
+    };
+    place(0, 0, 0);
+    return rank.map((c, i) => ({ c, r: keep[i] }));
+  };
+  // 矢の無い種類: 横に並べ、長くなったら折り返す
+  const wrapped = (pts, F, key) => {
+    if (memo.wrap[key]) return memo.wrap[key];
+    const limit = Math.max(F * 12, max(pts.map(q => q.w))), cells = []; let c = 0, r = 0, x = 0;
+    for (const q of pts) { if (c && x + q.w > limit) { r++; c = 0; x = 0; } cells.push({ c, r }); c++; x += q.w + F * .3; }
+    return (memo.wrap[key] = cells);
+  };
+  // 矢の通し方を決める: 隣なら直線（h・v）。それ以外は箱の横から出て、列の溝 → 行の溝 → 列の溝と、溝だけを通って相手の横に入る（箱を横切らない）
+  const route = (arrows, cells, idx) => {
+    const pair = {}, colN = {}, rowN = {}, port = {}, take = (o, k) => (o[k] = (o[k] ?? -1) + 1);
+    const out = arrows.map(m => {
+      const ca = cells[idx[m.from]], cb = cells[idx[m.to]];
+      if (ca.r === cb.r && Math.abs(ca.c - cb.c) === 1) return { m, ca, cb, kind: 'h' };
+      if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) return { m, ca, cb, kind: 'v', nth: take(pair, [m.from, m.to].sort().join('|')) };
+      const right = cb.c >= ca.c, gs = right ? ca.c + 1 : ca.c, gt = cb.c > ca.c ? cb.c : cb.c + 1, a = { m, ca, cb, kind: 'bus', gs, gt, right, left: cb.c > ca.c };
+      a.laneS = take(colN, gs);
+      if (gs !== gt) { a.laneT = take(colN, gt); a.gr = Math.max(ca.r, cb.r); a.laneR = take(rowN, a.gr); }
+      return a;
+    });
+    // 箱の横の出入り口（F を単位にした高さ）。名札がその口に付く矢だけ、名札 1 行ぶん空ける。まっすぐな矢は両端で同じ高さ
+    const slot = (keys, named) => { const y = Math.max(...keys.map(k => port[k] || 0)) + (named && keys.some(k => port[k]) ? .4 : 0); keys.forEach(k => { port[k] = y + .45; }); return y; };
+    for (const a of out) if (a.kind === 'h') { const r = a.cb.c > a.ca.c; a.p = slot([a.m.from + (r ? '>' : '<'), a.m.to + (r ? '<' : '>')], true); }
+    for (const a of out) if (a.kind === 'bus') { const one = a.gs === a.gt; a.pS = slot([a.m.from + (a.right ? '>' : '<')], one && a.ca.c === a.gs); a.pT = slot([a.m.to + (a.left ? '<' : '>')], one && a.cb.c === a.gs); }
+    out.port = port; out.colN = colN;
+    return out;
+  };
+  // 組 = 1 つの箱を罫線で割った行。全部の行が同時にそろう
+  const record = (parts, d, path) => stack(parts.map(q => frame(T[q.type], q.as, d, true, path)));
+  // 取りうる形の 1 つ = 箱。名前 ＋ 中身（組・素の値・なし）
+  const obj = (t, o, d, path) => {
+    const F = unitAt(d), f = F * .82, pad = F * .34;
+    const holds = o.holds || 'unit', head = o.name + (o.change ? ' ' + o.change : '');
+    const q = { kind: 'obj', t, o, d, f, pad, name: o.name, inv: holds === 'unit' ? undefined : holds.invariant, change: o.change, x: 0, y: 0 };
+    if (holds === 'unit') { q.w = 2 * pad + textWidth(head, f); q.h = 2 * pad + f * 1.3; return q; }
+    if (holds.prim) { q.prim = holds.prim; q.w = 2 * pad + Math.max(textWidth(head, f), textWidth(q.prim, f * .85)); q.h = 2 * pad + f * 1.3 + f * 1.25; return q; }
+    q.need = d + 1;
+    if (d + 1 > OPEN) { const within = !plain && !o.change && holds.parts.some(p => T[p.type].change || innerOf(T[p.type])); if (within) q.change = '改'; q.w = 2 * pad + textWidth(head + (within ? ' 改' : ''), f); q.h = 2 * pad + f * 1.3; return q; }
+    const top = pad + f * 1.3;
+    q.rec = record(holds.parts, d + 1, path); q.rec.x = pad; q.rec.y = top;
+    q.w = Math.max(2 * pad + q.rec.w, 2 * pad + textWidth(head, f)); q.h = top + q.rec.h + pad;
+    q.rec.w = q.w - 2 * pad; q.rec.rows.forEach(r => { r.w = q.rec.w; });
+    return q;
+  };
+  // 枠 = 型。見出し（名前・個数）＋ 中身。row は組の 1 行として描く（枠線なし）
+  const frame = (t, as, d, row, path) => {
+    const F = unitAt(d), ft = F * (d > 1 ? .72 : .8), pad = F * .4;
+    const label = as && as !== t.name ? `${as}: ${t.name}` : t.name, many = t.many ? `（N ${t.many}）` : '';
+    const change = plain ? undefined : t.change, n = { kind: 'frame', t, d, row, F, ft, pad, label, short: as || t.name, many, change, x: 0, y: 0 };
+    if (!plain && !t.change && innerOf(t)) n.within = '改'; // 畳んだ箱は、中の変更を代わりに告げる
+    const head = label + many + (change ? ' ' + change : ''), top = pad + ft * 1.35;
+    n.minW = 2 * pad + textWidth(head, ft);
+    if (t.form === 'table') { // 表: 列の行。名前（PK）… 型（→ 参照先）
+      n.doc = t.doc; n.need = d + 1; if (d + 1 > OPEN) return shutBox(n);
+      n.rec = stack(t.columns.map(c => line(c.name + (c.pk ? ' PK' : ''), c.type + (c.fk ? ` → ${T[c.fk].name}` : ''), d, c.change, c.pk ? c.name.length : -1))); n.rec.x = pad; n.rec.y = top;
+      return sized(n, top);
+    }
+    const objs = t.objects, bare = (t.form === 'value' || t.form === 'record') && objs.length === 1 ? objs[0] : null;
+    if (path.includes(t.id) || d > DEEP) { n.w = n.minW + ft; n.h = 2 * pad + ft * 1.4; n.leaf = true; return n; }
+    const sub = [...path, t.id];
+    if (bare) {
+      const holds = bare.holds || 'unit';
+      n.inv = holds.invariant; n.doc = t.doc;
+      if (holds === 'unit') { n.w = n.minW; n.h = 2 * pad + ft * 1.4; n.leaf = true; return n; }
+      if (holds.prim) { n.prim = holds.prim; n.w = n.minW + ft * 2 + textWidth(n.prim, ft); n.h = 2 * pad + ft * 1.4; return n; } // 素の値は 1 行: 名前 … 型
+      n.need = d + 1; if (d + 1 > OPEN) return shutBox(n);
+      n.rec = record(holds.parts, d + 1, sub); n.rec.x = pad; n.rec.y = top;
+      return sized(n, top);
+    }
+    // 状態・種類: 離れて並ぶ箱。at の格子、無ければ遷移の順に左から右へ
+    n.doc = t.doc; n.need = d; if (d > OPEN) return shutBox(n);
+    const pts = objs.map(o => obj(t, o, d, sub)), arrows = (t.morphisms || []).filter(m => m.from !== m.to), loops = (t.morphisms || []).filter(m => m.from === m.to);
+    const idx = Object.fromEntries(objs.map((o, i) => [o.id, i]));
+    const cells = objs.every(o => o.at) ? objs.map(o => ({ c: o.at[0], r: o.at[1] })) : arrows.length ? ranked(objs, arrows, idx) : wrapped(pts, F, t.id + '@' + d);
+    const fl = F * .7, nR = max(cells.map(c => c.r)) + 1, nC = max(cells.map(c => c.c)) + 1, lanes = route(arrows, cells, idx);
+    const named = m => textWidth(m.by + (m.change ? ' ' + m.change : ''), fl), loopRow = Array(nR).fill(0), loopNth = new Map(), loopsAt = {};
+    // 同じ箱に自分へ戻る矢が何本あっても、名札は 1 本ずつ上へ積む
+    for (const m of loops) { const k = loopsAt[m.from] = (loopsAt[m.from] ?? -1) + 1, r = cells[idx[m.from]].r; loopNth.set(m, k); loopRow[r] = Math.max(loopRow[r], F * (1.25 + k * .9)); }
+    // 箱の横は、出入りする矢の本数だけの高さを持つ
+    objs.forEach((o, i) => { const k = Math.max(lanes.port[o.id + '>'] || 0, lanes.port[o.id + '<'] || 0); pts[i].h = Math.max(pts[i].h, F * (.9 + k - .45 + .5)); });
+    const colW = Array(nC).fill(0), rowH = Array(nR).fill(0);
+    pts.forEach((q, i) => { const { c, r } = cells[i]; colW[c] = Math.max(colW[c], q.w); rowH[r] = Math.max(rowH[r], q.h); });
+    // 溝の幅: 左に通る線の本数ぶん、右にそこへ置く名札が入るだけ
+    const base = arrows.length ? F * .9 : F * .3, lab = {}, laneN = g => (lanes.colN[g] ?? -1) + 1;
+    const colGap = Array(nC + 1).fill(base), rowGap = Array(nR + 1).fill(base);
+    colGap[0] = pad; colGap[nC] = pad; rowGap[0] = 0; rowGap[nR] = pad;
+    const high = (r, h) => { rowGap[r] = Math.max(rowGap[r], h); };
+    for (const a of lanes) {
+      if (a.kind === 'h') { const g = Math.max(a.ca.c, a.cb.c); lab[g] = Math.max(lab[g] || 0, named(a.m)); }
+      else if (a.kind === 'v') high(Math.max(a.ca.r, a.cb.r), F * 1.5);
+      else if (a.gs === a.gt) lab[a.gs] = Math.max(lab[a.gs] || 0, named(a.m));
+      else high(a.gr, F * (1.3 + a.laneR * .9));
+    }
+    for (let g = 0; g <= nC; g++) if (laneN(g) || lab[g]) colGap[g] = Math.max(colGap[g], F * (.5 + laneN(g) * .5) + (lab[g] ? lab[g] + F * .9 : F * .3));
+    for (let r = 0; r < nR; r++) if (loopRow[r]) rowGap[r] += loopRow[r] + (r ? 0 : F * .2);
+    const colX = [], rowY = []; let x = 0, y = top;
+    for (let c = 0; c < nC; c++) { x += colGap[c]; colX[c] = x; x += colW[c]; }
+    for (let r = 0; r < nR; r++) { y += rowGap[r]; rowY[r] = y; y += rowH[r]; }
+    pts.forEach((q, i) => { const { c, r } = cells[i]; q.x = colX[c]; q.y = rowY[r]; });
+    Object.assign(n, { boxes: pts, lanes, loops, idx, cells, colX, colW, rowY, rowH, colGap, rowGap, fl, nC, laneN, loopRow, loopNth, named });
+    n.w = Math.max(x + colGap[nC], n.minW); n.h = y + rowGap[nR];
+    if (!arrows.length && !loops.length && !objs.every(o => o.at)) { // 矢の無い種類は格子にそろえず、詰めて並べる
+      let fx = pad, fw = 0; pts.forEach((q, i) => { if (!cells[i].c) fx = pad; q.x = fx; fx += q.w + F * .3; fw = Math.max(fw, fx - F * .3 + pad); });
+      n.w = Math.max(fw, n.minW);
+    }
+    return n;
+  };
+  // 最上位に並べる型: ほかの型の部品になっていない型（書いた順）。自分を含む型（木）は自分の部品に数えない
+  const tops = () => { const used = new Set(M.types.flatMap(t => (t.objects || []).flatMap(partsOf).map(p => p.type).filter(id => id !== t.id))); return M.types.filter(t => !used.has(t.id)); };
+  // 図を組む。世界ごとに最上位の型を棚に詰める。縦長の画面は世界を縦に、横長は横に
+  const place = (D, v) => {
+    OPEN = D;
+    const tall = v.h > v.w, F0 = unitAt(0), gap = unitAt(1) * .9, top = F0 * 1.7, shown = tops();
+    const cols = WORLDS.map(id => M.worlds.find(w => w.id === id)).map(w => ({ w, top, frames: shown.filter(t => t.world === w.id).map(t => frame(t, undefined, 1, false, [])) })).filter(c => c.frames.length);
+    const widest = max(cols.flatMap(c => c.frames.map(f => f.w)));
+    let X = 0, Y = 0, W = 0, H = 0;
+    for (const c of cols) {
+      const limit = tall ? Math.max(widest, (v.w - 24) / (openAt(OPEN + 1) * .96)) : Math.max(max(c.frames.map(f => f.w)), F0 * 9);
+      let x = 0, y = top, rowH = 0, cw = 0;
+      const fresh = !memo.shelf[c.w.id], brk = memo.shelf[c.w.id] ||= [];
+      c.frames.forEach((f, i) => {
+        if (fresh) brk[i] = x > 0 && (tall || x + f.w > limit); // 縦長の画面は 1 列。開いても下へ伸びるだけ
+        if (brk[i]) { x = 0; y += rowH + gap; rowH = 0; }
+        f.x = X + x; f.y = Y + y; x += f.w + gap; rowH = Math.max(rowH, f.h); cw = Math.max(cw, x - gap);
       });
-      self.setCam(self.state.view, self.camOf(self.state.view));
-      self._pin = busy ? requestAnimationFrame(step) : 0;
-      if (!busy && self.pinTo[path] === 1) self.reveal(path);
-    };
-    this._pin = requestAnimationFrame(step);
-  }
-  // 開き切った箱が画面からはみ出すなら、飛行が終わってから横に寄せて入れる（幅が画面より広ければ左端を揃える）
-  reveal(path) {
-    var self = this, wait = function () {
-      if (self._fly) { requestAnimationFrame(wait); return; }
-      var view = self.state.view, c = self.camOf(view), L = self.L(view, c.s), v = self.viewport(), b = null;
-      L.shapes.forEach(function (n) { if (n.id === path) b = n; }); if (!b) return;
-      var left = b.x * c.s + c.tx, right = left + b.w * c.s, top = b.y * c.s + c.ty, bottom = top + b.h * c.s, dx = 0, dy = 0;
-      if (right > v.w - 16) dx = (v.w - 16) - right; if (left + dx < 16) dx = 16 - left;
-      if (bottom > v.h - 72) dy = (v.h - 72) - bottom; if (top + dy < 12) dy = 12 - top;
-      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) { self.anchor = null; self.flyTo(view, { s: c.s, tx: c.tx + dx, ty: c.ty + dy }); }
-    };
-    requestAnimationFrame(wait);
-  }
-  // 押した所に何があるか。矢の名札 → 一番小さい箱
-  hitAt(L, wx, wy, s) {
-    var best = null, hits = L.hits || [];
-    for (var i = 0; i < hits.length; i++) { var h = hits[i]; if (h.f * s >= 6.5 && (h.op === undefined || h.op >= 0.3) && wx >= h.x - 4 / s && wx <= h.x + h.w + 4 / s && wy >= h.y - 2 / s && wy <= h.y + h.h + 2 / s) return h; }
-    L.shapes.forEach(function (n) { if (n.ref && (n.op === undefined || n.op >= 0.3) && Math.max(n.w, n.h) * s >= 8 && wx >= n.x && wx <= n.x + n.w && wy >= n.y && wy <= n.y + n.h && (!best || n.w * n.h < best.w * best.h)) best = n; });
-    return best;
-  }
-  hitScreen(p) { var view = this.state.view, c = this.camOf(view), wx = (p[0] - c.tx) / c.s, wy = (p[1] - c.ty) / c.s; var h = this.hitAt(this.L(view, c.s), wx, wy, c.s); return h ? { id: h.id, ref: h.ref, wx: wx, wy: wy, sx: p[0], sy: p[1], box: { x: h.x, y: h.y, w: h.w, h: h.h } } : null; }
-  tap(p) {
-    var h = this.hitScreen(p);
-    if (!h) { if (this.state.sel || this.state.hover) this.setState({ sel: null, hover: null }); return; }
-    var c = this.camOf(this.state.view), ax = h.box.x * c.s + c.tx + 1, ay = h.box.y * c.s + c.ty + 1; this.anchor = [ax, ay];
-    if (PINNABLE[h.ref.kind] && (this.pinTo[h.ref.path] === 1 || h.ref.open < 1)) {
-      this.togglePin(h.ref.path);
-      // 開いた中身の文字が読める大きさ（9px）に届かないなら、押した箱の左上を留めたまま、そこまでだけ寄る
-      var need = 11 / (h.ref.inner * c.s);
-      if (this.pinTo[h.ref.path] === 1 && need > 1.02) this.zoomAt(Math.min(need, 4), ax, ay, true);
+      const ch = y + rowH;
+      c.x = X; c.y = Y; W = Math.max(W, X + cw); H = Math.max(H, Y + ch);
+      if (tall) Y += ch + F0 * 2; else X += cw + F0 * 2;
     }
-    else if (this.state.sel && this.state.sel.id === h.id) { this.setState({ sel: null, hover: null }); return; }
-    this.setState({ sel: h, hover: null });
-  }
-  hoverAt(p) { var h = this.hitScreen(p), cur = this.state.hover; if (h && this.state.view === 'flow' && !structTarget(h.ref)) h = null; if ((cur ? cur.id : null) === (h ? h.id : null)) return; this.setState({ hover: h }); }
-  // タブを切り替えたとき、選んだものを裏側から見た所へ飛ぶ
-  flyLinked(view) {
-    var sel = this.state.sel; if (!sel) return;
-    var fromFlow = sel.ref.kind === 'wire' || sel.ref.kind === 'logic', v = this.viewport(); this.anchor = [v.w / 2, v.h / 2];
-    if (view === 'flow') {
-      if (fromFlow) return;
-      // 触れる流れの最初の 1 本に寄る（他は線が濃いので辿れる）
-      var ids = flowsOf(structOf(sel.ref)), L = this.L('flow'), q = ids.length ? L.flowRects[ids[0]] : null;
-      if (q) this.flyTo('flow', this.fitFlow(q));
-      return;
+    return { depth: D, cols, W, H };
+  };
+  const clamp = (p, v, s) => Math.min(MAXS, Math.max(.3, Math.min(v.w / p.W, v.h / p.H) * .5, s));
+  // 全体: 幅に合わせ、上から。縦に長い図は続きをドラッグで見る
+  const fitAll = (p, v) => { const s = clamp(p, v, (v.h > v.w ? v.w / p.W : Math.min(v.w / p.W, v.h / p.H)) * .94); return { s, tx: Math.max(12, (v.w - p.W * s) / 2), ty: 16 }; };
+  // 最初の画面: 画面に収まって名前が読める範囲で、いちばん深くまで開いた図
+  const home = v => {
+    memo = { shelf: {}, wrap: {} }; place(DEEP, v);
+    let D = 0; while (D < DEEP && fitAll(place(D + 1, v), v).s >= openAt(D + 1)) D++;
+    const placed = place(D, v), s = Math.min(fitAll(placed, v).s, openAt(D + 1) * .96);
+    return { placed, cam: { s, tx: Math.max(12, (v.w - placed.W * s) / 2), ty: 16 } };
+  };
+  return { use, place, home, clamp, order: v => place(DEEP, v) };
+};
+// 倍率から開く深さを決める。境目では少し粘る（行ったり来たりで図が組み変わらないように）
+const levelOf = (s, open) => { let D = 0; while (D < DEEP && s >= openAt(D + 1)) D++; return D < open && s > openAt(open) * .93 ? open : D; };
+
+// ---------- 操作: ドラッグで動かす、ピンチとホイールで近づく、押す、二度押しで近づく。面はカメラの読み書き（cam・put・clamp・zoomAt）と、押した・重ねたときの振る舞いを渡す
+const gestures = (svg, face) => {
+  const ptrs = new Map(); let drag = null, pinch = null, lastTap = null;
+  const local = e => { const r = svg.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const grip = () => { const [p, q] = [...ptrs.values()], r = svg.getBoundingClientRect(); return { ...face.cam(), d: Math.hypot(p[0] - q[0], p[1] - q[1]), mx: (p[0] + q[0]) / 2 - r.left, my: (p[1] + q[1]) / 2 - r.top }; };
+  const tap = (e, target) => {
+    const now = performance.now(), [px, py] = local(e);
+    if (lastTap && now - lastTap.t < 320 && Math.hypot(px - lastTap.x, py - lastTap.y) < 30) { lastTap = null; face.zoomAt(2, px, py); return; }
+    lastTap = { t: now, x: px, y: py };
+    face.tap(e, target, px, py);
+  };
+  svg.addEventListener('pointerdown', e => {
+    svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); face.touch();
+    if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, ...face.cam(), moved: false, target: e.target };
+    else if (ptrs.size === 2) { pinch = grip(); drag = null; }
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) { if (e.pointerType === 'mouse' && !e.buttons) face.hover(e); return; }
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pinch && ptrs.size === 2) {
+      const now = grip(), s = face.clamp(pinch.s * now.d / pinch.d), k = s / pinch.s;
+      // 近づく途中で図が組み直ったら、そこを新しい起点にする
+      if (face.put({ s, tx: now.mx - (pinch.mx - pinch.tx) * k, ty: now.my - (pinch.my - pinch.ty) * k }, [now.mx, now.my])) pinch = grip();
+    } else if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; svg.classList.add('drag'); }
+      if (drag.moved) face.put({ s: face.cam().s, tx: drag.tx + dx, ty: drag.ty + dy });
     }
-    if (!fromFlow) return;
-    var tg = structTarget(sel.ref); if (!tg) return;
-    var one = tg.states.length === 1;
-    // 状態なら、その状態が開いて描かれる倍率を探し、収めるのは親の型（どこの状態か分かるように）
-    var find = function (L) { var best = null; L.shapes.forEach(function (n) { if (!n.ref || n.ref.open < 0.99) return; var ok = one ? (n.ref.kind === 'object' && n.ref.t.id === tg.T && n.ref.o.name === tg.states[0]) : ((n.ref.kind === 'type' || n.ref.kind === 'table') && n.ref.t.id === tg.T); if (ok && (!best || n.id.length < best.id.length)) best = n; });
-      if (best && one) { var pid = best.id.slice(0, best.id.lastIndexOf('#')), par = null; L.shapes.forEach(function (n) { if (n.id === pid) par = n; }); if (par) return par; }
-      return best; };
-    var b0 = null, s0 = 0; for (var k = 3; k < LEVELS.length && !b0; k++) { s0 = LEVELS[k] * 1.6; b0 = find(this.L('struct', s0)); } if (!b0) return;
-    // 箱は倍率と共に育つので、収まる倍率を 3 回詰める
-    var s1 = this.clampS(Math.min(Math.max(this.fitRect(b0.x, b0.y, b0.w, b0.h).s, s0), 1.6)), b1 = b0;
-    for (var it = 0; it < 3; it++) { b1 = find(this.L('struct', s1)) || b1; var fs = this.fitRect(b1.x, b1.y, b1.w, b1.h).s; if (fs >= s1) break; s1 = this.clampS(Math.max(fs, s0)); }
-    var L1 = this.L('struct', s1); b1 = find(L1) || b1;
-    // 親が収まらない倍率なら、的（状態）そのものを中央に
-    var c1 = b1; if (one && (b1.w * s1 > v.w || b1.h * s1 > v.h)) { var tgt = null; L1.shapes.forEach(function (n) { if (n.ref && n.ref.kind === 'object' && n.ref.t.id === tg.T && n.ref.o.name === tg.states[0] && n.ref.open >= 0.99 && (!tgt || n.id.length < tgt.id.length)) tgt = n; }); if (tgt) c1 = tgt; }
-    var tx1 = c1.w * s1 > v.w - 32 ? 16 - c1.x * s1 : v.w / 2 - (c1.x + c1.w / 2) * s1;
-    this.flyTo('struct', { s: s1, tx: tx1, ty: v.h / 2 - (c1.y + c1.h / 2) * s1 });
-  }
-  local(e) { var r = e.currentTarget.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
-  renderVals() {
-    var view = this.state.view, cam = this.camOf(view), s = cam.s, L = this.L(view, s);
-    if (view === 'struct') this.lastL.struct = L;
-    var px = function (v) { return (v / s).toFixed(2) + 'px'; };
-    var vpt = this.viewport(), inView = function (x, y, w, h) { var X = x * s + cam.tx, Y = y * s + cam.ty; return X + w * s >= -40 && Y + h * s >= -40 && X <= vpt.w + 40 && Y <= vpt.h + 40; };
-    var opStyle = function (op) { return op !== undefined && op < 1 ? 'opacity:' + op.toFixed(2) + ';' : ''; };
-    var hl = {}, sel = this.state.sel; if (sel) hl[sel.id] = 1;
-    // 選んだものは裏側でも選ばれている: 流れで選んだ線・箱 → 構造の型と状態、構造で選んだ型・状態・表 → 流れの線と箱
-    var fromFlow = sel && (sel.ref.kind === 'wire' || sel.ref.kind === 'logic'), tg = sel ? (fromFlow ? structTarget(sel.ref) : structOf(sel.ref)) : null;
-    var linked = function (n) {
-      if (!tg) return false;
-      if (view === 'struct' && fromFlow) { if (!n.ref) return false; var all = tg.all || [tg.T]; if (n.ref.kind === 'object') return n.ref.t.id === tg.T && tg.states.indexOf(n.ref.o.name) >= 0; if (n.ref.kind === 'type' || n.ref.kind === 'table') return all.indexOf(n.ref.t.id) >= 0 && !tg.states.length; return false; }
-      if (view === 'flow' && !fromFlow && n.k === 'wire') return wireHits(n, tg);
-      return false;
-    };
-    var linkedWire = {};
-    var shapeStyle = function (n) {
-      var st = 'position:absolute;box-sizing:border-box;left:' + n.x + 'px;top:' + n.y + 'px;width:' + n.w + 'px;height:' + n.h + 'px;' + opStyle(n.op);
-      switch (n.k) {
-        case 'region': st += 'background:' + C.dim + ';border-radius:' + n.r + 'px'; break;
-        case 'cat': st += 'background:rgba(43,51,64,0.07);border-radius:' + n.r + 'px'; break;
-        case 'cat2': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.line + ';border-radius:' + n.r + 'px'; break;
-        case 'back': st += 'background:rgba(43,51,64,0.06);border-radius:' + n.r + 'px'; break;
-        case 'pt': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.hair + ';border-radius:' + n.r + 'px;box-shadow:0 ' + px(1) + ' ' + px(3) + ' rgba(43,51,64,0.10)'; break;
-        case 'chip': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.hair + ';border-radius:' + n.r + 'px'; break;
-        case 'prim': st += 'background:' + C.surface + ';border:' + px(1) + ' dashed ' + C.muted + ';border-radius:' + n.r + 'px'; break;
-        case 'txt': break;
-        case 'wire': var lw = linked(n) || hl[n.id + ':t']; if (lw) linkedWire[n.id] = 1; st = 'position:absolute;left:' + (n.x - (lw ? 1.25 : 0.75) / s) + 'px;top:' + n.y + 'px;width:' + px(lw ? 2.5 : 1.5) + ';height:' + n.h + 'px;background:' + (lw ? C.acc : n.color); return st;
-        case 'box': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.line + ';border-radius:2px;box-shadow:0 ' + px(1) + ' ' + px(2) + ' rgba(43,51,64,0.08)'; break;
-        case 'dom': st += 'border:' + px(1.25) + ' solid ' + C.fg + ';border-radius:50%'; break;
-        case 'uc': st += 'background:' + C.uc + ';border-radius:50%'; break;
-        case 'per': st += 'background:' + C.stored + ';border-radius:1px'; break;
-        case 'exit': st += 'border-left:' + px(1) + ' dashed ' + C.fail; break;
-        case 'sw': st += 'border-top:' + px(1.5) + ' solid ' + n.color; break;
-        case 'swdash': st += 'border-top:' + px(1) + ' dashed ' + n.color; break;
-        case 'rbar': st += 'width:0'; break;
-        case 'lgch': st += 'background:' + C.surface + ';border:' + px(1) + ' solid ' + C.hair + ';border-radius:2px'; break;
-      }
-      // 今回の変更: 新 = 実線の縁、改 = 破線の縁（表の列は左の短い縦線）
-      if (n.ch === '新' || n.ch === '改') st += (n.k === 'rbar' ? ';border-left:' : ';border:') + px(n.k === 'rbar' ? 2.5 : 2) + (n.ch === '新' ? ' solid ' : ' dashed ') + (n.ch === '新' ? C.add : C.mod);
-      if (hl[n.id] || linked(n)) st += ';outline:' + px(1.5) + ' solid ' + C.acc + ';outline-offset:' + px(1.5);
-      return st;
-    };
-    var shapes = [], texts = [], arrows = [];
-    L.shapes.forEach(function (n) {
-      if (view === 'struct' && n.k !== 'region' && Math.max(n.w, n.h) * s < (n.w === 0 || n.h === 0 ? 10 : 8)) return;
-      if (view === 'struct' && n.tf && n.tf * s < 6.5) return;
-      if (!inView(n.x, n.y, n.w, n.h)) return;
-      shapes.push({ style: shapeStyle(n) });
-    });
-    L.texts.forEach(function (t) {
-      var fs = t.f * s; if ((view === 'struct' && fs < 6.5) || (t.op !== undefined && t.op < 0.06)) return;
-      var w = tw(t.text, t.f);
-      if (view === 'struct' && t.fitW !== undefined && t.fitW < w + 2 / s) return;
-      var cx = t.cx !== undefined, x = cx ? t.cx : t.x;
-      if (!inView(cx ? x - w / 2 : t.end ? x - w : x, t.y, w, t.f * 1.25)) return;
-      var lt = t.id && (hl[t.id] || linkedWire[t.id.replace(/:t$/, '')]);
-      var st = 'position:absolute;left:' + x + 'px;top:' + t.y + 'px;font-size:' + t.f.toFixed(3) + 'px;line-height:1.25;white-space:nowrap;pointer-events:none;color:' + (lt ? C.acc : t.color || C.fg) + ';' + opStyle(t.op) + (lt ? 'font-weight:700;' : '');
-      if (t.bold) st += 'font-weight:700;'; if (t.w500) st += 'font-weight:500;'; if (t.strike) st += 'text-decoration:line-through;';
-      if (t.mono) st += 'font-family:' + MONO + ';'; if (t.ls) st += 'letter-spacing:.06em;';
-      if (cx) st += 'transform:translateX(-50%);'; else if (t.end) st += 'transform:translateX(-100%);';
-      if (t.pill) st += 'background:' + C.surface + ';padding:0 ' + (t.f * 0.3).toFixed(2) + 'px;';
-      texts.push({ style: st, text: t.text });
-    });
-    L.arrows.forEach(function (a) {
-      if (a.op !== undefined && a.op < 0.06) return;
-      var xs = a.pts.map(function (p) { return p[0]; }), ys = a.pts.map(function (p) { return p[1]; });
-      var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), bw = Math.max.apply(null, xs) - x0, bh = Math.max.apply(null, ys) - y0;
-      if (view === 'struct' && !a.always && Math.max(bw, bh) * s < 10) return;
-      if (view === 'struct' && a.tf && a.tf * s < 6.5) return;
-      if (!inView(x0, y0, bw, bh)) return;
-      var on = hl[a.id] || (a.ends && a.ends.some(function (e) { return hl[e]; })), color = on ? C.acc : a.color, aop = a.op;
-      if (a.far && !on) { var e0 = a.pts[0], e1 = a.pts[a.pts.length - 1], in0 = inView(e0[0], e0[1], 0, 0), in1 = inView(e1[0], e1[1], 0, 0); if (!in0 || !in1) aop = (aop === undefined ? 1 : aop) * 0.35; }
-      var m = 12 / s; x0 -= m; y0 -= m; var w = bw + 2 * m, h = bh + 2 * m;
-      var sw = (a.sw || 1.5) * (on ? 1.6 : 1) / s, hl2 = 7 / s, hw = 3.2 / s, pts = a.pts, p1 = pts[pts.length - 2], p2 = pts[pts.length - 1];
-      var Lh = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1, ux = (p2[0] - p1[0]) / Lh, uy = (p2[1] - p1[1]) / Lh;
-      var bx = p2[0] - ux * hl2, by = p2[1] - uy * hl2, body = a.head ? pts.slice(0, -1).concat([[bx, by]]) : pts;
-      var P = function (p) { return (p[0] - x0).toFixed(2) + ' ' + (p[1] - y0).toFixed(2); };
-      var d;
-      if (a.onlyHead) d = '';
-      else if (a.curve) d = 'M' + P(body[0]) + ' C' + P(body[1]) + ', ' + P(body[2]) + ', ' + P(body[3]);
-      else if (a.round) {
-        d = 'M' + P(body[0]);
-        for (var ci = 1; ci < body.length - 1; ci++) {
-          var pa = body[ci - 1], pc = body[ci], pn = body[ci + 1];
-          var l1 = Math.hypot(pc[0] - pa[0], pc[1] - pa[1]) || 1, l2 = Math.hypot(pn[0] - pc[0], pn[1] - pc[1]) || 1, rr = Math.min(a.round, l1 / 2, l2 / 2);
-          var q1 = [pc[0] - (pc[0] - pa[0]) / l1 * rr, pc[1] - (pc[1] - pa[1]) / l1 * rr], q2 = [pc[0] + (pn[0] - pc[0]) / l2 * rr, pc[1] + (pn[1] - pc[1]) / l2 * rr];
-          d += ' L' + P(q1) + ' Q' + P(pc) + ', ' + P(q2);
-        }
-        d += ' L' + P(body[body.length - 1]);
-      } else d = body.map(function (p, i) { return (i ? 'L' : 'M') + P(p); }).join(' ');
-      var head = a.head ? [[p2[0], p2[1]], [bx - uy * hw, by + ux * hw], [bx + uy * hw, by - ux * hw]].map(function (p) { return (p[0] - x0).toFixed(2) + ',' + (p[1] - y0).toFixed(2); }).join(' ') : '';
-      var ps = 'fill:none;stroke:' + color + ';stroke-width:' + sw + 'px;stroke-linecap:round;stroke-linejoin:round;' + (a.dash && !on ? 'stroke-dasharray:' + (5 / s) + ' ' + (4 / s) + ';' : '');
-      arrows.push({ vb: '0 0 ' + w.toFixed(2) + ' ' + h.toFixed(2), style: 'position:absolute;left:' + x0 + 'px;top:' + y0 + 'px;width:' + w + 'px;height:' + h + 'px;overflow:visible;pointer-events:none;' + opStyle(aop), d: d || 'M 0 0', ps: ps, head: head || '0,0', hs: a.head ? 'fill:' + color + ';stroke:none' : 'display:none' });
-    });
-    // ホバー: 地図に描けない約束（不変条件）だけを、箱の下に 1 行の注釈として出す
-    var hov = this.state.hover, hinv = null;
-    if (hov && view === 'struct') { var hr = hov.ref, ho = hr.kind === 'object' ? hr.o : hr.kind === 'type' && hr.t.objects && hr.t.objects.length === 1 ? hr.t.objects[0] : null; hinv = ho && ho.holds && ho.holds.invariant ? ho.holds.invariant : null; }
-    var pop = { style: 'display:none', text: '' };
-    if (hinv) {
-      var hR = { x: hov.box.x * s + cam.tx, y: hov.box.y * s + cam.ty, w: hov.box.w * s, h: hov.box.h * s }, hw = Math.min(tw(hinv, 12) + 20, vpt.w - 16), hh = 17 * Math.ceil(tw(hinv, 12) / (hw - 20)) + 10;
-      var hx = Math.min(Math.max(hR.x, 8), vpt.w - hw - 8), hy = hR.y + hR.h + 6; if (hy + hh > vpt.h - 8) hy = hR.y - hh - 6;
-      pop = { style: 'position:absolute;left:' + hx.toFixed(0) + 'px;top:' + hy.toFixed(0) + 'px;width:' + hw + 'px;box-sizing:border-box;padding:5px 10px;background:' + C.surface + ';border-radius:3px;font-size:12px;line-height:17px;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;color:' + C.amber + ';pointer-events:none;z-index:2', text: hinv };
+  });
+  const up = e => {
+    ptrs.delete(e.pointerId);
+    if (drag && ptrs.size === 0 && !drag.moved) tap(e, drag.target);
+    if (ptrs.size < 2) pinch = null;
+    if (ptrs.size === 0) { drag = null; svg.classList.remove('drag'); }
+  };
+  svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') face.leave(); });
+  svg.addEventListener('wheel', e => { e.preventDefault(); face.touch(); const [px, py] = local(e); face.zoomAt(Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .002)), px, py, false); }, { passive: false });
+  return local;
+};
+// カメラを滑らかに動かす。each が返した移動ぶん（図の組み直し）は、行き先にも足す
+const glideCam = (from, to, each, done) => {
+  const a = { ...from }, b = { ...to }, t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / 320), e = 1 - Math.pow(1 - k, 3);
+    const shift = each({ s: Math.exp(Math.log(a.s) + (Math.log(b.s) - Math.log(a.s)) * e), tx: a.tx + (b.tx - a.tx) * e, ty: a.ty + (b.ty - a.ty) * e });
+    if (shift) { a.tx += shift.x; b.tx += shift.x; a.ty += shift.y; b.ty += shift.y; }
+    if (k < 1) requestAnimationFrame(step); else done();
+  };
+  requestAnimationFrame(step);
+};
+
+// ---------- 構造の面。1 つの SVG に置き、カメラ（拡大・移動）で見る。読めないものは描かず、近づくと 1 段ずつ開く
+// 文字は画面上で 11px 未満なら描かず、上限で頭打ち。不変条件と意図は図に描かず、箱に重ねるか押すと出る
+const CAP = { nm: 15, ti: 13, ml: 12, prim: 13, wl: 13 }, MIN = 11;
+const capOf = t => { for (const k of Object.keys(CAP)) if (t.classList.contains(k)) return CAP[k]; return 13; };
+const unitsOf = c => textWidth(c.kind === 'obj' ? c.name : (c.line ? c.label : (c.row ? c.short : c.label) + c.many), 1);
+const structFace = (svg, world, tipEl, crumbsEl) => {
+  const eng = Structure(), view = () => sizeOf(svg);
+  let M, P = { depth: 0, cols: [], W: 0, H: 0 }, nodes = [], heads = [], texts = [], byType = {}, wls = [], lastS = 0;
+  // カメラ。screen = world × s + (tx, ty)
+  let cam = { s: 1, tx: 0, ty: 0 }, raf = 0, touched = false, moving = false, hold = false, shift = null, aim = null;
+  let tipOf = null, tipS = 0, tipHover = false, pinned = null, traced = null, shown = null;
+
+  const mark = (g, text, change) => { if (!change) return; g.classList.add(CH[change]); text.append(tspan(' ' + change, 'chg')); };
+  const note = (g, n) => { if (n.inv) g.dataset.inv = n.inv; if (n.doc) g.dataset.doc = n.doc; };
+  // 矢 = 遷移。中の出来事で起きる遷移（when）は破線。変更は太い下敷きで塗る
+  const drawArrow = (n, pts, m, lx, ly, anchor) => {
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' '), cls = chOf(m.change);
+    const path = sv('path', { d, class: 'mor' + (m.when ? ' auto' : '') + cls });
+    const p1 = pts[pts.length - 2], p2 = pts[pts.length - 1], len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
+    const poly = sv('polygon', { class: 'head' + cls });
+    heads.push({ poly, tip: p2, ux: (p2[0] - p1[0]) / len, uy: (p2[1] - p1[1]) / len, size: n.F * .2 });
+    const label = sv('text', { x: lx, y: ly, 'font-size': n.fl, 'text-anchor': anchor, class: 'ml mid' + cls }, [m.by]);
+    if (m.change) label.append(tspan(' ' + m.change, 'chg'));
+    return [...(m.change ? [sv('path', { d, class: 'hl' + cls })] : []), path, poly, label];
+  };
+  const arrow = (n, a) => {
+    const { m, ca, cb } = a, A = n.boxes[n.idx[m.from]], B = n.boxes[n.idx[m.to]], F = n.F, fl = n.fl;
+    const port = (Q, k) => Q.y + F * (.9 + k);
+    if (a.kind === 'h') { // 同じ行の隣: 水平。名札は相手の箱の手前、線の上
+      const y = port(A, a.p), right = cb.c > ca.c, g = Math.max(ca.c, cb.c);
+      return drawArrow(n, right ? [[A.x + A.w, y], [B.x, y]] : [[A.x, y], [B.x + B.w, y]], m, n.colX[g] - fl * .6, y - fl * .75, 'end');
     }
-    return {
-      worldStyle: 'position:absolute;left:0;top:0;width:0;height:0;transform:translate(' + cam.tx + 'px,' + cam.ty + 'px) scale(' + s + ');transform-origin:0 0',
-      cursor: this.state.hover ? 'pointer' : 'grab',
-      shapes: shapes, texts: texts, arrows: arrows,
-      popStyle: pop.style, popText: pop.text,
-      isFlow: view === 'flow', flowDot: !!(view === 'struct' && tg && !fromFlow && flowsOf(tg).length > 0), structDot: !!(view === 'flow' && tg && fromFlow),
-      hint: '×' + s.toFixed(2), title: MODEL.name,
-    };
+    if (a.kind === 'v') { // 同じ列の隣: 垂直。往復は左右にずらす
+      const x = Math.max(A.x, B.x) + Math.min(A.w, B.w, F * 3) / 2 + a.nth * (fl * 1.2 + n.named(m)), down = cb.r > ca.r;
+      return drawArrow(n, down ? [[x, A.y + A.h], [x, B.y]] : [[x, A.y], [x, B.y + B.h]], m, x + fl * .6, n.rowY[Math.max(ca.r, cb.r)] - F * .7, 'start');
+    }
+    // それ以外: 溝だけを通る
+    const edge = g => (g < n.nC ? n.colX[g] - n.colGap[g] : n.colX[n.nC - 1] + n.colW[n.nC - 1]);
+    const laneX = (g, k) => edge(g) + F * (.5 + k * .5);
+    const sx = a.right ? A.x + A.w : A.x, ex = a.left ? B.x : B.x + B.w, sy = port(A, a.pS), ey = port(B, a.pT), xs = laneX(a.gs, a.laneS);
+    if (a.gs === a.gt) {
+      const R = ca.c === a.gs ? [A, sy] : cb.c === a.gs ? [B, ey] : null; // 溝の右の箱に入る（出る）ところに名札
+      const at = R ? [n.colX[a.gs] - fl * .6, R[1] - fl * .75, 'end'] : [laneX(a.gs, n.laneN(a.gs)), (sy + ey) / 2, 'start'];
+      return drawArrow(n, [[sx, sy], [xs, sy], [xs, ey], [ex, ey]], m, ...at);
+    }
+    const xt = laneX(a.gt, a.laneT), gy = n.rowY[a.gr] - n.loopRow[a.gr] - F * (.55 + a.laneR * .9);
+    return drawArrow(n, [[sx, sy], [xs, sy], [xs, gy], [xt, gy], [xt, ey], [ex, ey]], m, (xs + xt) / 2, gy - fl * .75, 'middle');
+  };
+  // 自分に戻る矢: 箱の上に小さく回す
+  const loop = (n, m) => {
+    const A = n.boxes[n.idx[m.from]], F = n.F, up = F * .9 * n.loopNth.get(m), x1 = A.x + F * .3, x2 = x1 + F * .7, y = A.y, h = F * .7 + up;
+    return drawArrow(n, [[x1, y], [x1, y - h], [x2, y - h], [x2, y]], m, x2 + n.fl * .4, y - F * .6 - up, 'start');
+  };
+  // 描く。絶対位置を nodes に控える（押して寄る、今いる場所）
+  const renderRecord = (r, ax, ay, key) => {
+    const g = sv('g', { transform: `translate(${r.x} ${r.y})` }), AX = ax + r.x, AY = ay + r.y;
+    r.rows.forEach((row, i) => { if (i) g.append(sv('line', { x1: 0, y1: row.y, x2: r.w, y2: row.y, class: 'hair' })); renderFrame(row, g, AX, AY, key + '/' + i); });
+    return g;
+  };
+  const renderObj = (q, ax, ay, key) => {
+    const g = sv('g', { class: 'pt', transform: `translate(${q.x} ${q.y})` }), AX = ax + q.x, AY = ay + q.y;
+    g.append(sv('rect', { width: q.w, height: q.h, rx: q.f * .08, class: 'obj-r' }));
+    const ny = !q.rec && !q.prim ? q.h / 2 : q.pad + q.f * .5; // 名前だけの箱は、名前を縦の真ん中に
+    const name = sv('text', { x: q.pad, y: ny, 'font-size': q.f, class: 'nm mid' }, [q.name]);
+    name._b = { w: q.w, h: q.h, pad: q.pad, units: unitsOf(q) };
+    mark(g, name, q.change); note(g, q);
+    g.append(name);
+    nodes.push({ g, n: q, key, need: q.need, x: AX, y: AY, w: q.w, h: q.h, label: q.name });
+    if (q.prim) g.append(sv('text', { x: q.pad, y: q.pad + q.f * 1.3 + q.f * .6, 'font-size': q.f * .85, class: 'prim mid' }, [q.prim]));
+    if (q.rec) g.append(renderRecord(q.rec, AX, AY, key));
+    return g;
+  };
+  const renderFrame = (n, parent, ax, ay, key) => {
+    const g = sv('g', { class: 'cat' + (n.row ? ' row' : ''), transform: `translate(${n.x} ${n.y})` }), AX = ax + n.x, AY = ay + n.y;
+    g.append(sv('rect', { width: n.w, height: n.h, rx: n.row ? 0 : n.F * .06, class: n.row ? 'row-r' : 'frame-r' }));
+    const oneLine = n.prim !== undefined || n.leaf, ty = oneLine ? n.h / 2 : n.pad + n.ft * .5;
+    const title = sv('text', { x: n.pad, y: ty, 'font-size': n.ft, class: 'ti mid' }, []);
+    if (n.bold >= 0) title.append(n.label.slice(0, n.bold), tspan(n.label.slice(n.bold), 'form'));
+    else if (n.row && n.short && n.label !== n.short) title.append(n.short, tspan(n.label.slice(n.short.length), 'rest')); else title.append(n.label);
+    title._b = { w: n.w, h: n.h, pad: n.pad, units: unitsOf(n) };
+    if (n.many) title.append(tspan(n.many, 'form'));
+    mark(g, title, n.change); note(g, n);
+    g.append(title);
+    if (n.t) { g.dataset.type = n.t.id; (byType[n.t.id] ||= []).push(g); }
+    if (!n.line) nodes.push({ g, n, key, need: n.need, x: AX, y: AY, w: n.w, h: n.h, head: n.row || n.leaf || n.prim !== undefined ? 0 : n.pad + n.ft * 1.35, label: n.label });
+    const inner = sv('g');
+    if (n.prim !== undefined) inner.append(sv('text', { x: n.w - n.pad, y: n.h / 2, 'font-size': n.ft, 'text-anchor': 'end', class: 'prim mid' }, [n.prim]));
+    if (n.rec) inner.append(renderRecord(n.rec, AX, AY, key));
+    if (n.boxes) {
+      n.arrowEls = [...n.lanes.map(a => ({ m: a.m, els: arrow(n, a) })), ...n.loops.map(m => ({ m, els: loop(n, m) }))];
+      for (const a of n.arrowEls) inner.append(...a.els);
+      for (const q of n.boxes) { q.owner = n; inner.append(renderObj(q, AX, AY, key + '/' + q.o.id)); }
+    }
+    g.append(inner);
+    parent.append(g);
+  };
+  const draw = placed => {
+    P = placed; nodes = []; heads = []; byType = {}; wls = []; lastS = 0;
+    world.replaceChildren();
+    const F0 = unitAt(0);
+    for (const c of P.cols) {
+      const wl = sv('text', { x: c.x, y: c.y + F0 * .7, 'font-size': F0 * 1.2, class: 'wl mid ' + c.w.id, 'data-y': c.y + c.top }, [c.w.name]);
+      world.append(wl); wls.push({ id: c.w.id, el: wl, x: c.x, y: c.y });
+      for (const f of c.frames) renderFrame(f, world, 0, 0, f.t.id);
+    }
+    texts = [...world.querySelectorAll('text')].map(t => ({ t, f: +t.getAttribute('font-size'), max: capOf(t), b: t._b, min: t.classList.contains('ml') ? 9 : MIN }));
+    showTip(null);
+  };
+  const build = D => draw(eng.place(D, view()));
+
+  // 1 つ奥の情報。箱に重ねる（指は押す）と、意図と不変条件の吹き出しが出る
+  const showTip = g => {
+    tipOf = g && (g.dataset.inv || g.dataset.doc) ? g : null;
+    if (!tipOf) { tipEl.hidden = true; return; }
+    tipEl.replaceChildren(...(tipOf.dataset.doc ? [el('p', { class: 'doc' }, [tipOf.dataset.doc])] : []), ...(tipOf.dataset.inv ? [el('p', {}, [tipOf.dataset.inv])] : []));
+    tipEl.hidden = false; tipS = cam.s; placeTip();
+  };
+  const placeTip = () => {
+    if (!tipOf) return;
+    if (tipHover && cam.s !== tipS) { showTip(null); return; }
+    const m = svg.parentNode.getBoundingClientRect(), r = tipOf.querySelector(':scope > rect').getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+    if (r.bottom < m.top || r.top > m.bottom || r.right < m.left || r.left > m.right) { tipEl.style.visibility = 'hidden'; return; }
+    tipEl.style.visibility = '';
+    const x = Math.max(12, Math.min(Math.max(r.left, m.left) - m.left, m.width - t.width - 12));
+    const above = r.top - m.top - t.height - 6, y = above >= 8 ? above : Math.max(r.top - m.top, 0) + 36;
+    tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+  };
+  // 対応: この型と世界をまたいで結ばれた型の縁を濃くする（線は引かない）。流れの面から来た型も同じ縁
+  const showLinks = id => {
+    world.querySelectorAll('.linked').forEach(g => g.classList.remove('linked'));
+    const at = shown && nodes.find(n => n.key === shown); if (at) at.g.classList.add('linked');
+    if (!id) return;
+    for (const m of M.maps.filter(m => m.from === id || m.to === id)) for (const end of [m.from, m.to]) for (const g of byType[end] || []) g.classList.add('linked');
+  };
+  // 状態に重ねる（押す）と、その状態に出入りする矢だけが濃くなり、ほかは薄くなる
+  const trace = key => {
+    world.querySelectorAll('.hot,.dim').forEach(e => e.classList.remove('hot', 'dim'));
+    const q = key && (nodes.find(n => n.key === key) || {}).n; if (!q || !q.owner) return;
+    for (const { m, els } of q.owner.arrowEls) { const on = m.from === q.o.id || m.to === q.o.id; els.forEach(e => e.classList.add(on ? 'hot' : 'dim')); }
+  };
+
+  // 組み直す。指（カーソル）の下にあった箱の同じ場所が、同じ画面位置に残るように合わせる
+  const relevel = (D, px, py) => {
+    const wx = (px - cam.tx) / cam.s, wy = (py - cam.ty) / cam.s, had = new Map(nodes.map(n => [n.key, [n.n.x, n.n.y, n.w, n.h]])), hadW = new Map(wls.map(l => [l.id, l]));
+    let old = nodes.filter(n => wx >= n.x && wx <= n.x + n.w && wy >= n.y && wy <= n.y + n.h);
+    if (!old.length) old = nodes.filter(n => !n.key.includes('/')).sort((a, b) => Math.hypot(a.x + a.w / 2 - wx, a.y + a.h / 2 - wy) - Math.hypot(b.x + b.w / 2 - wx, b.y + b.h / 2 - wy)).slice(0, 1);
+    const marks = old.map(n => ({ key: n.key, u: wx - n.x, v: wy - n.y })).reverse(); // 指の下の箱の左上（名前）を動かさない
+    build(D);
+    for (const m of marks) {
+      const n = nodes.find(n => n.key === m.key); if (!n) continue;
+      const tx = px - (n.x + m.u) * cam.s, ty = py - (n.y + m.v) * cam.s;
+      shift = { x: tx - cam.tx, y: ty - cam.ty }; cam.tx = tx; cam.ty = ty; break;
+    }
+    // 残る箱は元の場所から新しい場所へ滑らせ、新しく出たものだけフェードする（図が飛ばない）
+    const dx = shift ? shift.x / cam.s : 0, dy = shift ? shift.y / cam.s : 0, glide = { duration: 280, easing: 'cubic-bezier(.2,0,0,1)' }, calm = still();
+    if (had.size) for (const n of nodes) {
+      const o = had.get(n.key); if (!o) { n.g.classList.add('born'); continue; }
+      const top = !n.key.includes('/'), ox = o[0] - (top ? dx : 0), oy = o[1] - (top ? dy : 0);
+      if (!calm && Math.hypot(ox - n.n.x, oy - n.n.y) * cam.s > 1) n.g.animate([{ transform: `translate(${ox}px,${oy}px)` }, { transform: `translate(${n.n.x}px,${n.n.y}px)` }], glide);
+      const r = n.g.firstElementChild; // 開く箱は、元の大きさから育つ（いきなり隣に重ならない）
+      if (!calm && (o[2] !== n.w || o[3] !== n.h)) r.animate([{ transform: `scale(${o[2] / n.w},${o[3] / n.h})` }, { transform: 'scale(1,1)' }], glide);
+    }
+    if (!calm) for (const l of wls) { const o = hadW.get(l.id); if (o) l.el.animate([{ transform: `translate(${o.x - dx - l.x}px,${o.y - dy - l.y}px)` }, { transform: 'translate(0,0)' }], glide); }
+    showLinks(pinned); trace(traced);
+  };
+  const lod = () => {
+    if (cam.s === lastS) return; lastS = cam.s; const s = cam.s;
+    // 文字: 名前は 10px を下限に縮尺どおり（上限あり）。型や素の値などの添え書きは、縮尺どおりで読める大きさから
+    for (const { t, f, max, b, min } of texts) {
+      const show = b ? b.h * s >= 13 && (b.w - b.pad) * s >= b.units * 10 + 2 : f * s >= min || t.classList.contains('wl');
+      t.classList.toggle('hide', !show); if (!show) continue;
+      t.setAttribute('font-size', Math.min(b ? Math.max(f * s, 10) : f * s, max) / s);
+      if (b) t.classList.toggle('floor', f * s < MIN);
+      if (t.classList.contains('ml')) t.setAttribute('stroke-width', 4 / s);
+      if (t.dataset.y) t.setAttribute('y', t.dataset.y - Math.min(64, 16 / s));
+    }
+    for (const h of heads) {
+      const k = Math.min(h.size, 7 / s), [x, y] = h.tip, bx = x - h.ux * k, by = y - h.uy * k, nx = -h.uy * k * .45, ny = h.ux * k * .45;
+      h.poly.setAttribute('points', `${x},${y} ${bx + nx},${by + ny} ${bx - nx},${by - ny}`);
+    }
+  };
+  const apply = () => {
+    if (!hold) { const D = levelOf(cam.s, P.depth); if (D !== P.depth) { const v = view(), p = aim || [v.w / 2, v.h / 2]; relevel(D, p[0], p[1]); } }
+    world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`);
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); crumbs(); placeTip(); });
+  };
+  const put = (c, at) => { cam = c; if (at) aim = at; shift = null; apply(); return shift; };
+  // keep = 動いている間は開く深さを変えない（寄る先の深さはもう決めてある）
+  const setCam = (c, animate, keep) => {
+    if (!animate || still()) { hold = false; put(c); return; }
+    moving = true; hold = !!keep;
+    glideCam(cam, c, put, () => { moving = false; hold = false; apply(); });
+  };
+  const clamp = s => eng.clamp(P, view(), s);
+  const fitRect = (x, y, w, h) => { const v = view(), s = clamp(Math.min(v.w / w, v.h / h) * .9); return { s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; };
+  const home = () => { const h = eng.home(view()); touched = false; pinned = traced = shown = null; draw(h.placed); hold = false; cam = h.cam; apply(); };
+  // 箱に寄る: その箱の中身が開く深さに組み直し、中身が読める倍率で箱を収める。画面より大きい箱は左上を合わせる
+  const focus = (key, px, py) => {
+    let n = nodes.find(n => n.key === key); if (!n) return null;
+    const D = Math.min(DEEP, n.need ?? P.depth);
+    if (D !== P.depth) { relevel(D, px, py); n = nodes.find(n => n.key === key); }
+    const v = view(), s = Math.min(Math.max(fitRect(n.x, n.y, n.w, n.h).s, openAt(D) * 1.05, .4), openAt(D + 1) * .96);
+    setCam({ s, tx: n.w * s > v.w - 32 ? 16 - n.x * s : v.w / 2 - (n.x + n.w / 2) * s, ty: n.h * s > v.h - 32 ? 16 - n.y * s : v.h / 2 - (n.y + n.h / 2) * s }, true, true);
+    return n;
+  };
+  const zoomAt = (k, px, py, animate = true) => { aim = [px, py]; const s = clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
+  // 今いる場所: 画面の中央を含み、画面の幅をほぼ占めている箱を外から順に
+  const crumbs = () => {
+    const v = view(), wx = (v.w / 2 - cam.tx) / cam.s, wy = (v.h / 2 - cam.ty) / cam.s;
+    const chain = nodes.filter(n => wx >= n.x && wx <= n.x + n.w && wy >= n.y && wy <= n.y + n.h && n.w * cam.s > v.w * .7).filter((n, i, a) => !i || n.label !== a[i - 1].label);
+    crumbsEl.replaceChildren(...chain.slice(-4).flatMap((n, i) => {
+      const b = el('button', { type: 'button' }, [n.label]);
+      b.addEventListener('click', () => { touched = true; const v = view(); focus(n.key, v.w / 2, v.h / 2); });
+      return i ? [el('span', { 'aria-hidden': 'true' }, ['›']), b] : [b];
+    }));
+  };
+
+  // 閉じた箱の中は見えていないので、見えている一番内側の箱を相手にする
+  const seen = t => t.closest && t.closest('.cat,.pt');
+  const stateOf = t => { const g = t.closest && t.closest('.pt'), n = g && nodes.find(n => n.g === g); return n ? n.key : null; };
+  const typed = g => { const c = g && g.closest('.cat[data-type]'); return c && M.maps.some(m => m.from === c.dataset.type || m.to === c.dataset.type) ? c.dataset.type : null; };
+  const local = gestures(svg, {
+    cam: () => cam, put, clamp, zoomAt, touch: () => { touched = true; },
+    hover: e => {
+      if (moving) return;
+      const t = noted(e, e.target);
+      if (t !== tipOf) { showTip(t); tipHover = true; }
+      if (!pinned) showLinks(typed(seen(e.target)));
+      if (!traced) trace(stateOf(e.target));
+    },
+    leave: () => { showTip(null); if (!pinned) showLinks(null); if (!traced) trace(null); },
+    tap: (e, target, px, py) => {
+      const g = seen(target), n = g && nodes.find(n => n.g === g), tip = e.pointerType !== 'mouse' && !!noted(e, target);
+      shown = null; pinned = typed(g); showLinks(pinned); traced = e.pointerType === 'mouse' ? null : stateOf(target);
+      const m = n && focus(n.key, px, py); trace(traced);
+      showTip(tip && m ? m.g : null); tipHover = false;
+    },
+  });
+  // 吹き出しを出す箱。開いた枠は見出しに重ねたときだけ（中身を覆わない）
+  const noted = (e, target) => {
+    const g = seen(target); if (!g || !(g.dataset.inv || g.dataset.doc)) return null;
+    const n = nodes.find(n => n.g === g);
+    return n && n.head && (local(e)[1] - cam.ty) / cam.s > n.y + n.head ? null : g;
+  };
+
+  return {
+    // 設計図を受ける。keep = 触っていたら、見ている場所と開き具合を保つ
+    open: (model, keep) => {
+      M = model; eng.use(M);
+      if (!keep || !touched) return home();
+      pinned = traced = shown = null; eng.order(view()); build(P.depth); hold = false; apply();
+    },
+    home,
+    resize: () => { if (!touched) home(); },
+    // 流れの面から来る: 線が結ばれた型を探し（畳まれていれば開いて）、そこへ寄って縁を濃くする
+    goto: id => {
+      const find = () => nodes.filter(n => n.n.kind === 'frame' && n.n.t && n.n.t.id === id).sort((a, b) => a.key.length - b.key.length)[0];
+      let D = P.depth, n; while (!(n = find()) && D < DEEP) build(++D);
+      if (!n) return; const v = view();
+      touched = true; pinned = null; traced = null; shown = n.key; focus(n.key, v.w / 2, v.h / 2); showLinks(null);
+    },
+  };
+};
+
+// ---------- 流れの配置。同じ設計図の logic と flows を、ストリング図に投影する
+// 文法は 2 つ: 線 = 値（型〈状態〉）、箱 = 処理。上から下へ続けて行い、横に並ぶ線は同時にそこにある。箱の脇を通る線は、その箱が触らない値
+const FONT = { bn: 13.5, cap: 12, wn: 12, fail: 12, fn: 15 }, PAD = 10, LIM = 9.5, READ = 9 / FONT.cap + .001; // READ = 添え書きが読める倍率
+const Flow = (() => {
+  // 箱の種類。ドメインの箱は、出す線の型の形から決まる
+  const kindOf = (M, lg, st) => {
+    if (lg.layer === 'usecase') return 'ユースケース'; if (lg.layer === 'persistence') return '保存';
+    const forms = Object.values(st.out || {}).map(w => (typeOf(M, w.name) || {}).form);
+    return forms.includes('lifecycle') ? '遷移' : forms.includes('kind') ? '判断' : forms.some(Boolean) ? '計算' : 'ドメイン';
+  };
+  // 長い名前は、型と状態の切れ目で折る
+  const wrap = label => {
+    const lines = []; let line = '';
+    for (const tok of label.replace(/〈/g, '\u0001〈').replace(/｜/g, '｜\u0001').replace(/ (?!✓)/g, ' \u0001').split('\u0001')) {
+      if (line && textWidth((line + tok).trim(), 1) > LIM) { lines.push(line.trim()); line = ''; }
+      line += tok;
+    }
+    if (line.trim()) lines.push(line.trim());
+    return lines;
+  };
+  // 1 本の流れを置く。列 = 線の通り道、段 = 箱。箱と箱の間で、そこから始まる線に名前を書く
+  const layout = (M, fl, plain) => {
+    const n = fl.columns.length, L = Object.fromEntries(M.logic.map(l => [l.id, l]));
+    const gaps = fl.steps.map(() => ({})).concat([{}]), segs = [], live = {}; let wid = 0;
+    const born = (c, g, name, kind) => { live[c] = { id: ++wid, name, kind, from: g }; gaps[g][c] = { lines: wrap(name), w: live[c] }; };
+    for (const [c, name] of Object.entries(fl.start)) born(+c, 0, name, fl.columns[c].kind);
+    fl.steps.forEach((st, i) => {
+      const [a, b] = st.span;
+      for (let c = a; c <= b; c++) if (live[c]) segs.push({ c, w: live[c], g0: live[c].from, to: i });
+      for (const c of st.drop || []) delete live[c];
+      for (let c = a; c <= b; c++) if (live[c] && !(st.out || {})[c]) live[c] = { ...live[c], from: i + 1 };
+      for (const [c, w] of Object.entries(st.out || {})) born(+c, i + 1, w.name, w.kind);
+    });
+    for (const c of Object.keys(live)) segs.push({ c: +c, w: live[c], g0: live[c].from, to: fl.steps.length, open: true });
+    // 列の幅: その列の名前が入り、箱の名前も入るだけ
+    const cw = Array(n).fill(32);
+    gaps.forEach(g => Object.entries(g).forEach(([c, o]) => { cw[c] = Math.max(cw[c], max(o.lines.map(l => textWidth(l, FONT.wn))) + 18); }));
+    // 流れの全部の段が同じ印（丸ごと新しい流れ）なら、印は題名に 1 度だけ。箱には処理そのものの印だけを残す
+    const whole = !plain && fl.steps.length > 0 && fl.steps.every(st => st.change && st.change === fl.steps[0].change) ? fl.steps[0].change : undefined;
+    const bx = fl.steps.map(st => {
+      const lg = L[st.logic], ch = plain ? undefined : lg.change || (whole ? undefined : st.change), kind = kindOf(M, lg, st), fails = lg.fails || [];
+      const need = Math.max(textWidth(lg.name + (ch ? ' ' + ch : ''), FONT.bn), textWidth(kind, FONT.cap), ...fails.map(f => textWidth('→ ' + f, FONT.fail))) + 2 * PAD + 12;
+      const [a, b] = st.span, have = sum(cw.slice(a, b + 1)); if (have < need) cw[b] += need - have;
+      return { st, lg, ch, kind, fails, h: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + fails.length * FONT.fail * 1.4 + 9 };
+    });
+    const colX = []; let x = 0; for (let c = 0; c < n; c++) { colX[c] = x + PAD; x += cw[c]; }
+    const gapH = gaps.map((g, i) => { const k = max(Object.values(g).map(o => o.lines.length)); return k ? k * FONT.wn * 1.35 + 20 : i === gaps.length - 1 ? 14 : 22; });
+    const gy = [], by = []; let y = FONT.fn * 2.2;
+    gaps.forEach((g, i) => { gy[i] = y; y += gapH[i]; if (bx[i]) { by[i] = y; y += bx[i].h; } });
+    bx.forEach((b, i) => { const [a, c] = b.st.span; b.x = colX[a] - PAD; b.y = by[i]; b.w = sum(cw.slice(a, c + 1)) - 12; });
+    return { flow: fl, whole, colX, gaps, gy, boxes: bx, by, segs, w: x, h: y };
+  };
+  // 流れを並べる。文字が元の大きさで読める倍率で、横に入るだけ並べて折り返す（続きは下へ）。無理なら、添え書きが読める下限で
+  const place = (M, v) => {
+    const plain = flowsPlain(M), lays = M.flows.map(fl => layout(M, fl, plain)), GX = 64, GY = 56;
+    const pack = k => { const at = []; let y = 0, w = 0; for (let i = 0; i < lays.length; i += k) { let x = 0, h = 0; lays.slice(i, i + k).forEach(l => { at.push([x, y]); x += l.w + GX; h = Math.max(h, l.h); }); w = Math.max(w, x - GX); y += h + GY; } return { at, w, h: y - GY }; };
+    let best = pack(1);
+    for (const want of [1, READ]) { let k = lays.length; while (k > 1 && v.w / pack(k).w * .96 < want) k--; if (k > 1 || v.w / pack(1).w * .96 >= want) { best = pack(k); break; } }
+    return { flows: lays, at: best.at, W: best.w, H: best.h };
+  };
+  return { place };
+})();
+
+// ---------- 流れの面。色は外の世界に触れる所だけ: API の値と、保存の値・保存の箱
+const flowFace = (svg, world, tipEl, jump) => {
+  const view = () => sizeOf(svg);
+  let M, W = 0, H = 0, texts = [], boxes = [];
+  let cam = { s: 1, tx: 0, ty: 0 }, raf = 0, touched = false, lastS = 0;
+  let tipOf = null, tipPinned = false, traced = null, same = null;
+
+  const render = (lay, X, Y, fi) => {
+    const g = sv('g', { transform: `translate(${X},${Y})` }), { flow: fl, colX, gy, boxes: bx, by } = lay;
+    const text = (attrs, kids, meta) => { const t = sv('text', attrs, kids); texts.push({ t, f: +attrs['font-size'], ...meta }); return t; };
+    const fn = text({ x: 0, y: FONT.fn * .7, 'font-size': FONT.fn, class: 'fn mid' + chOf(lay.whole) }, [fl.name], { role: 'fn' });
+    if (lay.whole) fn.append(tspan(' ' + lay.whole, 'chg'));
+    g.append(fn);
+    const wg = sv('g');
+    // 線: 生まれた所（上の端か箱の下）から、受ける箱の上（か下の端）まで
+    for (const s of lay.segs) {
+      const d = `M${colX[s.c]} ${s.g0 === 0 ? gy[0] : by[s.g0 - 1] + bx[s.g0 - 1].h}V${s.open ? lay.h : by[s.to]}`, io = s.w.kind ? ' io ' + s.w.kind : '';
+      wg.append(sv('path', { d, class: 'wire' + io, 'data-w': fi + ':' + s.w.id }), sv('path', { d, class: 'hit', 'data-w': fi + ':' + s.w.id, 'data-name': s.w.name }));
+    }
+    lay.gaps.forEach((gap, i) => Object.entries(gap).forEach(([c, o]) => {
+      const t = text({ x: colX[c] + 7, y: gy[i] + 10 + FONT.wn * .6, 'font-size': FONT.wn, class: 'wn mid' + (o.w.kind ? ' io ' + o.w.kind : ''), 'data-w': fi + ':' + o.w.id, 'data-name': o.w.name }, [], { role: 'wn' });
+      o.lines.forEach((l, k) => t.append(sv('tspan', { x: colX[c] + 7, dy: k ? '1.35em' : 0 }, [l])));
+      wg.append(t);
+    }));
+    g.append(wg);
+    bx.forEach(b => {
+      const bg = sv('g', { class: 'box' + chOf(b.ch), transform: `translate(${b.x},${b.y})`, 'data-logic': b.lg.id });
+      if (b.lg.note) bg.dataset.doc = b.lg.note;
+      bg.append(sv('rect', { width: b.w, height: b.h, rx: 2, class: 'obj-r' }));
+      bg.append(text({ x: PAD, y: 9 + FONT.cap * .65, 'font-size': FONT.cap, class: 'cap mid' + (b.lg.layer === 'persistence' ? ' stored' : '') }, [b.kind + (b.lg.ref ? ' · ' + b.lg.ref : '')], { role: 'sub' }));
+      const y = 9 + FONT.cap * 1.3 + FONT.bn * .72, nm = text({ x: PAD, y, 'font-size': FONT.bn, class: 'bn mid' }, [b.lg.name], { role: 'bn', box: b, units: textWidth(b.lg.name + (b.ch ? ' ' + b.ch : ''), 1), cy: b.h / 2, y });
+      if (b.ch) nm.append(tspan(' ' + b.ch, 'chg'));
+      bg.append(nm);
+      b.fails.forEach((f, k) => bg.append(text({ x: PAD, y: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + FONT.fail * (k * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid' }, ['→ ' + f], { role: 'sub' })));
+      g.append(bg); boxes.push({ g: bg, x: X + b.x, y: Y + b.y, w: b.w, h: b.h });
+    });
+    return g;
+  };
+  const build = () => {
+    texts = []; boxes = []; lastS = 0; world.replaceChildren();
+    const p = Flow.place(M, view()); W = p.W; H = p.H;
+    p.flows.forEach((l, i) => world.append(render(l, p.at[i][0], p.at[i][1], i)));
+  };
+
+  // 文字は画面上の大きさで決める: 箱の名前は 10px を下限に（箱に入るなら）、添え書きは縮尺どおりで読める大きさから
+  const lod = () => {
+    if (cam.s === lastS) return; lastS = cam.s; const s = cam.s;
+    for (const { t, f, role, box, units, cy, y } of texts) {
+      let size, show = true;
+      if (role === 'bn') { size = Math.min(Math.max(f * s, 10), 15); show = (box.w - 2 * PAD) * s + 2 >= units * size; t.setAttribute('y', FONT.cap * s < 9 ? cy : y); }
+      else if (role === 'fn') size = Math.min(Math.max(f * s, 11), 15);
+      else { size = Math.min(f * s, 13); show = f * s >= 9; }
+      t.classList.toggle('hide', !show); if (show) t.setAttribute('font-size', size / s);
+    }
+  };
+  const apply = () => {
+    world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`);
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); placeTip(); });
+  };
+  const put = c => { cam = c; apply(); };
+  const clamp = s => { const v = view(); return Math.min(4, Math.max(.2, Math.min(v.w / W, v.h / H) * .5, s)); };
+  const setCam = (c, animate) => { if (!animate || still()) put(c); else glideCam(cam, c, put, () => {}); };
+  // 全体: 幅に合わせ、上から。添え書きが読める倍率を下回らず、入りきらない分は動かして見る
+  const home = () => { touched = false; traced = same = null; showTip(null); build(); const v = view(), s = clamp(Math.min(Math.max(v.w / W * .96, READ), 1.1)); put({ s, tx: Math.max(10, (v.w - W * s) / 2), ty: 16 }); };
+  const zoomAt = (k, px, py, animate = true) => { const s = clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
+  // 箱に寄る: 中の添え書きまで読める倍率で、箱を画面の中ほどに
+  const focus = b => { const v = view(), s = Math.max(cam.s, Math.min(1.1, (v.w - 32) / b.w)); setCam({ s, tx: Math.min(Math.max(v.w / 2 - (b.x + b.w / 2) * s, v.w - 16 - (b.x + b.w) * s), 16 - b.x * s), ty: v.h / 2 - (b.y + b.h / 2) * s }, true); };
+
+  // 1 つ奥の情報。線に重ねると、その値が生まれてから受け取られるまでが濃くなり、型の意図と不変条件が出る。箱に重ねると、同じ処理を使うほかの流れの箱が分かる
+  const trace = w => {
+    world.querySelectorAll('.hot,.dim').forEach(e => e.classList.remove('hot', 'dim'));
+    if (w) world.querySelectorAll('.wire,.wn').forEach(e => e.classList.add(e.dataset.w === w ? 'hot' : 'dim'));
+  };
+  const mark = id => {
+    world.querySelectorAll('.same').forEach(e => e.classList.remove('same'));
+    const twins = id ? boxes.filter(b => b.g.dataset.logic === id) : [];
+    if (twins.length > 1) twins.forEach(b => b.g.classList.add('same'));
+  };
+  const says = (t, pin) => {
+    if (t.dataset.doc) return [el('p', { class: 'doc' }, [t.dataset.doc])];
+    const ty = t.dataset.name && typeOf(M, t.dataset.name); if (!ty) return [];
+    const st = statesOf(t.dataset.name), objs = (ty.objects || []).filter(o => (st.length ? st.includes(o.name) : ty.objects.length === 1) && o.holds && o.holds.invariant);
+    const go = el('button', { type: 'button' }, [`${ty.name}を構造で見る ›`]); // 押して留めたときだけ、もう 1 つの面への入口が付く
+    go.addEventListener('click', () => { showTip(null); jump(ty.id); });
+    return [...(ty.doc ? [el('p', { class: 'doc' }, [ty.doc])] : []), ...objs.map(o => el('p', {}, [(st.length > 1 ? o.name + ': ' : '') + o.holds.invariant])), ...(pin ? [go] : [])];
+  };
+  const showTip = (t, pin = false) => {
+    const kids = t ? says(t, pin) : []; tipPinned = pin && kids.length > 0; tipEl.classList.toggle('pinned', tipPinned);
+    tipOf = kids.length ? t : null; tipEl.hidden = !tipOf; if (tipOf) { tipEl.replaceChildren(...kids); placeTip(); }
+  };
+  const placeTip = () => {
+    if (!tipOf) return;
+    const m = svg.parentNode.getBoundingClientRect(), r = (tipOf.classList.contains('box') ? tipOf.firstChild : tipOf.classList.contains('hit') ? world.querySelector(`.wn[data-w="${tipOf.dataset.w}"]`) || tipOf : tipOf).getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+    const x = Math.max(12, Math.min(r.left - m.left, m.width - t.width - 12)), above = r.top - m.top - t.height - 6;
+    tipEl.style.left = x + 'px'; tipEl.style.top = (above >= 8 ? above : r.bottom - m.top + 8) + 'px';
+  };
+  const pickAt = t => ({ box: t.closest && t.closest('.box'), wire: t.dataset && t.dataset.w ? t : t.parentNode && t.parentNode.dataset && t.parentNode.dataset.w ? t.parentNode : null });
+  gestures(svg, {
+    cam: () => cam, put, clamp, zoomAt, touch: () => { touched = true; },
+    hover: e => {
+      const { box, wire } = pickAt(e.target);
+      if (!traced) trace(wire ? wire.dataset.w : null);
+      if (!same) mark(box ? box.dataset.logic : null);
+      const t = wire || box || null; if (!tipPinned && t !== tipOf) showTip(t);
+    },
+    leave: () => { if (!tipPinned) showTip(null); if (!traced) trace(null); if (!same) mark(null); },
+    tap: (e, target) => {
+      const { box, wire } = pickAt(target);
+      traced = wire ? wire.dataset.w : null; trace(traced);
+      same = box ? box.dataset.logic : null; mark(same);
+      if (box) focus(boxes.find(b => b.g === box));
+      showTip(wire || (e.pointerType !== 'mouse' ? box : null), !!wire);
+    },
+  });
+
+  return {
+    open: (model, keep) => {
+      M = model;
+      if (!keep || !touched) return home();
+      traced = same = null; showTip(null); build(); apply();
+    },
+    home,
+    resize: () => { if (!touched) home(); },
+  };
+};
+
+// ---------- 1 つの地図。設計図は setModel で受け、attach した要素（ページの .cmap）の 2 つの SVG に描く。面は同じ設計図の投影で、重ねて置き、片方だけ見せる
+class View {
+  constructor() { this.el = null; this.q = null; this.faces = null; this.model = null; this.json = ''; this.face = ''; }
+  // 設計図が書き換わったら組み直す。触っていなければ全体に戻し、触っていれば見ている場所を保つ
+  setModel(m) {
+    const json = JSON.stringify(m); if (json === this.json) return;
+    this.json = json; this.model = m;
+    if (this.el && this.el.isConnected) this.open(true);
   }
-  // 盤面の中身（世界の div の innerHTML）。順は 箱 → 矢 → 文字
-  static markup(v) {
-    return v.shapes.map(function (n) { return '<div style="' + n.style + '"></div>'; }).join('') +
-      v.arrows.map(function (a) { return '<svg viewBox="' + a.vb + '" preserveAspectRatio="none" style="' + a.style + '" aria-hidden="true"><path d="' + a.d + '" style="' + a.ps + '"></path><polygon points="' + a.head + '" style="' + a.hs + '"></polygon></svg>'; }).join('') +
-      v.texts.map(function (t) { return '<div style="' + t.style + '">' + escText(t.text) + '</div>'; }).join('');
+  open(keep) {
+    this.q.title.textContent = this.model.name;
+    for (const face of Object.values(this.faces)) face.open(this.model, keep);
+    if (this.face) this.show(this.face);
   }
-  paint() {
-    if (!this.el || !this.el.isConnected) return;
-    var v = this.renderVals(), q = this.q, html = MapView.markup(v);
-    // 盤面は中身が変わったときだけ innerHTML で作り直す（カメラは world の transform だけ）。スマホのピンチで引っかかるなら、最初に疑う所
-    q.world.style.cssText = v.worldStyle; if (html !== this.drawn) { this.drawn = html; q.world.innerHTML = html; }
-    q.vp.style.cursor = v.cursor; q.pop.style.cssText = v.popStyle; q.pop.textContent = v.popText;
-    q.title.textContent = v.title; q.hint.textContent = v.hint;
-    q.flow.setAttribute('aria-selected', String(v.isFlow)); q.struct.setAttribute('aria-selected', String(!v.isFlow)); q.flow.disabled = !this.hasFlows();
-    q.flowDot.hidden = !v.flowDot; q.structDot.hidden = !v.structDot;
-  }
-  // ページの .cmap に描く。描き直しで要素が作り直されたら、新しい方に付け替える
+  // ページの .cmap に描く。ページの描き直しで要素が作り直されたら、新しい方に付け替える
   attach(el) {
     if (this.el === el) return;
-    var self = this, pick = function (name) { return el.querySelector('[data-m="' + name + '"]'); };
-    this.el = el; this.drawn = ''; this.q = { vp: pick('vp'), world: pick('world'), pop: pick('pop'), title: pick('title'), hint: pick('hint'), flow: pick('flow'), struct: pick('struct'), flowDot: pick('flow-dot'), structDot: pick('struct-dot') };
-    var vp = this.q.vp;
-    vp.addEventListener('pointerdown', function (e) { self.down(e); });
-    vp.addEventListener('pointermove', function (e) { self.move(e); });
-    vp.addEventListener('pointerup', function (e) { self.up(e); });
-    vp.addEventListener('pointercancel', function (e) { self.up(e); });
-    vp.addEventListener('pointerleave', function () { if (self.state.hover) self.setState({ hover: null }); });
-    // 既定の動き（ページの拡大）を止めるので passive にしない
-    vp.addEventListener('wheel', function (e) { e.preventDefault(); self.wheel(e); }, { passive: false });
-    vp.addEventListener('dblclick', function (e) { var p = self.local(e); self.zoomAt(2, p[0], p[1], true); });
-    pick('fit').addEventListener('click', function () { self.fitAll(); });
-    this.q.flow.addEventListener('click', function () { self.show('flow'); });
-    this.q.struct.addEventListener('click', function () { self.show('struct'); });
-    // 画面の大きさ（向き・ドックの高さ）が変わったら測り直す
-    if (this.ro) this.ro.disconnect();
-    this.ro = new ResizeObserver(function () { self.viewport(vp); self.schedule(); });
-    this.ro.observe(vp);
-    this.viewport(vp); this.schedule();
+    const pick = name => el.querySelector(`[data-m="${name}"]`), first = !this.el;
+    this.el = el; this.face = '';
+    this.q = { title: pick('title'), struct: pick('struct'), flow: pick('flow'), legend: pick('legend') };
+    this.faces = {
+      struct: structFace(pick('struct-svg'), pick('struct-svg').firstElementChild, pick('struct-tip'), pick('crumbs')),
+      flow: flowFace(pick('flow-svg'), pick('flow-svg').firstElementChild, pick('flow-tip'), id => this.jump(id)),
+    };
+    this.q.title.addEventListener('click', () => this.faces[this.face].home());
+    if (first) addEventListener('resize', () => { if (this.el.isConnected) for (const face of Object.values(this.faces)) face.resize(); });
+    this.open(false);
   }
-  show(view) { if (this.state.view === view) return; this.setState({ view: view, hover: null }); this.flyLinked(view); }
-  fitAll() {
-    var view = this.state.view, v = this.viewport(); this.anchor = [v.w / 2, v.h / 2]; this.pins = {}; this.pinT = {}; this.pinTo = {}; this.lastL = {}; this.setState({ sel: null, hover: null });
-    var l = this.L(view, LEVELS[2]), f = this.fitRect(0, 0, l.w, l.h);
-    if (view === 'struct') { for (var k = 0; k < 3; k++) { l = this.L(view, f.s); var f2 = this.fitRect(0, 0, l.w, l.h); if (f2.s >= f.s) break; f = f2; } f.s = Math.max(f.s, 7 / 44); l = this.L(view, f.s); f = { s: f.s, tx: (v.w - l.w * f.s) / 2, ty: Math.max(8, (v.h - l.h * f.s) / 2) }; }
-    this.flyTo(view, f);
-  }
-  down(e) {
-    var self = this, view = this.state.view;
-    if (e.target !== e.currentTarget && e.target.closest && e.target.closest('button')) return;
-    this.viewport(e.currentTarget); e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId);
-    this.ptrs[e.pointerId] = [e.clientX, e.clientY]; this.nptr = Object.keys(this.ptrs).length; this.moved = false;
-    var c = this.camOf(view);
-    if (this.nptr === 1) this.drag = { x: e.clientX, y: e.clientY, tx: c.tx, ty: c.ty };
-    else if (this.nptr === 2) { var ps = Object.keys(this.ptrs).map(function (k) { return self.ptrs[k]; }); var r = e.currentTarget.getBoundingClientRect(); this.pinch = { d: Math.hypot(ps[0][0] - ps[1][0], ps[0][1] - ps[1][1]), s: c.s, mx: (ps[0][0] + ps[1][0]) / 2 - r.left, my: (ps[0][1] + ps[1][1]) / 2 - r.top, tx: c.tx, ty: c.ty }; this.drag = null; }
-  }
-  move(e) {
-    var self = this, view = this.state.view;
-    if (!this.ptrs[e.pointerId]) { if (e.pointerType === 'mouse' && this.nptr === 0) this.hoverAt(this.local(e)); return; }
-    this.ptrs[e.pointerId] = [e.clientX, e.clientY];
-    if (this.pinch && this.nptr === 2) {
-      var ps = Object.keys(this.ptrs).map(function (k) { return self.ptrs[k]; }), r = e.currentTarget.getBoundingClientRect();
-      var d = Math.hypot(ps[0][0] - ps[1][0], ps[0][1] - ps[1][1]), mx = (ps[0][0] + ps[1][0]) / 2 - r.left, my = (ps[0][1] + ps[1][1]) / 2 - r.top;
-      var ns = this.clampS(this.pinch.s * d / this.pinch.d), q = ns / this.pinch.s; this.moved = true; this.anchor = [mx, my];
-      this.setCam(view, { s: ns, tx: mx - (this.pinch.mx - this.pinch.tx) * q, ty: my - (this.pinch.my - this.pinch.ty) * q });
-    } else if (this.drag) {
-      var dx = e.clientX - this.drag.x, dy = e.clientY - this.drag.y;
-      if (!this.moved && Math.hypot(dx, dy) > 6) this.moved = true;
-      if (this.moved) { var c = this.camOf(view); this.setCam(view, { s: c.s, tx: this.drag.tx + dx, ty: this.drag.ty + dy }); }
+  // 面を見せる。中身の無い面（型が無い・流れが無い）は見せず、もう片方を見せる
+  show(want) {
+    const m = this.model, q = this.q, face = want === 'flow' ? (m.flows.length ? 'flow' : 'struct') : (m.types.length ? 'struct' : 'flow');
+    this.face = face; this.el.dataset.view = face;
+    for (const [name, has] of [['struct', m.types.length], ['flow', m.flows.length]]) {
+      q[name].toggleAttribute('aria-current', name === face); q[name].toggleAttribute('aria-disabled', !has);
     }
+    const on = legendOf(m, face); for (const s of q.legend.children) s.hidden = !on[s.dataset.k];
   }
-  up(e) {
-    var self = this;
-    if (!(e.pointerId in this.ptrs)) return;
-    delete this.ptrs[e.pointerId]; this.nptr = Object.keys(this.ptrs).length;
-    if (this.nptr < 2) this.pinch = null;
-    if (this.nptr === 0) {
-      if (!this.moved) {
-        var now = Date.now(), p = this.local(e);
-        // 2 回続けて押す = 拡大（指）。マウスの 2 回目は dblclick に任せる
-        clearTimeout(this._tapT);
-        if (now - this.lastTap < 320) { if (e.pointerType === 'touch') this.zoomAt(2, p[0], p[1], true); this.lastTap = 0; }
-        else { this.lastTap = now; this._tapT = setTimeout(function () { self.tap(p); }, 280); }
-      }
-      this.drag = null;
-    }
-  }
-  // ピンチ（ctrlKey 付きのホイール）とマウスのホイールは拡大縮小。トラックパッドの 2 本指は移動（ドラッグと同じ）
-  wheel(e) {
-    var view = this.state.view, p = this.local(e), k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1, dx = e.deltaX * k, dy = e.deltaY * k;
-    if (e.ctrlKey) { this.zoomAt(Math.exp(-dy * 0.01), p[0], p[1]); return; }
-    var mouseWheel = dx === 0 && Math.abs(dy) >= 40 && Number.isInteger(dy);
-    if (mouseWheel) { this.zoomAt(Math.exp(-dy * 0.002), p[0], p[1]); return; }
-    var c = this.camOf(view); this.setCam(view, { s: c.s, tx: c.tx - dx, ty: c.ty - dy });
-  }
+  // 流れの線から、構造のその型へ飛ぶ
+  jump(id) { this.show('struct'); this.faces.struct.goto(id); location.hash = this.q.struct.getAttribute('href'); }
 }
-return { View: MapView };
+return { View, Structure, Flow, typeOf, statesOf, levelOf, legendOf, openAt, DEEP };
 })()
 </script>
 
@@ -1254,7 +1224,7 @@ const render = () => {
   // 中身が同じなら作り直さない（作り直すと、開いた箇所・横スクロール・文字の選択が消える）
   if (page !== S.drawn) { S.drawn = page; $('glance').innerHTML = page }
   // coder の地図は自分で描く。ページの描き直しで作り直されたら、新しい要素に付け替える
-  if ($('cmap')) { coderMap.setModel(S.model); coderMap.attach($('cmap')) }
+  if ($('cmap')) { coderMap.setModel(S.model); coderMap.attach($('cmap')); coderMap.show(sub) }
   renderDock(ship, sub)
   renderSheet()
 }
@@ -1610,12 +1580,13 @@ const foundView = () => {
     <div>${head('探索の狙いと分かったこと', S.quality.charters.length || 'なし')}${charters}</div>
     <details class="log"><summary>片づいた <span class="cnt">${closed.length}</span></summary>${closed.map(findingRow).join('')}</details>`
 }
-// coder: 設計図（型・対応・処理・流れ）の「構造」と「流れ」の地図。盤面は coderMap が描くので、ここは枠だけ（中身が変わっても作り直さない）
+// coder: 設計図（型・対応・処理・流れ）を「構造」と「流れ」の 2 つの面に描く。盤面は coderMap が描くので、ここは枠だけ（中身が変わっても作り直さない）。面は #coder が構造、#coder.flow が流れ
 const coderMap = new CoderMap.View()
-const MAP = `<div class="cmap" id="cmap"><header class="chead gut"><a href="#"><small>‹ ${NAME.coder}</small><b data-m="title"></b></a>
-  <div class="ctabs" role="tablist" aria-label="投影"><button type="button" role="tab" data-m="flow">流れ<i data-m="flow-dot" hidden></i></button><button type="button" role="tab" data-m="struct">構造<i data-m="struct-dot" hidden></i></button></div>
-  <span class="chint" data-m="hint"></span></header>
-  <div class="cvp" data-m="vp"><div data-m="world"></div><div role="tooltip" data-m="pop"></div><button type="button" class="cfit" data-m="fit" aria-label="全体に戻る"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg></button></div></div>`
+const MAP = `<div class="cmap" id="cmap"><header class="chead gut"><a href="#">‹ ${NAME.coder}</a><button type="button" data-m="title"></button><nav class="crumbs" data-m="crumbs" aria-label="今見ている場所"></nav>
+  <nav class="ctabs" aria-label="面を選ぶ"><a href="#coder" data-m="struct">構造</a><a href="#coder.flow" data-m="flow">流れ</a></nav></header>
+  <div class="cvp"><svg data-m="struct-svg" role="img" aria-label="構造の地図。枠は型、離れて並ぶ箱はどれか 1 つ、罫線で割った行は全部そろう、矢は遷移"><g></g></svg><div class="tip" data-m="struct-tip" hidden></div>
+  <svg data-m="flow-svg" role="img" aria-label="流れの地図。線は値、箱は処理。上から下へ進む"><g></g></svg><div class="tip" data-m="flow-tip" hidden></div>
+  <p class="cleg" data-m="legend" aria-label="色の意味"><span data-k="api">API</span><span data-k="db">保存</span><span data-k="new">新</span><span data-k="mod">改</span></p></div></div>`
 const designed = () => S.model && (S.model.types.length > 0 || S.model.flows.length > 0)
 const coderPage = () => (unready() || !designed() ? `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.coder}</a>${unready() || '<p class="req wait">まだ設計図がありません</p>'}` : MAP)
 // coder のドック: 成果物（PR）・要レビュー・承認。地図が画面を使うので、ページの本体には置かない

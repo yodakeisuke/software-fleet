@@ -23,7 +23,7 @@ const column = object({ name: text(), type: text('DB の型'), pk: flag('主キ�
 const modelType = object({
   id: text('鍵。部品・対応・fk・条件はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
-  many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。開いた箱の題名の下に出る'),
+  many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。箱に重ねるか押すと出る'),
   objects: list(ref('object'), 'table 以外。1 つ以上'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
 }, ['id', 'name', 'world', 'form'])
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')

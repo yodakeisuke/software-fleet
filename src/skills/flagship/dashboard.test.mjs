@@ -1,19 +1,24 @@
-// coder の地図（dashboard.html の <script id="coder-map">）を、ページから切り出したそのままの形で Node で動かす。描画の前の投影（盤面・カメラ・固定・選択）を見る
+// coder の地図（dashboard.html の <script id="coder-map">）を、ページから切り出したそのままの形で Node で動かす。見るのは配置（DOM に触れない計算）の規則。描画と操作はブラウザで確かめる（docs/qa-done.md の Q5）
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 const page = readFileSync(new URL('./dashboard.html', import.meta.url), 'utf8')
 const source = page.match(/<script id="coder-map">([\s\S]*?)<\/script>/)[1]
-// フレームは手で進める（tick）。cancelAnimationFrame は登録を外す
-let now = 0
-let frames = []
-const clock = { performance: { now: () => now }, requestAnimationFrame: f => frames.push(f), cancelAnimationFrame: id => { frames[id - 1] = () => {} } }
-const tick = ms => { now += ms; const due = frames; frames = []; due.forEach(f => f(now)) }
-const settle = (limit = 120) => { let k = 0; while (frames.length && k < limit) { tick(16); k++ } return k }
-const CoderMap = new Function(...Object.keys(clock), `${source}\nreturn CoderMap`)(...Object.values(clock))
-// 地図を 1 つ、画面の大きさを決めて作る
-const mapOf = (model, w, h) => { const map = new CoderMap.View(); map.setModel(model); map.viewport = () => ({ w, h }); return map }
+const CoderMap = new Function(`${source}\nreturn CoderMap`)()
+const PHONE = { w: 390, h: 796 }, WIDE = { w: 1280, h: 800 }
+// 構造の配置。深さ D まで開いた図（最初に全部開いた図で折り返しの並びを決める）
+const structure = model => { const engine = CoderMap.Structure(); engine.use(model); return engine }
+const placed = (model, D, v = WIDE) => { const engine = structure(model); engine.order(v); return engine.place(D, v) }
+const frames = board => board.cols.flatMap(col => col.frames)
+const frameOf = (board, id) => frames(board).find(frame => frame.t.id === id)
+// 状態（箱）の id → [列, 行]
+const cellsOf = frame => Object.fromEntries(frame.t.objects.map((object, i) => [object.id, [frame.cells[i].c, frame.cells[i].r]]))
+// 状態機械 1 つだけの設計図。arrows は [from, to] の列
+const machine = (states, arrows, at = {}) => ({
+  ...EMPTY, types: [{ id: 'm', name: '機械', world: 'domain', form: 'lifecycle', objects: states.map(id => ({ id, name: id, ...(at[id] ? { at: at[id] } : {}) })), morphisms: arrows.map(([from, to]) => ({ from, to, by: `${from}から${to}へ` })) }],
+})
+const EMPTY = { name: '例', worlds: [{ id: 'api', name: '境界' }, { id: 'domain', name: 'ドメイン' }, { id: 'db', name: '保存' }], types: [], maps: [], logic: [], flows: [] }
 
 // 例の設計図（Design artifact で地図を固めたときの「注文」）
 const MODEL = {
@@ -197,198 +202,165 @@ const MODEL = {
         { logic: 'shape_list', span: [0, 1], out: { 0: { name: '一覧の返事', kind: 'api' } }, drop: [1] }
       ] }
   ]
-};
+}
 
-test('広い画面で、あらゆる倍率・位置・固定・選択を描ける', () => {
-  for (const view of ['struct', 'flow']) {
-    const map = mapOf(MODEL, 2600, 1600)
-    map.state.view = view
-    map.renderVals()
-    const board = map.L(view, 1)
-    for (let k = 0; k < 30; k++) {
-      const s = 0.08 * Math.pow(1.2, k)
-      for (const [fx, fy] of [[0.1, 0.1], [0.5, 0.5], [0.9, 0.3], [0.3, 0.9]]) {
-        map.state.cam[view] = { s, tx: 1300 - board.w * fx * s, ty: 800 - board.h * fy * s }
-        CoderMap.View.markup(map.renderVals())
-      }
-    }
+test('状態機械は、いちばん長い道筋を 1 行目に一直線に置き、流れは左から右', () => {
+  const cells = cellsOf(frameOf(placed(machine(['a', 'x', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd'], ['a', 'x'], ['x', 'd']]), 1), 'm'))
+  assert.deepEqual([cells.a, cells.b, cells.c, cells.d], [[0, 0], [1, 0], [2, 0], [3, 0]])
+  assert.deepEqual(cells.x, [1, 1])
+})
+
+test('脇の状態は矢の交差が最小、次に矢が短くなる行に置き、同点は書いた順', () => {
+  // 契約: 一時停止を先に書いても、解約済へ矢が出る解約予約が上に来る
+  const contract = machine(['trial', 'active', 'past_due', 'paused', 'canceling', 'canceled'], [
+    ['trial', 'active'], ['trial', 'canceled'], ['active', 'active'], ['active', 'past_due'], ['past_due', 'active'], ['past_due', 'canceled'],
+    ['active', 'paused'], ['paused', 'active'], ['active', 'canceling'], ['canceling', 'active'], ['canceling', 'canceled'],
+  ])
+  assert.deepEqual(cellsOf(frameOf(placed(contract, 1), 'm')), { trial: [0, 0], active: [1, 0], past_due: [2, 0], canceled: [3, 0], canceling: [2, 1], paused: [2, 2] })
+  const tie = cellsOf(frameOf(placed(machine(['a', 'b', 'c', 'x', 'y'], [['a', 'b'], ['b', 'c'], ['a', 'x'], ['a', 'y']]), 1), 'm'))
+  assert.deepEqual([tie.x, tie.y], [[1, 1], [1, 2]])
+})
+
+test('戻る矢があっても列は決まり、at で置いた図は指定どおり', () => {
+  const back = cellsOf(frameOf(placed(machine(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['c', 'a']]), 1), 'm'))
+  assert.deepEqual(back, { a: [0, 0], b: [1, 0], c: [2, 0] })
+  const fixed = cellsOf(frameOf(placed(machine(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']], { a: [0, 0], b: [0, 1], c: [1, 1] }), 1), 'm'))
+  assert.deepEqual(fixed, { a: [0, 0], b: [0, 1], c: [1, 1] })
+})
+
+test('最上位は部品になっていない型だけを書いた順に並べ、区画は worlds の並びに依らず 境界 → ドメイン → 保存', () => {
+  const board = placed({ ...MODEL, worlds: [...MODEL.worlds].reverse() }, 0)
+  assert.deepEqual(board.cols.map(col => col.w.id), ['api', 'domain', 'db'])
+  assert.deepEqual(board.cols[1].frames.map(frame => frame.t.id), ['order', 'shipment', 'stock'])
+  assert(board.cols[0].x < board.cols[1].x && board.cols[1].x < board.cols[2].x)
+  const tall = placed(MODEL, 0, PHONE)
+  assert(tall.cols[0].y < tall.cols[1].y && tall.cols[1].y < tall.cols[2].y)
+})
+
+test('自分を含む型（木）も最上位に出て、中の自分は名前だけの行になる', () => {
+  const org = { id: 'org', name: '組織', world: 'domain', form: 'value', objects: [{ id: 'v', name: '組織', holds: { parts: [{ type: 'org', as: '上位' }] } }] }
+  const board = placed({ ...EMPTY, types: [org] }, 3)
+  assert.deepEqual(frames(board).map(frame => frame.t.id), ['org'])
+  assert.equal(frameOf(board, 'org').rec.rows[0].leaf, true)
+})
+
+test('開いていない箱は名前の大きさで、開くと中身のぶん育つ', () => {
+  const shut = frameOf(placed(MODEL, 0), 'order'), open = frameOf(placed(MODEL, 1), 'order'), deep = frameOf(placed(MODEL, 2), 'order')
+  assert.equal(shut.leaf, true)
+  assert.equal(shut.boxes, undefined)
+  assert.equal(open.boxes.length, 5)
+  assert(shut.h < open.h / 2 && shut.w < open.w / 2)
+  assert(open.boxes.every(state => state.rec === undefined))
+  assert(deep.boxes.some(state => state.rec) && deep.w > open.w && deep.h > open.h)
+})
+
+test('折り返しの並びは最初に一度決めて、どの深さに開いても変えない', () => {
+  for (const v of [PHONE, WIDE]) {
+    const engine = structure(MODEL)
+    engine.home(v)
+    const breaks = D => engine.place(D, v).cols.map(col => col.frames.map(frame => frame.x === col.x))
+    for (let D = 1; D <= CoderMap.DEEP; D++) assert.deepEqual(breaks(D), breaks(0))
   }
-  const map = mapOf(MODEL, 2600, 1600)
-  const paths = [...new Set(map.L('struct', 0.6).shapes.filter(n => n.ref?.path).map(n => n.ref.path))]
-  assert(paths.length > 20)
-  for (const path of paths) {
-    map.pins = { [path]: 1 }; map.pinTo = { [path]: 1 }; map.layouts = {}; map.keys = []
-    for (const s of [0.2, 0.4, 0.8, 1.6]) { map.state.cam.struct = { s, tx: 0, ty: 0 }; map.renderVals() }
-  }
-  map.pins = {}; map.pinTo = {}; map.layouts = {}; map.keys = []
-  for (const s of [0.1, 0.15, 0.2, 0.3, 0.5, 0.8, 1.2, 2.4]) {
-    const board = map.L('struct', s)
-    map.state.cam.struct = { s, tx: 0, ty: 0 }
-    for (const n of [...board.shapes, ...(board.hits ?? [])].filter(n => n.ref)) { map.state.sel = { id: n.id, ref: n.ref, wx: n.x, wy: n.y, box: n }; map.renderVals() }
-  }
-  map.state.view = 'flow'
-  map.state.cam.flow = { s: 1, tx: 0, ty: 0 }
-  for (const n of map.L('flow').shapes.filter(n => n.ref)) { map.state.sel = { id: n.id, ref: n.ref, wx: n.x, wy: n.y, box: n }; map.renderVals() }
+  // 縦長の画面は 1 列
+  assert(placed(MODEL, 2, PHONE).cols.every(col => col.frames.every(frame => frame.x === col.x)))
 })
 
-test('押して固定した箱は、押した所に左上を留めたまま開く（はみ出すなら画面に寄せる）', () => {
-  const map = mapOf(MODEL, 800, 552)
-  map.state.cam.struct = map.camOf('struct')
-  const corner = n => { const cam = map.camOf('struct'); return [n.x * cam.s + cam.tx + 1, n.y * cam.s + cam.ty + 1] }
-  const shape = id => map.L('struct', map.camOf('struct').s).shapes.find(x => x.id === id)
-  const press = n => {
-    const [ax, ay] = corner(n)
-    map.tap([ax + 4, ay + 4])
-    settle()
-    const c = map.camOf('struct'), m = shape(n.id), V = map.viewport()
-    const left = m.x * c.s + c.tx, right = left + m.w * c.s, top = m.y * c.s + c.ty, bottom = top + m.h * c.s, dx = left - ax, dy = top - ay
-    const wide = m.w * c.s > V.w - 32, tall = m.h * c.s > V.h - 84
-    const panned = right > V.w - 16 + 1 || bottom > V.h - 72 + 1 || Math.abs(dx) > 10 || Math.abs(dy) > 10
-    const stayed = !panned && Math.abs(dx) <= 10 && Math.abs(dy) <= 10
-    const fitted = (wide ? Math.abs(left - 16) <= 2 : right <= V.w - 16 + 2) && (tall ? Math.abs(top - 12) <= 2 : bottom <= V.h - 72 + 2)
-    assert(stayed || fitted, `${n.id}: ${[left, top, right, bottom].map(Math.round)}`)
-  }
-  // 開いている箱を押すと選ぶだけ
-  press(shape('order#confirmed'))
-  assert.equal(map.state.sel.id, 'order#confirmed')
-  // 寄ってから、閉じた箱を入れ子の奥へ順に押す。押した箱は開いたまま固定される
-  const [zx, zy] = corner(shape('order#confirmed'))
-  map.zoomAt(2.2, zx, zy)
-  for (const id of ['order#confirmed/支払#unpaid/金額', 'order#confirmed/支払#unpaid/金額#v/数値']) {
-    const n = shape(id)
-    assert(n.ref.open < 1 && map.hitScreen(corner(n).map(v => v + 4))?.id === id, id)
-    press(n)
-    assert.equal(map.pins[n.ref.path], 1, id)
-  }
+test('最初の画面は、収まって名前が読める範囲でいちばん深く開く', () => {
+  const phone = structure(MODEL).home(PHONE), wide = structure(MODEL).home(WIDE)
+  assert.equal(phone.placed.depth, 0)
+  assert.equal(wide.placed.depth, 1)
+  for (const { placed: board, cam } of [phone, wide]) assert(cam.s < CoderMap.openAt(board.depth + 1) && board.W * cam.s <= (board === phone.placed ? PHONE : WIDE).w)
+  const small = structure(machine(['a', 'b'], [['a', 'b']])).home(WIDE)
+  assert(small.placed.depth >= 1)
 })
 
-test('流れ: 線の名前が読め、選んだ線は濃く、構造へ切り替えると的の型が画面に収まる', () => {
-  const map = mapOf(MODEL, 1024, 720)
-  map.state.view = 'flow'
-  const board = map.L('flow')
-  map.state.cam.flow = map.camOf('flow')
-  assert(map.renderVals().texts.some(t => t.text === '合計を出す'))
-  const draft = board.hits.find(h => h.ref.label === '注文〈下書き〉')
-  map.state.sel = { id: draft.id, ref: draft.ref, wx: draft.x, wy: draft.y, box: draft }
-  const label = map.renderVals().texts.find(t => t.text === '注文〈下書き〉')
-  assert.match(label.style, /#3F5577/)
-  assert.match(label.style, /font-weight:700/)
-  const lines = board.hits.find(h => h.ref.label === '明細 ×N')
-  map.state.sel = { id: lines.id, ref: lines.ref, wx: 0, wy: 0, box: lines }
-  map.state.view = 'struct'
-  map.lastL = {}
-  map.flyLinked('struct')
-  settle()
-  const c = map.camOf('struct'), box = map.L('struct', c.s).shapes.filter(x => x.ref?.kind === 'type' && x.ref.t.id === 'line').sort((a, b) => a.id.length - b.id.length)[0]
-  assert(box.w * c.s <= 1024 && box.h * c.s <= 720)
+test('倍率が上がると 1 段ずつ開き、境目では少し粘る', () => {
+  const { openAt, levelOf } = CoderMap
+  assert.equal(levelOf(openAt(1) * 0.99, 0), 0)
+  assert.equal(levelOf(openAt(1), 0), 1)
+  assert.equal(levelOf(openAt(2) * 1.01, 1), 2)
+  assert.equal(levelOf(openAt(2) * 0.95, 2), 2)
+  assert.equal(levelOf(openAt(2) * 0.9, 2), 1)
 })
 
-test('ホバーは不変条件だけを注釈に出し、背景を押すと選択が外れる', () => {
-  const map = mapOf(MODEL, 390, 796)
-  const cam = map.camOf('struct')
-  map.state.cam.struct = cam
-  const target = map.L('struct', cam.s).shapes.find(n => n.ref?.kind === 'object' && n.ref.o.holds.invariant && Math.max(n.w, n.h) * cam.s >= 8)
-  map.hoverAt([(target.x + target.w / 2) * cam.s + cam.tx, (target.y + target.h / 2) * cam.s + cam.ty])
-  const shown = map.renderVals()
-  assert.equal(map.state.hover.id, target.id)
-  assert.equal(shown.popText, target.ref.o.holds.invariant)
-  assert.equal(shown.cursor, 'pointer')
-  map.state.sel = map.state.hover
-  map.tap([2, 790])
-  assert.equal(map.state.sel, null)
+test('中に変更がある箱は畳んでいても「改」を告げ、自分の印はそのまま。全部が同じ印なら出さない', () => {
+  const shut = placed(MODEL, 0)
+  assert.equal(frameOf(shut, 'order').change, '改')
+  assert.equal(frameOf(shut, 't_payments').change, '改')
+  assert.equal(frameOf(shut, 'shipment').change, undefined)
+  const order = frameOf(placed(MODEL, 1), 'order')
+  assert.equal(order.change, undefined)
+  assert.equal(order.boxes.find(state => state.o.id === 'confirmed').change, '改')
+  assert.equal(order.boxes.find(state => state.o.id === 'draft').change, undefined)
+  const fresh = { ...MODEL, types: MODEL.types.map(type => ({ ...type, change: '新' })) }
+  assert.equal(frameOf(placed({ ...MODEL, types: MODEL.types.map(type => (type.id === 'stock' ? { ...type, change: '新' } : type)) }, 0), 'stock').change, '新')
+  assert(frames(placed(fresh, 0)).every(frame => frame.change === undefined))
 })
 
-test('設計図が書き換わると盤面を組み直し、見ている場所は残して選択を外す', () => {
-  const map = mapOf(MODEL, 390, 796)
-  map.state.cam.struct = { s: 0.5, tx: 10, ty: 20 }
-  map.state.sel = { id: 'order', ref: map.L('struct', 0.5).shapes.find(n => n.id === 'order').ref }
-  const before = map.L('struct', 0.5)
-  map.setModel({ ...MODEL, name: '受注' })
-  assert.notEqual(map.L('struct', 0.5), before)
-  assert.deepEqual(map.state.cam.struct, { s: 0.5, tx: 10, ty: 20 })
-  assert.equal(map.state.sel, null)
-  assert.equal(map.renderVals().title, '受注')
-})
-
-test('流れがまだ無い・型がまだ無い設計図も描け、流れが無ければ構造を見せる', () => {
-  const noFlows = mapOf({ ...MODEL, flows: [] }, 390, 796)
-  noFlows.state.view = 'flow'
-  noFlows.setModel({ ...MODEL, flows: [], name: '型だけ' })
-  assert.equal(noFlows.hasFlows(), false)
-  assert.equal(noFlows.state.view, 'struct')
-  assert(noFlows.renderVals().shapes.length > 0)
-  const noTypes = mapOf({ ...MODEL, types: [], maps: [] }, 390, 796)
-  for (const view of ['struct', 'flow']) { noTypes.state.view = view; noTypes.renderVals() }
-  noTypes.fitAll()
-  settle()
-})
-
-test('holds を省いた 1 つだけの対象（unit）の型も描ける', () => {
-  const ok = { id: 'ok', name: '受け付けた', world: 'api', form: 'record', objects: [{ id: 'v', name: '受け付けた' }] }
-  const map = mapOf({ ...MODEL, types: [...MODEL.types, ok] }, 390, 796)
-  for (const s of [0.1, 0.5, 2]) { map.state.cam.struct = { s, tx: 0, ty: 0 }; CoderMap.View.markup(map.renderVals()) }
-  assert(map.L('struct', 0.5).boxes[ok.id])
-})
-
-test('✓ と ×N が両方付いた線も型に結ぶ（Lifecycle の型を出す箱は Transition）', () => {
+test('流れの箱の種類: ドメインは出す線の型の形から決まり、✓ と ×N が付いた線も型に結ぶ', () => {
+  const kinds = id => CoderMap.Flow.place(MODEL, WIDE).flows.find(lay => lay.flow.id === id).boxes.map(box => box.kind)
+  assert.deepEqual(kinds('confirm'), ['ユースケース', '保存', '計算', 'ユースケース', '遷移', '保存'])
+  assert.deepEqual(kinds('cancel').slice(2, 4), ['判断', '遷移'])
+  assert.equal(kinds('ship')[3], 'ドメイン')
   const model = structuredClone(MODEL)
-  model.flows.find(f => f.id === 'reserve').steps[1].out[1].name = '引当済の明細 ✓ ×N'
-  const board = mapOf(model, 1024, 720).L('flow')
-  const box = board.shapes.find(n => n.ref?.kind === 'logic' && n.ref.lg.id === 'reserve')
-  const kind = board.texts.find(t => Math.abs(t.x - (box.x + 23)) < 1e-6 && Math.abs(t.y - (box.y + 7)) < 1e-6)
-  assert.equal(kind.text, 'Transition')
+  model.flows.find(flow => flow.id === 'reserve').steps[1].out[1].name = '引当済の明細 ✓ ×N'
+  assert.equal(CoderMap.Flow.place(model, WIDE).flows.find(lay => lay.flow.id === 'reserve').boxes[1].kind, '遷移')
+  // 結び方は src/skills/coder/logic/wires.ts の写し
+  assert.equal(CoderMap.typeOf(MODEL, '確定済の注文 ×N ✓').id, 'order')
+  assert.equal(CoderMap.typeOf(MODEL, '注文の要約 ×N').id, 'summary')
+  assert.equal(CoderMap.typeOf(MODEL, '確定した'), undefined)
+  assert.deepEqual(CoderMap.statesOf('注文〈下書き｜確定済〉'), ['下書き', '確定済'])
 })
 
-test('自分への遷移は箱の上の弧に名札を出し、同じ両端の遷移は名札をずらして積む', () => {
+test('流れの線は生まれてから受ける箱まで 1 本で、箱の脇を通る線はその箱が切らない', () => {
+  const lay = CoderMap.Flow.place(MODEL, WIDE).flows.find(l => l.flow.id === 'confirm')
+  const runs = name => lay.segs.filter(seg => seg.w.name === name).map(seg => [seg.c, seg.g0, seg.open ? 'end' : seg.to])
+  // 注文〈下書き〉は 2 段目で生まれ、3・4 段目（合計・与信）の脇を通って 5 段目に入る
+  assert.deepEqual(runs('注文〈下書き〉'), [[1, 2, 4]])
+  assert.deepEqual(runs('確定した'), [[0, 6, 'end']])
+  assert(lay.boxes.every((box, i) => i === 0 || box.y >= lay.boxes[i - 1].y + lay.boxes[i - 1].h))
+})
+
+test('丸ごと新しい流れは題名に 1 度だけ印を出し、箱には処理そのものの印だけを残す', () => {
   const model = structuredClone(MODEL)
-  model.types.find(t => t.id === 'order').morphisms.push({ from: 'draft', to: 'draft', by: '明細を足す' }, { from: 'draft', to: 'cancelled', by: '期限切れ', when: { type: 'line', at: 'open', all: true } })
-  const map = mapOf(model, 2600, 1600)
-  const draft = map.L('struct', 1).shapes.find(n => n.id === 'order#draft')
-  map.state.cam.struct = { s: 1, tx: 1300 - (draft.x + draft.w / 2), ty: 800 - (draft.y + draft.h / 2) }
-  const texts = map.renderVals().texts
-  const at = text => texts.filter(t => t.text === text).map(t => /left:([^;]+);top:([^;]+);/.exec(t.style).slice(1).join(','))
-  assert.equal(at('明細を足す').length, 1)
-  assert.equal(at('期限切れ').length, 1)
-  assert(at('取り消す').length >= 1 && !at('取り消す').includes(at('期限切れ')[0]))
+  model.flows.find(flow => flow.id === 'cancel').steps.forEach(step => { step.change = '新' })
+  const cancel = CoderMap.Flow.place(model, WIDE).flows.find(lay => lay.flow.id === 'cancel')
+  assert.equal(cancel.whole, '新')
+  assert.deepEqual(cancel.boxes.map(box => box.ch), [undefined, undefined, undefined, undefined, '新', '改'])
+  const ship = CoderMap.Flow.place(MODEL, WIDE).flows.find(lay => lay.flow.id === 'ship')
+  assert.equal(ship.whole, undefined)
+  assert.equal(ship.boxes[3].ch, '削')
 })
 
-test('自分を含む型（木）も最上位に描き、その部品は中に描く', () => {
-  const org = { id: 'org', name: '組織', world: 'domain', form: 'value', objects: [{ id: 'v', name: '組織', holds: { parts: [{ type: 'org_name' }, { type: 'org', as: '上位' }] } }] }
-  const orgName = { id: 'org_name', name: '組織名', world: 'domain', form: 'value', objects: [{ id: 'v', name: '組織名', holds: { prim: '文字列' } }] }
-  const map = mapOf({ ...MODEL, types: [...MODEL.types, org, orgName] }, 390, 796)
-  for (const s of [0.1, 0.5, 1, 4]) {
-    const board = map.L('struct', s)
-    assert(board.boxes.org)
-    assert.equal(board.boxes.org_name, undefined)
-    map.state.cam.struct = { s, tx: 0, ty: 0 }
-    map.renderVals()
-  }
+test('凡例は、その面のその設計図に出ている色だけ', () => {
+  assert.deepEqual(CoderMap.legendOf(MODEL, 'struct'), { api: true, db: true, new: true, mod: true })
+  const plain = { ...machine(['a', 'b'], [['a', 'b']]), logic: [{ id: 'l', name: '進める', layer: 'domain' }], flows: [{ id: 'f', name: '進める', columns: [{ name: '機械' }], start: { 0: '機械〈a〉' }, steps: [{ logic: 'l', span: [0, 0], out: { 0: { name: '機械〈b〉' } } }] }] }
+  assert.deepEqual(CoderMap.legendOf(plain, 'struct'), { api: false, db: false, new: false, mod: false })
+  assert.deepEqual(CoderMap.legendOf(plain, 'flow'), { api: false, db: false, new: false, mod: false })
+  // 削だけでも、畳んだ箱は「改」で告げる
+  const cut = structuredClone(plain)
+  cut.types[0].morphisms[0].change = '削'
+  assert.deepEqual(CoderMap.legendOf(cut, 'struct'), { api: false, db: false, new: false, mod: true })
 })
 
-test('区画は worlds の並びに依らず、左から 依頼 → 型 → 表', () => {
-  const map = mapOf({ ...MODEL, worlds: [...MODEL.worlds].reverse() }, 390, 796)
-  const x = id => map.L('struct', 0.5).shapes.find(n => n.id === `R:${id}`).x
-  assert(x('api') < x('domain') && x('domain') < x('db'))
+test('型がまだ無い・流れがまだ無い・段がまだ無い設計図も置ける', () => {
+  const noTypes = { ...MODEL, types: [], maps: [], flows: [{ id: 'f', name: '空の流れ', columns: [{ name: '値' }], start: { 0: '値' }, steps: [] }] }
+  assert.deepEqual(structure(noTypes).home(PHONE).placed.cols, [])
+  assert.equal(CoderMap.Flow.place(noTypes, PHONE).flows[0].whole, undefined)
+  assert.deepEqual(CoderMap.legendOf(noTypes, 'struct'), { api: false, db: false, new: false, mod: false })
+  assert.deepEqual(CoderMap.Flow.place({ ...MODEL, flows: [] }, PHONE).flows, [])
+  const unit = { id: 'ok', name: '受け付けた', world: 'api', form: 'record', objects: [{ id: 'v', name: '受け付けた' }] }
+  assert.equal(frameOf(placed({ ...MODEL, types: [...MODEL.types, unit] }, 2), 'ok').leaf, true)
 })
 
-test('盤面の中身が同じなら作り直さない', () => {
-  const map = mapOf(MODEL, 390, 796)
-  let built = 0
-  const node = () => ({ style: {}, setAttribute: () => {} })
-  map.el = { isConnected: true }
-  map.q = { vp: node(), pop: node(), title: node(), hint: node(), flow: node(), struct: node(), flowDot: node(), structDot: node(), world: { style: {}, set innerHTML (html) { built++ } } }
-  map.paint()
-  map.paint()
-  assert.equal(built, 1)
-  map.state.cam.struct = { s: 2, tx: 0, ty: 0 }
-  map.paint()
-  assert.equal(built, 2)
+test('配置は設計図を書き換えない（書き換えると、同じ設計図を毎回組み直すことになる）', () => {
+  const before = JSON.stringify(MODEL)
+  structure(MODEL).home(PHONE)
+  for (let D = 0; D <= CoderMap.DEEP; D++) placed(MODEL, D)
+  CoderMap.Flow.place(MODEL, PHONE)
+  assert.equal(JSON.stringify(MODEL), before)
 })
 
-test('盤面の文字は HTML として埋めない', () => {
-  const map = mapOf({ ...MODEL, worlds: MODEL.worlds.map(w => (w.id === 'domain' ? { ...w, name: '<img src=x onerror=alert(1)>' } : w)) }, 2600, 1600)
-  map.state.cam.struct = { s: 0.5, tx: 0, ty: 0 }
-  const html = CoderMap.View.markup(map.renderVals())
-  assert(html.includes('&lt;img src=x onerror=alert(1)&gt;'))
-  assert(!html.includes('<img'))
+test('DB の文字列は文字としてだけ入れ、HTML として解釈しない', () => {
+  assert(!/innerHTML|outerHTML|insertAdjacentHTML|document\.write/.test(source))
 })
