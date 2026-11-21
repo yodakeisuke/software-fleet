@@ -545,8 +545,9 @@ const Structure = () => {
     const idx = Object.fromEntries(objs.map((o, i) => [o.id, i]));
     const cells = objs.every(o => o.at) ? objs.map(o => ({ c: o.at[0], r: o.at[1] })) : arrows.length ? ranked(objs, arrows, idx) : wrapped(pts, F, t.id + '@' + d);
     const fl = F * .7, nR = max(cells.map(c => c.r)) + 1, nC = max(cells.map(c => c.c)) + 1, lanes = route(arrows, cells, idx);
-    const named = m => tw(m.by + (m.change ? ' ' + m.change : ''), fl), loopRow = Array(nR).fill(0);
-    for (const m of loops) loopRow[cells[idx[m.from]].r] = F * 1.25;
+    const named = m => tw(m.by + (m.change ? ' ' + m.change : ''), fl), loopRow = Array(nR).fill(0), loopNth = new Map(), loopsAt = {};
+    // 同じ箱に自分へ戻る矢が何本あっても、名札は 1 本ずつ上へ積む
+    for (const m of loops) { const k = loopsAt[m.from] = (loopsAt[m.from] ?? -1) + 1, r = cells[idx[m.from]].r; loopNth.set(m, k); loopRow[r] = Math.max(loopRow[r], F * (1.25 + k * .9)); }
     // 箱の横は、出入りする矢の本数だけの高さを持つ
     objs.forEach((o, i) => { const k = Math.max(lanes.port[o.id + '>'] || 0, lanes.port[o.id + '<'] || 0); pts[i].h = Math.max(pts[i].h, F * (.9 + k - .45 + .5)); });
     const colW = Array(nC).fill(0), rowH = Array(nR).fill(0);
@@ -568,7 +569,7 @@ const Structure = () => {
     for (let c = 0; c < nC; c++) { x += colGap[c]; colX[c] = x; x += colW[c]; }
     for (let r = 0; r < nR; r++) { y += rowGap[r]; rowY[r] = y; y += rowH[r]; }
     pts.forEach((q, i) => { const { c, r } = cells[i]; q.x = colX[c]; q.y = rowY[r]; });
-    Object.assign(n, { boxes: pts, lanes, loops, idx, cells, colX, colW, rowY, rowH, colGap, rowGap, fl, nC, laneN, loopRow, named });
+    Object.assign(n, { boxes: pts, lanes, loops, idx, cells, colX, colW, rowY, rowH, colGap, rowGap, fl, nC, laneN, loopRow, loopNth, named });
     n.w = Math.max(x + colGap[nC], n.minW); n.h = y + rowGap[nR];
     if (!arrows.length && !loops.length && !objs.every(o => o.at)) { // 矢の無い種類は格子にそろえず、詰めて並べる
       let fx = pad, fw = 0; pts.forEach((q, i) => { if (!cells[i].c) fx = pad; q.x = fx; fx += q.w + F * .3; fw = Math.max(fw, fx - F * .3 + pad); });
@@ -717,8 +718,8 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   };
   // 自分に戻る矢: 箱の上に小さく回す
   const loop = (n, m) => {
-    const A = n.boxes[n.idx[m.from]], F = n.F, x1 = A.x + F * .3, x2 = x1 + F * .7, y = A.y, h = F * .7;
-    return drawArrow(n, [[x1, y], [x1, y - h], [x2, y - h], [x2, y]], m, x2 + n.fl * .4, y - F * .6, 'start');
+    const A = n.boxes[n.idx[m.from]], F = n.F, up = F * .9 * n.loopNth.get(m), x1 = A.x + F * .3, x2 = x1 + F * .7, y = A.y, h = F * .7 + up;
+    return drawArrow(n, [[x1, y], [x1, y - h], [x2, y - h], [x2, y]], m, x2 + n.fl * .4, y - F * .6 - up, 'start');
   };
   // 描く。絶対位置を nodes に控える（押して寄る、今いる場所）
   const renderRecord = (r, ax, ay, key) => {
