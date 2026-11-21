@@ -682,10 +682,10 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
 
   const mark = (g, text, change) => { if (!change) return; g.classList.add(CH[change]); text.append(tspan(' ' + change, 'chg')); };
   const note = (g, n) => { if (n.inv) g.dataset.inv = n.inv; if (n.doc) g.dataset.doc = n.doc; };
-  // 矢 = 遷移。中の出来事で起きる遷移（when）は破線。変更は太い下敷きで塗る
+  // 矢 = 遷移。中の出来事で起きる遷移（auto）は破線。変更は太い下敷きで塗る
   const drawArrow = (n, pts, m, lx, ly, anchor) => {
     const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' '), cls = chOf(m.change);
-    const path = sv('path', { d, class: 'mor' + (m.when ? ' auto' : '') + cls });
+    const path = sv('path', { d, class: 'mor' + (m.auto ? ' auto' : '') + cls });
     const p1 = pts[pts.length - 2], p2 = pts[pts.length - 1], len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
     const poly = sv('polygon', { class: 'head' + cls });
     heads.push({ poly, tip: p2, ux: (p2[0] - p1[0]) / len, uy: (p2[1] - p1[1]) / len, size: n.F * .2 });

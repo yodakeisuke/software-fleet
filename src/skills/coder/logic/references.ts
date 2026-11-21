@@ -37,24 +37,15 @@ const boxed = (model: Model, type: ModelType) => {
     ...(objects.length === 0 ? [`型「${type.name}」に objects がない`] : []),
     ...duplicated(objects.map(object => object.id), `型「${type.name}」の箱の id`),
     ...objects.flatMap(object => parts(model, type, object)),
-    ...(type.morphisms ?? []).flatMap(morphism => ends(model, type, morphism)),
+    ...(type.morphisms ?? []).flatMap(morphism => ends(type, morphism)),
   ]
 }
 // 部品（holds.parts）が指す型がある
 const parts = (model: Model, type: ModelType, object: ModelObject) =>
   partsOf(object.holds).filter(part => typeOf(model, part.type) === undefined).map(part => `型「${type.name}」の「${object.name}」の部品が指す型「${part.type}」がない`)
-// 遷移の両端はその型の箱の id。条件（when）の型と、その型の箱もある
-const ends = (model: Model, type: ModelType, morphism: Morphism) => [
-  ...[morphism.from, morphism.to].filter(id => !has(type, id)).map(id => `型「${type.name}」の遷移「${morphism.by}」の端「${id}」が箱にない`),
-  ...conditioned(model, type, morphism),
-]
-// 条件（when）があれば、その型があり、その状態（at）がその型の箱にある
-const conditioned = (model: Model, type: ModelType, { by, when }: Morphism) => {
-  if (when === undefined) return []
-  const target = typeOf(model, when.type)
-  if (target === undefined) return [`型「${type.name}」の遷移「${by}」の条件の型「${when.type}」がない`]
-  return has(target, when.at) ? [] : [`型「${type.name}」の遷移「${by}」の条件の状態「${when.at}」が型「${target.name}」の箱にない`]
-}
+// 遷移の両端はその型の箱の id
+const ends = (type: ModelType, morphism: Morphism) =>
+  [morphism.from, morphism.to].filter(id => !has(type, id)).map(id => `型「${type.name}」の遷移「${morphism.by}」の端「${id}」が箱にない`)
 // 対応（maps）の両端の型がある
 const unmapped = (model: Model, map: Mapping) => [map.from, map.to].filter(id => typeOf(model, id) === undefined).map(id => `対応 ${map.from} → ${map.to} の「${id}」が型にない`)
 // 中身の部品。unit（省略を含む）と prim は部品を持たない

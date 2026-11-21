@@ -55,8 +55,8 @@ const MODEL = {
       ],
       morphisms: [
         { from: 'draft', to: 'confirmed', by: '確定する' },
-        { from: 'confirmed', to: 'shipping', by: '一部が出荷済', when: { type: 'line', at: 'shipped', all: false } },
-        { from: 'shipping', to: 'done', by: '全明細が出荷済', when: { type: 'line', at: 'shipped', all: true } },
+        { from: 'confirmed', to: 'shipping', by: '一部が出荷済', auto: true },
+        { from: 'shipping', to: 'done', by: '全明細が出荷済', auto: true },
         { from: 'draft', to: 'cancelled', by: '取り消す' },
         { from: 'confirmed', to: 'cancelled', by: '取り消す' }
       ] },

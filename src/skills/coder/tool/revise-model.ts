@@ -17,11 +17,10 @@ const holds: JsonSchemaNode = {
   oneOf: [choice(['unit']), object({ prim: text('素の値の説明（例: UUID、整数 ≥ 1）'), invariant: text() }, ['prim']), object({ parts: list(part), invariant: text() }, ['parts'])],
 }
 const modelObject = object({ id: text('型の中の鍵'), name: text(), at: list(number, 'lifecycle で盤面に置く位置 [列, 行]。省くと自動'), holds: ref('holds'), change: ref('change') }, ['id', 'name'], '箱の中の箱: 状態（lifecycle）・値（value / record）・選択肢（kind）')
-const when = object({ type: text('条件を見る型の id'), at: text('その型の箱の id'), all: flag('many の型で、全てがその状態なら true。省けばいずれか') }, ['type', 'at'], '遷移の条件')
-const morphism = object({ from: text('箱の id'), to: text('箱の id'), by: text('遷移を起こす契機（動詞句）'), when, change: ref('change') }, ['from', 'to', 'by'], '遷移 = 矢。lifecycle だけが持つ')
+const morphism = object({ from: text('箱の id'), to: text('箱の id'), by: text('遷移を起こす契機（動詞句）'), auto: flag('命令ではなく、中に持つ型の状態が変わって起きる遷移なら true（例: 全明細が出荷済）。破線で出る'), change: ref('change') }, ['from', 'to', 'by'], '遷移 = 矢。lifecycle だけが持つ')
 const column = object({ name: text(), type: text('DB の型'), pk: flag('主キー'), fk: text('参照する表の id'), change: ref('change') }, ['name', 'type'])
 const modelType = object({
-  id: text('鍵。部品・対応・fk・条件はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
+  id: text('鍵。部品・対応・fk はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
   many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。箱に重ねるか押すと出る'),
   objects: list(ref('object'), 'table 以外。1 つ以上'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
