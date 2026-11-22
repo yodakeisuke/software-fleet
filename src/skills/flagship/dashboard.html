@@ -541,7 +541,10 @@ const Structure = () => {
     const holds = o.holds || 'unit', head = o.name + (o.change ? ' ' + o.change : '');
     const q = { kind: 'obj', t, o, d, f, pad, name: o.name, inv: holds === 'unit' ? undefined : holds.invariant, change: o.change, x: 0, y: 0 };
     if (holds === 'unit') { q.w = 2 * pad + textWidth(head, f); q.h = 2 * pad + f * 1.3; return q; }
-    if (holds.prim) { q.prim = holds.prim; q.w = 2 * pad + Math.max(textWidth(head, f), textWidth(q.prim, f * .85)); q.h = 2 * pad + f * 1.3 + f * 1.25; return q; }
+    if (holds.prim) { // 素の値の説明。縦長の画面では、この箱が開く倍率で幅に入るように折る（折らないと、寄っても 1 行が画面の外へ伸びる）
+      const fp = f * .85, room = VW > 0 ? (VW - 32) / (openAt(d) * 1.05) - 2 * pad - unitAt(d) : Infinity;
+      q.prim = wrapTo(holds.prim, room, fp); q.w = 2 * pad + Math.max(textWidth(head, f), max(q.prim.map(l => textWidth(l, fp)))); q.h = 2 * pad + f * 1.3 + f * 1.25 * q.prim.length; return q;
+    }
     q.need = d + 1;
     if (d + 1 > OPEN) { const within = !plain && !o.change && holds.parts.some(p => T[p.type].change || innerOf(T[p.type])); if (within) q.change = '改'; q.w = 2 * pad + textWidth(head + (within ? ' 改' : ''), f); q.h = 2 * pad + f * 1.3; return q; }
     const top = pad + f * 1.3;
@@ -790,7 +793,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     mark(g, name, q.change); note(g, q);
     g.append(name);
     nodes.push({ g, n: q, key, need: q.need, x: AX, y: AY, w: q.w, h: q.h, label: q.name });
-    if (q.prim) g.append(sv('text', { x: q.pad, y: q.pad + q.f * 1.3 + q.f * .6, 'font-size': q.f * .85, class: 'prim mid' }, [q.prim]));
+    if (q.prim) g.append(sv('text', { x: q.pad, y: q.pad + q.f * 1.3 + q.f * .6, 'font-size': q.f * .85, class: 'prim mid' }, q.prim.map((l, k) => sv('tspan', { x: q.pad, dy: k ? '1.47em' : 0 }, [l]))));
     if (q.rec) g.append(renderRecord(q.rec, AX, AY, key));
     return g;
   };
@@ -829,7 +832,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
       world.append(wl); wls.push({ id: c.w.id, el: wl, x: c.x, y: c.y });
       for (const f of c.frames) renderFrame(f, world, 0, 0, f.t.id);
     }
-    texts = [...world.querySelectorAll('text')].map(t => ({ t, f: +t.getAttribute('font-size'), max: capOf(t), b: t._b, min: t.classList.contains('ml') ? 9 : MIN }));
+    texts = [...world.querySelectorAll('text')].map(t => ({ t, f: +t.getAttribute('font-size'), max: capOf(t), b: t._b, min: t.classList.contains('ml') ? 9 : t.classList.contains('prim') ? 9.5 : MIN })); // 素の値の説明は、箱が開く倍率で読める（開いたのに行が空、にしない）
     showTip(null);
   };
   const build = D => draw(eng.place(D, view()));
@@ -1015,7 +1018,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
 
 // ---------- 流れの配置。同じ設計図の logic と flows を、ストリング図に投影する
 // 文法は 2 つ: 線 = 値（型〈状態〉）、箱 = 処理。上から下へ続けて行い、横に並ぶ線は同時にそこにある。箱の脇を通る線は、その箱が触らない値
-const FONT = { bn: 13.5, cap: 12, wn: 12, fail: 12, fn: 15 }, PAD = 10, LIM = 9.5, READ = 9 / FONT.cap + .001; // READ = 添え書きが読める倍率
+const FONT = { bn: 13.5, cap: 12, wn: 12, fail: 12, fn: 15 }, PAD = 10, LIM = 9.5, LIMB = 16, READ = 9 / FONT.cap + .001; // READ = 添え書きが読める倍率
 const Flow = (() => {
   // 箱の種類。ドメインの箱は、出す線の型の形から決まる
   const kindOf = (M, lg, st) => {
@@ -1023,16 +1026,18 @@ const Flow = (() => {
     const forms = Object.values(st.out || {}).map(w => (typeOf(M, w.name) || {}).form);
     return forms.includes('lifecycle') ? '遷移' : forms.includes('kind') ? '判断' : forms.some(Boolean) ? '計算' : 'ドメイン';
   };
-  // 長い名前は、型と状態の切れ目で折る
-  const wrap = label => {
+  // 長い名前は切れ目で折る。線の名前は型と状態の切れ目、箱の名前は語と識別子の切れ目（折らないと、箱 1 つの名前が列を画面の外まで押し出す）
+  const fill = (toks, lim) => {
     const lines = []; let line = '';
-    for (const tok of label.replace(/〈/g, '\u0001〈').replace(/｜/g, '｜\u0001').replace(/ (?!✓)/g, ' \u0001').split('\u0001')) {
-      if (line && textWidth((line + tok).trim(), 1) > LIM) { lines.push(line.trim()); line = ''; }
+    for (const tok of toks) {
+      if (line && textWidth((line + tok).trim(), 1) > lim) { lines.push(line.trim()); line = ''; }
       line += tok;
     }
     if (line.trim()) lines.push(line.trim());
     return lines;
   };
+  const wrap = label => fill(label.replace(/〈/g, '\u0001〈').replace(/｜/g, '｜\u0001').replace(/ (?!✓)/g, ' \u0001').split('\u0001'), LIM);
+  const wrapName = name => fill(name.replace(/[（(]/g, '\u0001$&').replace(/[ #./_]/g, '$&\u0001').split('\u0001'), LIMB);
   // 1 本の流れを置く。列 = 線の通り道、段 = 箱。箱と箱の間で、そこから始まる線に名前を書く
   const layout = (M, fl, plain) => {
     const n = fl.columns.length, L = Object.fromEntries(M.logic.map(l => [l.id, l]));
@@ -1054,11 +1059,14 @@ const Flow = (() => {
     const whole = !plain && fl.steps.length > 0 && fl.steps.every(st => st.change && st.change === fl.steps[0].change) ? fl.steps[0].change : undefined;
     const bx = fl.steps.map(st => {
       const lg = L[st.logic], ch = plain ? undefined : lg.change || (whole ? undefined : st.change), kind = kindOf(M, lg, st), fails = lg.fails || [];
-      const need = Math.max(textWidth(lg.name + (ch ? ' ' + ch : ''), FONT.bn), textWidth(kind, FONT.cap), ...fails.map(f => textWidth('→ ' + f, FONT.fail))) + 2 * PAD + 12;
-      const [a, b] = st.span, have = sum(cw.slice(a, b + 1)); if (have < need) cw[b] += need - have;
+      const [a, b] = st.span, have = sum(cw.slice(a, b + 1)), tail = ch ? ' ' + ch : '';
+      const lines = textWidth(lg.name + tail, FONT.bn) + 2 * PAD + 12 <= have ? [lg.name] : wrapName(lg.name); // 通る列に入る名前は折らない
+      const units = max(lines.map((l, k) => textWidth(l + (k === lines.length - 1 ? tail : ''), 1))), top = 9 + FONT.cap * 1.3 + FONT.bn * (1.45 + (lines.length - 1) * 1.3);
+      const need = Math.max(units * FONT.bn, textWidth(kind, FONT.cap), ...fails.map(f => textWidth('→ ' + f, FONT.fail))) + 2 * PAD + 12;
+      if (have < need) cw[b] += need - have;
       const also = lg.also && lg.also.length ? `ほかに ${lg.also.length} つの流れが通る` : ''; // 意味を変えた処理が、描いていないどの流れに効くか（名前は吹き出し）
       if (also) cw[b] += Math.max(0, textWidth(also, FONT.fail) + 2 * PAD + 12 - sum(cw.slice(a, b + 1)));
-      return { st, lg, ch, kind, fails, also, h: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + (fails.length + (also ? 1 : 0)) * FONT.fail * 1.4 + 9 };
+      return { st, lg, ch, kind, fails, also, lines, units, top, h: top + (fails.length + (also ? 1 : 0)) * FONT.fail * 1.4 + 9 };
     });
     const colX = []; let x = 0; for (let c = 0; c < n; c++) { colX[c] = x + PAD; x += cw[c]; }
     const gapH = gaps.map((g, i) => { const k = max(Object.values(g).map(o => o.lines.length)); return k ? k * FONT.wn * 1.35 + 20 : i === gaps.length - 1 ? 14 : 22; });
@@ -1108,11 +1116,11 @@ const flowFace = (svg, world, tipEl, jump) => {
       const doc = [b.lg.note, b.also && 'ほかに通る流れ: ' + b.lg.also.join('、')].filter(Boolean).join('\n'); if (doc) bg.dataset.doc = doc;
       bg.append(sv('rect', { width: b.w, height: b.h, rx: 2, class: 'obj-r' }));
       bg.append(text({ x: PAD, y: 9 + FONT.cap * .65, 'font-size': FONT.cap, class: 'cap mid' + (b.lg.layer === 'persistence' ? ' stored' : '') }, [b.kind + (b.lg.ref ? ' · ' + b.lg.ref : '')], { role: 'sub' }));
-      const y = 9 + FONT.cap * 1.3 + FONT.bn * .72, nm = text({ x: PAD, y, 'font-size': FONT.bn, class: 'bn mid' }, [b.lg.name], { role: 'bn', box: b, units: textWidth(b.lg.name + (b.ch ? ' ' + b.ch : ''), 1), cy: b.h / 2, y });
+      const y = 9 + FONT.cap * 1.3 + FONT.bn * .72, nm = text({ x: PAD, y, 'font-size': FONT.bn, class: 'bn mid' }, b.lines.map((l, k) => sv('tspan', { x: PAD, dy: k ? '1.3em' : 0 }, [l])), { role: 'bn', box: b, units: b.units, cy: b.h / 2, y });
       if (b.ch) nm.append(tspan(' ' + b.ch, 'chg'));
       bg.append(nm);
-      b.fails.forEach((f, k) => bg.append(text({ x: PAD, y: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + FONT.fail * (k * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid' }, ['→ ' + f], { role: 'sub' })));
-      if (b.also) bg.append(text({ x: PAD, y: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + FONT.fail * (b.fails.length * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid also' }, [b.also], { role: 'sub' }));
+      b.fails.forEach((f, k) => bg.append(text({ x: PAD, y: b.top + FONT.fail * (k * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid' }, ['→ ' + f], { role: 'sub' })));
+      if (b.also) bg.append(text({ x: PAD, y: b.top + FONT.fail * (b.fails.length * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid also' }, [b.also], { role: 'sub' }));
       g.append(bg); boxes.push({ g: bg, name: b.lg.name, x: X + b.x, y: Y + b.y, w: b.w, h: b.h });
     });
     return g;
@@ -1128,7 +1136,7 @@ const flowFace = (svg, world, tipEl, jump) => {
     if (cam.s === lastS) return; lastS = cam.s; const s = cam.s;
     for (const { t, f, role, box, units, cy, y } of texts) {
       let size, show = true;
-      if (role === 'bn') { const fit = ((box.w - 2 * PAD) * s + 2) / units; size = Math.min(Math.max(f * s, 10), 15, Math.max(fit, 7.5)); show = fit >= 7.5; t.setAttribute('y', FONT.cap * s < 9 ? cy : y); } // 引いても、箱が何かは名乗る（入らなければ字を 7.5px まで小さく）
+      if (role === 'bn') { const k = box.lines.length, fit = Math.min(((box.w - 2 * PAD) * s + 2) / units, k > 1 ? (box.h * s - 4) / (k * 1.3) : Infinity); size = Math.min(Math.max(f * s, 10), 15, Math.max(fit, 7.5)); show = fit >= 7.5; t.setAttribute('y', FONT.cap * s < 9 ? cy - (k - 1) * .65 * size / s : y); } // 引いても、箱が何かは名乗る（入らなければ字を 7.5px まで小さく）
       else if (role === 'fn') size = Math.min(Math.max(f * s, 11), 15);
       else { size = Math.min(f * s, 13); show = f * s >= 9; }
       t.classList.toggle('hide', !show); if (show) t.setAttribute('font-size', size / s);
