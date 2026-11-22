@@ -316,7 +316,7 @@ a.le{color:var(--acc)}
 .ctabs a[aria-disabled]{opacity:.4;pointer-events:none}
 /* 箱に載らないこと（coder が決めたこと・残した穴）。地図の上に 1 行で数を出し、押すと地図に重ねて並べる */
 .cvp{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--bg);font-size:14px;line-height:1.4}
-.cvp svg{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.cvp svg{position:absolute;inset:0 0 26px;display:block;width:100%;height:calc(100% - 26px);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
 .cvp svg.drag{cursor:grabbing}
 .cmap[data-view="flow"] [data-m^="struct-"],.cmap:not([data-view="flow"]) [data-m^="flow-"]{visibility:hidden;pointer-events:none}
 /* 構造: 枠 = 型（破線の枠 = コードでは型になっていない）、離れて並ぶ箱 = どれか 1 つ、罫線で割った行 = 全部そろう、矢 = 遷移。線は画面上 1px */
@@ -371,13 +371,14 @@ a.le{color:var(--acc)}
 .cvp .tip p.doc{font-size:13px;font-weight:400;white-space:pre-line}
 .cvp .tip p.of{font-size:12px;color:var(--muted)}
 .cvp .tip.pinned{pointer-events:auto}
-.cvp .tip.docked{left:12px!important;right:12px;top:auto!important;bottom:34px;width:auto;max-width:none}
+.cvp .tip.docked{left:12px!important;right:12px;top:auto!important;bottom:38px;width:auto;max-width:none}
 .cvp .tip.docked.up{top:12px!important;bottom:auto}
 /* 留めた吹き出しが語っている箱。離れて出るので、縁でつなぐ */
 .cvp .told>rect{stroke:var(--fg);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .cvp .tip button{justify-self:start;min-height:40px;font-size:13px;font-weight:600;color:var(--acc)}
 /* 凡例: 語がそのまま見本。世界は字の色、変更は塗り。左下に 1 行で、その面に出ている色だけ */
-.cleg{position:absolute;z-index:1;left:max(8px,env(safe-area-inset-left,0px));bottom:6px;margin:0;display:flex;gap:10px;padding:5px 7px;border-radius:3px;background:var(--bg);font-size:11px;font-weight:600;line-height:1;pointer-events:none}
+/* 凡例は盤面の下の帯に置く（盤面に重ねると、下の箱の名前を隠す） */
+.cleg{position:absolute;left:0;right:0;bottom:0;height:26px;margin:0;display:flex;align-items:center;gap:10px;padding:0 max(16px,env(safe-area-inset-left,0px));background:var(--bg);font-size:11px;font-weight:600;line-height:1;pointer-events:none}
 .cleg [data-k="api"]{color:var(--cm-api)}.cleg [data-k="db"]{color:var(--cm-db)}
 .cleg [data-k="new"],.cleg [data-k="mod"]{margin-block:-2px;padding:2px 4px;border-radius:2px}
 .cleg [data-k="new"]{color:var(--cm-add);background:var(--cm-add-bg)}.cleg [data-k="mod"]{color:var(--cm-mod);background:var(--cm-mod-bg)}
