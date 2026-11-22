@@ -731,7 +731,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   const eng = Structure(), view = () => sizeOf(svg);
   let M, P = { depth: 0, cols: [], W: 0, H: 0 }, nodes = [], heads = [], texts = [], byType = {}, wls = [], lastS = 0;
   // カメラ。screen = world × s + (tx, ty)
-  let cam = { s: 1, tx: 0, ty: 0 }, raf = 0, touched = false, moving = false, hold = false, shift = null, aim = null;
+  let cam = { s: 1, tx: 0, ty: 0 }, raf = 0, settled = 0, touched = false, moving = false, hold = false, shift = null, aim = null;
   let tipOf = null, toldOf = null, tipS = 0, tipHover = false, pinned = null, traced = null, shown = null;
 
   const mark = (g, text, change) => { if (!change) return; g.classList.add(CH[change]); text.append(tspan(' ' + change, 'chg')); };
@@ -904,6 +904,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     }
     if (!calm) for (const l of wls) { const o = hadW.get(l.id); if (o) l.el.animate([{ transform: `translate(${o.x - dx - l.x}px,${o.y - dy - l.y}px)` }, { transform: 'translate(0,0)' }], glide); }
     showLinks(pinned); trace(traced);
+    if (!calm) { clearTimeout(settled); settled = setTimeout(apply, 300); } // 箱が滑り終えた後の位置で、もう 1 度確かめる（滑る途中の字を数えると、字の無い画面で止まる）
   };
   const lod = () => {
     if (cam.s === lastS) return; lastS = cam.s; const s = cam.s;
