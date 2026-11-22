@@ -520,7 +520,7 @@ const Structure = () => {
     const out = arrows.map(m => {
       const ca = cells[idx[m.from]], cb = cells[idx[m.to]];
       if (ca.r === cb.r && Math.abs(ca.c - cb.c) === 1) return { m, ca, cb, kind: 'h' };
-      if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) return { m, ca, cb, kind: 'v', nth: take(pair, [m.from, m.to].sort().join('|')) };
+      if (ca.c === cb.c && Math.abs(ca.r - cb.r) === 1) return { m, ca, cb, kind: 'v', nth: take(pair, [m.from, m.to].sort().join('|')), laneR: take(rowN, Math.max(ca.r, cb.r)) }; // 名札は行の溝の 1 段を取る（溝を通る矢の名札と重ならない）
       const right = cb.c >= ca.c, gs = right ? ca.c + 1 : ca.c, gt = cb.c > ca.c ? cb.c : cb.c + 1, a = { m, ca, cb, kind: 'bus', gs, gt, right, left: cb.c > ca.c };
       a.laneS = take(colN, gs);
       if (gs !== gt) { a.laneT = take(colN, gt); a.gr = Math.max(ca.r, cb.r); a.laneR = take(rowN, a.gr); }
@@ -596,7 +596,7 @@ const Structure = () => {
     const high = (r, h) => { rowGap[r] = Math.max(rowGap[r], h); };
     for (const a of lanes) {
       if (a.kind === 'h') { const g = Math.max(a.ca.c, a.cb.c); lab[g] = Math.max(lab[g] || 0, named(a.m)); }
-      else if (a.kind === 'v') high(Math.max(a.ca.r, a.cb.r), F * 1.5);
+      else if (a.kind === 'v') high(Math.max(a.ca.r, a.cb.r), F * (1.5 + a.laneR * .9));
       else if (a.gs === a.gt) lab[a.gs] = Math.max(lab[a.gs] || 0, named(a.m));
       else high(a.gr, F * (1.3 + a.laneR * .9));
     }
@@ -679,7 +679,7 @@ const gestures = (svg, face) => {
       if (face.put({ s, tx: now.mx - (pinch.mx - pinch.tx) * k, ty: now.my - (pinch.my - pinch.ty) * k }, [now.mx, now.my])) pinch = grip();
     } else if (drag) {
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; svg.classList.add('drag'); }
+      if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; svg.classList.add('drag'); face.hush(); } // 動かし始めたら吹き出しを畳む（次に見たい所を隠さない）
       if (drag.moved) face.put({ s: face.cam().s, tx: drag.tx + dx, ty: drag.ty + dy });
     }
   });
@@ -756,7 +756,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     }
     if (a.kind === 'v') { // 同じ列の隣: 垂直。往復は左右にずらす
       const x = Math.max(A.x, B.x) + Math.min(A.w, B.w, F * 3) / 2 + a.nth * (fl * 1.2 + n.named(m)), down = cb.r > ca.r;
-      return drawArrow(n, down ? [[x, A.y + A.h], [x, B.y]] : [[x, A.y], [x, B.y + B.h]], m, x + fl * .6, n.rowY[Math.max(ca.r, cb.r)] - F * .7, 'start');
+      return drawArrow(n, down ? [[x, A.y + A.h], [x, B.y]] : [[x, A.y], [x, B.y + B.h]], m, x + fl * .6, n.rowY[Math.max(ca.r, cb.r)] - n.loopRow[Math.max(ca.r, cb.r)] - F * (.55 + a.laneR * .9) - fl * .75, 'start');
     }
     // それ以外: 溝だけを通る
     const edge = g => (g < n.nC ? n.colX[g] - n.colGap[g] : n.colX[n.nC - 1] + n.colW[n.nC - 1]);
@@ -836,28 +836,30 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
 
   // 1 つ奥の情報。箱に重ねる（指は押す）と、意図と不変条件の吹き出しが出る
   // dock = 指で押したとき。吹き出しは盤面の端に留める（箱の脇に出すと、見比べたい隣の箱を隠す）。押した箱が下半分なら上端へ
-  // 指で押した箱は必ず答える（何も起きないと、押し損ねに見える）: 縁を濃くし、名前を名乗り、状態なら出入りする遷移を字で並べる（幅に収まらない図をなぞらなくて済む）。語ることが無ければ、無いと言う
-  const showTip = (g, dock = false) => {
+  // 指で押した箱は必ず答える（何も起きないと、押し損ねに見える）: 縁を濃くし、名前を名乗り、状態なら出入りする遷移を、矢ならその両端を字で言う（幅に収まらない図をなぞらなくて済む）。語ることが無ければ、無いと言う
+  const showTip = (g, dock = false, arrow) => {
     if (toldOf) toldOf.classList.remove('told');
     toldOf = dock ? g : null; if (toldOf) toldOf.classList.add('told');
-    const at = g && nodes.find(n => n.g === g), said = g ? [...(g.dataset.doc ? [el('p', { class: 'doc' }, [g.dataset.doc])] : []), ...(g.dataset.inv ? [el('p', {}, [g.dataset.inv])] : []), ...(dock && at ? moves(at.n) : [])] : [];
+    const at = g && nodes.find(n => n.g === g), q = at && at.n;
+    const said = !g ? [] : arrow ? [move(q, arrow, stateName(q, arrow.from) + ' → ' + stateName(q, arrow.to))] : [...(g.dataset.doc ? [el('p', { class: 'doc' }, [g.dataset.doc])] : []), ...(g.dataset.inv ? [el('p', {}, [g.dataset.inv])] : []), ...(dock && q && q.owner ? moves(q) : [])];
     tipOf = g && (dock || said.length) ? g : null; tipEl.classList.toggle('docked', dock);
     if (!tipOf) { tipEl.hidden = true; return; }
     tipEl.replaceChildren(...(dock ? about(at && at.label) : []), ...(said.length ? said : [el('p', { class: 'of' }, [SILENT])]));
     tipEl.hidden = false; tipS = cam.s; placeTip();
   };
+  const stateName = (lc, id) => (lc.boxes.find(b => b.o.id === id) || { o: {} }).o.name || id;
+  const move = (lc, m, ends) => el('p', { class: 'doc' }, [ends + '　' + m.by + (m.change ? ' ' + m.change : '')]);
   // 状態に出入りする遷移を、字で 1 行ずつ
   const moves = q => {
-    if (!q.owner) return [];
-    const name = id => (q.owner.boxes.find(b => b.o.id === id) || { o: {} }).o.name || id, line = (m, text) => el('p', { class: 'doc' }, [text + '　' + m.by + (m.change ? ' ' + m.change : '')]);
     const ms = q.owner.arrowEls.map(a => a.m);
-    return [...ms.filter(m => m.from === q.o.id).map(m => line(m, '→ ' + name(m.to))), ...ms.filter(m => m.to === q.o.id && m.from !== q.o.id).map(m => line(m, '← ' + name(m.from)))];
+    return [...ms.filter(m => m.from === q.o.id).map(m => move(q.owner, m, '→ ' + stateName(q.owner, m.to))), ...ms.filter(m => m.to === q.o.id && m.from !== q.o.id).map(m => move(q.owner, m, '← ' + stateName(q.owner, m.from)))];
   };
+  const hush = () => { showTip(null); traced = null; trace(null); };
   const placeTip = () => {
     if (!tipOf) return;
     if (tipHover && cam.s !== tipS) { showTip(null); return; }
     const m = svg.parentNode.getBoundingClientRect(), r = tipOf.querySelector(':scope > rect').getBoundingClientRect(), t = tipEl.getBoundingClientRect();
-    if (gone(r, m)) { showTip(null); traced = null; trace(null); return; } // 語っていた箱が画面から出たら、吹き出しも、濃くした矢も戻す
+    if (gone(r, m)) { hush(); return; } // 語っていた箱が画面から出たら、吹き出しも、濃くした矢も戻す
     if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
     const x = Math.max(12, Math.min(Math.max(r.left, m.left) - m.left, m.width - t.width - 12));
     const above = r.top - m.top - t.height - 6, y = above >= 8 ? above : Math.max(r.top - m.top, 0) + 36;
@@ -972,14 +974,16 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
       if (!pinned) showLinks(typed(seen(e.target)));
       if (!traced) trace(stateOf(e.target));
     },
-    leave: () => { showTip(null); if (!pinned) showLinks(null); if (!traced) trace(null); },
+    leave: () => { showTip(null); if (!pinned) showLinks(null); if (!traced) trace(null); }, hush: () => hush(),
     tap: (e, target, px, py) => {
       const g = seen(target), n = g && nodes.find(n => n.g === g), touch = e.pointerType !== 'mouse';
       shown = null; pinned = typed(g); showLinks(pinned); traced = e.pointerType === 'mouse' ? null : stateOf(target);
       // 寄るのは、開く中身がある箱を押したときだけ。中身の無い箱と、矢・名札は、押しても画面を動かさない（動くだけで何も出ないと、押し損ねに見える）
-      const stay = !n || n.need === undefined || !!target.closest('.mor,.head,.hl,.ml');
+      const hit = target.closest('.mor,.head,.hl,.ml'), arrow = hit && n && (n.n.arrowEls || []).find(a => a.els.includes(hit));
+      const stay = !n || n.need === undefined || !!hit;
       const m = n && (stay ? n : focus(n.key, px, py)); trace(traced);
-      showTip(touch && m ? m.g : null, true); tipHover = false;
+      if (arrow) n.n.arrowEls.forEach(a => a.els.forEach(e => e.classList.add(a === arrow ? 'hot' : 'dim'))); // 押した矢だけを濃く
+      showTip(touch && m ? m.g : null, true, arrow && arrow.m); tipHover = false;
     },
   });
   // 吹き出しを出す箱。開いた枠は見出しに重ねたときだけ（中身を覆わない）
@@ -1171,10 +1175,11 @@ const flowFace = (svg, world, tipEl, jump) => {
     toldOf = dock ? t : null; if (toldOf) toldOf.classList.add('told');
     tipOf = t && (dock || kids.length) ? t : null; tipEl.hidden = !tipOf; if (tipOf) { tipEl.replaceChildren(...(dock ? about(t.dataset.name || (boxes.find(b => b.g === t) || {}).name) : []), ...(kids.length ? kids : [el('p', { class: 'of' }, [SILENT])])); placeTip(); }
   };
+  const hush = () => { showTip(null); traced = same = null; trace(null); mark(null); };
   const placeTip = () => {
     if (!tipOf) return;
     const m = svg.parentNode.getBoundingClientRect(), r = (tipOf.classList.contains('box') ? tipOf.firstChild : tipOf.classList.contains('hit') ? world.querySelector(`.wn[data-w="${tipOf.dataset.w}"]`) || tipOf : tipOf).getBoundingClientRect(), t = tipEl.getBoundingClientRect();
-    if (gone(r, m)) { showTip(null); traced = same = null; trace(null); mark(null); return; } // 語っていた物が画面から出たら、薄くしたほかの線も戻す（残ると「削」に見える）
+    if (gone(r, m)) { hush(); return; } // 語っていた物が画面から出たら、薄くしたほかの線も戻す（残ると「削」に見える）
     if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
     const x = Math.max(12, Math.min(r.left - m.left, m.width - t.width - 12)), above = r.top - m.top - t.height - 6;
     tipEl.style.left = x + 'px'; tipEl.style.top = (above >= 8 ? above : r.bottom - m.top + 8) + 'px';
@@ -1189,7 +1194,7 @@ const flowFace = (svg, world, tipEl, jump) => {
       if (!same) mark(box ? box.dataset.logic : null);
       const t = wire || box || null; if (!tipPinned && t !== tipOf) showTip(t);
     },
-    leave: () => { if (!tipPinned) showTip(null); if (!traced) trace(null); if (!same) mark(null); },
+    leave: () => { if (!tipPinned) showTip(null); if (!traced) trace(null); if (!same) mark(null); }, hush: () => hush(),
     tap: (e, target) => {
       const { box, wire } = pickAt(target);
       traced = wire ? wire.dataset.w : null; trace(traced);
