@@ -305,7 +305,7 @@ test('中に変更がある箱は畳んでいても「改」を告げ、自分�
 
 test('流れの箱の種類: ドメインは出す線の型の形から決まり、✓ と ×N が付いた線も型に結ぶ', () => {
   const kinds = id => CoderMap.Flow.place(MODEL, WIDE).flows.find(lay => lay.flow.id === id).boxes.map(box => box.kind)
-  assert.deepEqual(kinds('confirm'), ['ユースケース', '保存', '計算', 'ユースケース', '遷移', '保存'])
+  assert.deepEqual(kinds('confirm'), ['ユースケース', '入出力', '計算', 'ユースケース', '遷移', '入出力'])
   assert.deepEqual(kinds('cancel').slice(2, 4), ['判断', '遷移'])
   assert.equal(kinds('ship')[3], 'ドメイン')
   const model = structuredClone(MODEL)

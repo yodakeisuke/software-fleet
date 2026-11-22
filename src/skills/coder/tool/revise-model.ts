@@ -28,7 +28,7 @@ const modelType = object({
 }, ['id', 'name', 'world', 'form'])
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
 const logic = object({
-  id: text('鍵。流れの段はこれで指す'), name: text(), layer: choice(['domain', 'usecase', 'persistence'], 'domain の種類は出す線の型から導く'),
+  id: text('鍵。流れの段はこれで指す'), name: text(), layer: choice(['domain', 'usecase', 'persistence'], 'domain = I/O を呼ばない関数だけ（種類は出す線の型から導く）。persistence = DB や外部との入出力（読む・書く・送る）を中で呼ぶ関数。判断と書き込みが 1 つの関数なら persistence。usecase = それらを順に呼ぶ手順（入口の handler も）'),
   note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), also: list(text(), 'この処理を通る、流れに描いていないユースケースの名前。改・削 の処理には必ず渡す（無ければ []）'), change: ref('change'),
 }, ['id', 'name', 'layer'], '処理 = 流れの箱')
 const wire = object({ name: text('線の名前。「型名〈状態｜状態〉 ✓ ×N」の形で構造の型と状態に結ばれる（例: 注文〈下書き〉、引当済の明細 ✓、明細 ×N）'), kind: choice(['api', 'stored'], 'API の求めと返事 / 保存されている値。省くと途中の値') }, ['name'])
