@@ -10,7 +10,7 @@ const keyed = (items: JsonSchemaNode, description: string): JsonSchemaNode => ({
 // 地図が導けるもの（最上位 = 部品になっていない型、API と保存の直結 = 両端の世界、箱の並び）は書かせない。持つだけで食い違いの種になる
 // 同じ定義は $defs に 1 度だけ書き、$ref で指す（LLM が読む tool の説明を短く保つ）
 const ref = (name: 'change' | 'holds' | 'object' | 'morphism' | 'column' | 'type' | 'map' | 'logic' | 'wire' | 'step' | 'flow') => JsonSchema.ref(name)
-const change = choice(['新', '改', '削'], '今回の変更。無印は既存（文脈として描く）')
+const change = choice(['新', '改', '削'], '今回の変更。git の差分で決め、中身や通る処理が変わった既存は 改。無印は今回触っていない既存（文脈として描く）')
 const part = object({ type: text('部品の型の id'), as: text('この型の中での呼び名。型名と同じなら省く') }, ['type'])
 const holds: JsonSchemaNode = {
   description: '箱の中身。省けば unit。unit = 中身なし、prim = 素の値、parts = 部品の直積。invariant は常に守る不変条件（形で封じきれないもの）',
@@ -23,12 +23,12 @@ const modelType = object({
   id: text('鍵。部品・対応・fk はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
   many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。箱に重ねるか押すと出る'),
-  objects: list(ref('object'), 'table 以外。1 つ以上'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
+  objects: list(ref('object'), 'table 以外。lifecycle・kind は取りうる形を並べる（どれか 1 つ）。value・record は 1 つで、項目は holds.parts'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
 }, ['id', 'name', 'world', 'form'])
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
 const logic = object({
   id: text('鍵。流れの段はこれで指す'), name: text(), layer: choice(['domain', 'usecase', 'persistence'], 'domain の種類は出す線の型から導く'),
-  note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), change: ref('change'),
+  note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), also: list(text(), 'この処理を通る、流れに描いていないユースケースの名前。改・削 の処理には必ず渡す（無ければ []）'), change: ref('change'),
 }, ['id', 'name', 'layer'], '処理 = 流れの箱')
 const wire = object({ name: text('線の名前。「型名〈状態｜状態〉 ✓ ×N」の形で構造の型と状態に結ばれる（例: 注文〈下書き〉、引当済の明細 ✓、明細 ×N）'), kind: choice(['api', 'stored'], 'API の求めと返事 / 保存されている値。省くと途中の値') }, ['name'])
 const step = object({
@@ -41,7 +41,7 @@ const flow = object({
 // コードの中の設計図。ページが「構造」と「流れ」の 2 つの地図に投影する
 const spec = {
   name: 'revise_model',
-  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
+  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows・caveats）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
   inputSchema: { ...object({
     name: text('この設計図の名前（例: 注文）'),
     worlds: list(object({ id: choice(['api', 'domain', 'db']), name: text('地図に出る区画の名前（例: 境界 · API、保存 · RDB）') }, ['id', 'name']), '3 つの世界。名前を変えたいときだけ渡す'),
@@ -49,6 +49,7 @@ const spec = {
     maps: list(ref('map')),
     logic: list(ref('logic')),
     flows: list(ref('flow')),
+    caveats: list(object({ kind: choice(['決めた', '残した'], '決めた = 依頼に無いのに自分で決めた仕様、残した = 知っていて直していない穴（未対応の利用側、既存処理との競合など）'), what: text('1 文') }, ['kind', 'what']), '箱に載らない、レビューで知るべきこと。地図の上に並ぶ'),
   }, []), $defs: { change, holds, object: modelObject, morphism, column, type: modelType, map, logic, wire, step, flow } },
   isDeferred: false,
 }

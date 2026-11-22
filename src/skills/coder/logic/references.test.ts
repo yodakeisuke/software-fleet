@@ -40,6 +40,16 @@ describe('references', () => {
     expect(References.problems(model([order, line], [{ from: 'order', to: 't_orders' }]))).toEqual(['対応 order → t_orders の「t_orders」が型にない'])
   })
 
+  test('並んだ箱は「どれか 1 つ」。全部そろう value と record の箱は 1 つ', () => {
+    const request: ModelType = { id: 'req', name: '確定の依頼', world: 'api', form: 'record', objects: [{ id: 'v', name: '確定の依頼', holds: { parts: [{ type: 'line', as: '明細' }] } }] }
+    expect(References.problems(model([request, line]))).toEqual([])
+    // 項目を箱として並べると、地図は「番号か操作者のどちらか」と描く
+    const fields = [{ id: 'id', name: '番号', holds: { prim: 'UUID' } }, { id: 'actor', name: '操作者', holds: { prim: 'ID' } }]
+    expect(References.problems(model([{ ...request, objects: fields }]))).toEqual(['型「確定の依頼」は record なので箱は 1 つ（項目は holds.parts に並べる。箱を並べると「どれか 1 つ」になる）'])
+    expect(References.problems(model([{ ...request, form: 'value', objects: fields }]))).toEqual(['型「確定の依頼」は value なので箱は 1 つ（項目は holds.parts に並べる。箱を並べると「どれか 1 つ」になる）'])
+    expect(References.problems(model([{ ...request, form: 'kind', objects: fields }]))).toEqual([])
+  })
+
   test('holds を省いた箱は unit（問題にしない）', () => {
     const kind: ModelType = { id: 'reason', name: '取消理由', world: 'domain', form: 'kind', objects: [{ id: 'mind', name: '気が変わった' }, { id: 'late', name: '届かない' }] }
     expect(References.problems(model([kind, order, line]))).toEqual([])

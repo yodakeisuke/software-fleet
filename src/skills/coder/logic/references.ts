@@ -35,11 +35,15 @@ const boxed = (model: Model, type: ModelType) => {
   const objects = type.objects ?? []
   return [
     ...(objects.length === 0 ? [`型「${type.name}」に objects がない`] : []),
+    ...single(type, objects),
     ...duplicated(objects.map(object => object.id), `型「${type.name}」の箱の id`),
     ...objects.flatMap(object => parts(model, type, object)),
     ...(type.morphisms ?? []).flatMap(morphism => ends(type, morphism)),
   ]
 }
+// 並んだ箱は「どれか 1 つ」。全部そろう value と record の箱は 1 つで、項目はその部品（並べると、地図が直積を直和に描く）
+const single = (type: ModelType, objects: ModelObject[]) =>
+  (['value', 'record'].includes(type.form) && objects.length > 1 ? [`型「${type.name}」は ${type.form} なので箱は 1 つ（項目は holds.parts に並べる。箱を並べると「どれか 1 つ」になる）`] : [])
 // 部品（holds.parts）が指す型がある
 const parts = (model: Model, type: ModelType, object: ModelObject) =>
   partsOf(object.holds).filter(part => typeOf(model, part.type) === undefined).map(part => `型「${type.name}」の「${object.name}」の部品が指す型「${part.type}」がない`)
