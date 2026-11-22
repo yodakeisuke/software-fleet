@@ -368,9 +368,13 @@ a.le{color:var(--acc)}
 .cvp .tip p{margin:0;font-size:14px;line-height:1.45;font-weight:600}
 .cvp .tip p.doc{font-size:13px;font-weight:400}
 .cvp .tip.pinned{pointer-events:auto}
+.cvp .tip.docked{left:12px!important;right:12px;top:auto!important;bottom:34px;width:auto;max-width:none}
+.cvp .tip.docked.up{top:12px!important;bottom:auto}
+/* 留めた吹き出しが語っている箱。離れて出るので、縁でつなぐ */
+.cvp .told>rect{stroke:var(--fg);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .cvp .tip button{justify-self:start;min-height:40px;font-size:13px;font-weight:600;color:var(--acc)}
 /* 凡例: 語がそのまま見本。世界は字の色、変更は塗り。左下に 1 行で、その面に出ている色だけ */
-.cleg{position:absolute;z-index:1;left:max(8px,env(safe-area-inset-left,0px));bottom:6px;margin:0;display:flex;gap:10px;padding:5px 7px;border-radius:3px;background:color-mix(in oklch,var(--bg) 88%,transparent);font-size:11px;font-weight:600;line-height:1;pointer-events:none}
+.cleg{position:absolute;z-index:1;left:max(8px,env(safe-area-inset-left,0px));bottom:6px;margin:0;display:flex;gap:10px;padding:5px 7px;border-radius:3px;background:var(--bg);font-size:11px;font-weight:600;line-height:1;pointer-events:none}
 .cleg [data-k="api"]{color:var(--cm-api)}.cleg [data-k="db"]{color:var(--cm-db)}
 .cleg [data-k="new"],.cleg [data-k="mod"]{margin-block:-2px;padding:2px 4px;border-radius:2px}
 .cleg [data-k="new"]{color:var(--cm-add);background:var(--cm-add-bg)}.cleg [data-k="mod"]{color:var(--cm-mod);background:var(--cm-mod-bg)}
@@ -394,6 +398,8 @@ const NS = 'http://www.w3.org/2000/svg';
 const fill = (e, attrs, kids) => { for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); for (const k of kids) e.append(k); return e; };
 const el = (tag, attrs = {}, kids = []) => fill(document.createElement(tag), attrs, kids);
 const sv = (tag, attrs = {}, kids = []) => fill(document.createElementNS(NS, tag), attrs, kids);
+// 盤面 m の中で、箱 r の見えている部分が下半分に寄っているか（留めた吹き出しを、その反対の端へ出す）
+const low = (r, m) => Math.max(r.top, m.top) + Math.min(r.bottom, m.bottom) > m.top + m.bottom;
 const tspan = (text, cls) => sv('tspan', { class: cls }, [text]);
 const textWidth = (s, f) => f * [...s].reduce((a, ch) => a + (ch.charCodeAt(0) < 0x2000 ? .6 : 1), 0);
 const max = a => Math.max(0, ...a), sum = a => a.reduce((x, y) => x + y, 0);
@@ -779,8 +785,10 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   const build = D => draw(eng.place(D, view()));
 
   // 1 つ奥の情報。箱に重ねる（指は押す）と、意図と不変条件の吹き出しが出る
-  const showTip = g => {
-    tipOf = g && (g.dataset.inv || g.dataset.doc) ? g : null;
+  // dock = 指で押したとき。吹き出しは盤面の端に留める（箱の脇に出すと、見比べたい隣の箱を隠す）。押した箱が下半分なら上端へ
+  const showTip = (g, dock = false) => {
+    if (tipOf) tipOf.classList.remove('told');
+    tipOf = g && (g.dataset.inv || g.dataset.doc) ? g : null; tipEl.classList.toggle('docked', dock); if (tipOf) tipOf.classList.toggle('told', dock);
     if (!tipOf) { tipEl.hidden = true; return; }
     tipEl.replaceChildren(...(tipOf.dataset.doc ? [el('p', { class: 'doc' }, [tipOf.dataset.doc])] : []), ...(tipOf.dataset.inv ? [el('p', {}, [tipOf.dataset.inv])] : []));
     tipEl.hidden = false; tipS = cam.s; placeTip();
@@ -790,7 +798,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     if (tipHover && cam.s !== tipS) { showTip(null); return; }
     const m = svg.parentNode.getBoundingClientRect(), r = tipOf.querySelector(':scope > rect').getBoundingClientRect(), t = tipEl.getBoundingClientRect();
     if (r.bottom < m.top || r.top > m.bottom || r.right < m.left || r.left > m.right) { tipEl.style.visibility = 'hidden'; return; }
-    tipEl.style.visibility = '';
+    tipEl.style.visibility = ''; if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
     const x = Math.max(12, Math.min(Math.max(r.left, m.left) - m.left, m.width - t.width - 12));
     const above = r.top - m.top - t.height - 6, y = above >= 8 ? above : Math.max(r.top - m.top, 0) + 36;
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
@@ -902,8 +910,10 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     tap: (e, target, px, py) => {
       const g = seen(target), n = g && nodes.find(n => n.g === g), tip = e.pointerType !== 'mouse' && !!noted(e, target);
       shown = null; pinned = typed(g); showLinks(pinned); traced = e.pointerType === 'mouse' ? null : stateOf(target);
-      const m = n && focus(n.key, px, py); trace(traced);
-      showTip(tip && m ? m.g : null); tipHover = false;
+      // 寄るのは、開く中身がある箱を押したときだけ。中身の無い箱と、矢・名札は、押しても画面を動かさない（動くだけで何も出ないと、押し損ねに見える）
+      const stay = !n || n.need === undefined || !!target.closest('.mor,.head,.hl,.ml');
+      const m = n && (stay ? n : focus(n.key, px, py)); trace(traced);
+      showTip(tip && m ? m.g : null, true); tipHover = false;
     },
   });
   // 吹き出しを出す箱。開いた枠は見出しに重ねたときだけ（中身を覆わない）
@@ -1081,16 +1091,19 @@ const flowFace = (svg, world, tipEl, jump) => {
     go.addEventListener('click', () => { showTip(null); jump(ty.id); });
     return [...(ty.doc ? [el('p', { class: 'doc' }, [ty.doc])] : []), ...objs.map(o => el('p', {}, [(st.length > 1 ? o.name + ': ' : '') + o.holds.invariant])), ...(pin ? [go] : [])];
   };
-  const showTip = (t, pin = false) => {
-    const kids = t ? says(t, pin) : []; tipPinned = pin && kids.length > 0; tipEl.classList.toggle('pinned', tipPinned);
-    tipOf = kids.length ? t : null; tipEl.hidden = !tipOf; if (tipOf) { tipEl.replaceChildren(...kids); placeTip(); }
+  const showTip = (t, pin = false, dock = false) => {
+    const kids = t ? says(t, pin) : []; tipPinned = pin && kids.length > 0; tipEl.classList.toggle('pinned', tipPinned); tipEl.classList.toggle('docked', dock);
+    if (tipOf) tipOf.classList.remove('told');
+    tipOf = kids.length ? t : null; tipEl.hidden = !tipOf; if (tipOf) { tipOf.classList.toggle('told', dock); tipEl.replaceChildren(...kids); placeTip(); }
   };
   const placeTip = () => {
     if (!tipOf) return;
     const m = svg.parentNode.getBoundingClientRect(), r = (tipOf.classList.contains('box') ? tipOf.firstChild : tipOf.classList.contains('hit') ? world.querySelector(`.wn[data-w="${tipOf.dataset.w}"]`) || tipOf : tipOf).getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+    if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
     const x = Math.max(12, Math.min(r.left - m.left, m.width - t.width - 12)), above = r.top - m.top - t.height - 6;
     tipEl.style.left = x + 'px'; tipEl.style.top = (above >= 8 ? above : r.bottom - m.top + 8) + 'px';
   };
+  const inView = g => { const m = svg.getBoundingClientRect(), r = g.getBoundingClientRect(); return r.left >= m.left && r.right <= m.right && r.top >= m.top && r.bottom <= m.bottom; };
   const pickAt = t => ({ box: t.closest && t.closest('.box'), wire: t.dataset && t.dataset.w ? t : t.parentNode && t.parentNode.dataset && t.parentNode.dataset.w ? t.parentNode : null });
   gestures(svg, {
     cam: () => cam, put, clamp, zoomAt, touch: () => { touched = true; },
@@ -1105,8 +1118,8 @@ const flowFace = (svg, world, tipEl, jump) => {
       const { box, wire } = pickAt(target);
       traced = wire ? wire.dataset.w : null; trace(traced);
       same = box ? box.dataset.logic : null; mark(same);
-      if (box) focus(boxes.find(b => b.g === box));
-      showTip(wire || (e.pointerType !== 'mouse' ? box : null), !!wire);
+      if (box && !inView(box)) focus(boxes.find(b => b.g === box)); // 画面に収まっている箱は動かさない
+      showTip(wire || (e.pointerType !== 'mouse' ? box : null), !!wire, e.pointerType !== 'mouse');
     },
   });
 
