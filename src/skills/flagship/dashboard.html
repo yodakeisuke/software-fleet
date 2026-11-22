@@ -1103,7 +1103,8 @@ const flowFace = (svg, world, tipEl, jump) => {
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); cam = keepInk(svg, world, cam); placeTip(); });
   };
   const put = c => { cam = c; apply(); };
-  const clamp = s => { const v = view(); return Math.min(4, Math.max(.2, Math.min(v.w / W, v.h / H) * .5, s)); };
+  // 寄れる上限は、字が育ちきる倍率（1.1 強）の少し上。その先は箱と余白だけが育つ
+  const clamp = s => { const v = view(); return Math.min(1.4, Math.max(.2, Math.min(v.w / W, v.h / H) * .5, s)); };
   const setCam = (c, animate) => { if (!animate || still()) put(c); else glideCam(cam, c, put, () => {}); };
   // 全体: 幅に合わせ、上から。添え書きが読める倍率を下回らず、入りきらない分は動かして見る
   const home = () => { touched = false; traced = same = null; showTip(null); build(); const v = view(), s = clamp(Math.min(Math.max(v.w / W * .96, READ), 1.1)); put({ s, tx: Math.max(10, (v.w - W * s) / 2), ty: 16 }); };
