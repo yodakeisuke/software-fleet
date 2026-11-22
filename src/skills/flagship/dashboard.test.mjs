@@ -55,8 +55,8 @@ const MODEL = {
       ],
       morphisms: [
         { from: 'draft', to: 'confirmed', by: '確定する' },
-        { from: 'confirmed', to: 'shipping', by: '一部が出荷済', when: { type: 'line', at: 'shipped', all: false } },
-        { from: 'shipping', to: 'done', by: '全明細が出荷済', when: { type: 'line', at: 'shipped', all: true } },
+        { from: 'confirmed', to: 'shipping', by: '一部が出荷済', auto: true },
+        { from: 'shipping', to: 'done', by: '全明細が出荷済', auto: true },
         { from: 'draft', to: 'cancelled', by: '取り消す' },
         { from: 'confirmed', to: 'cancelled', by: '取り消す' }
       ] },
@@ -226,6 +226,12 @@ test('戻る矢があっても列は決まり、at で置いた図は指定ど�
   assert.deepEqual(back, { a: [0, 0], b: [1, 0], c: [2, 0] })
   const fixed = cellsOf(frameOf(placed(machine(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']], { a: [0, 0], b: [0, 1], c: [1, 1] }), 1), 'm'))
   assert.deepEqual(fixed, { a: [0, 0], b: [0, 1], c: [1, 1] })
+})
+
+test('自分へ戻る矢は 1 本ごとに名札 1 行ぶん、その状態の上を空ける（空けないと名前が重なる）', () => {
+  const above = loops => { const frame = frameOf(placed(machine(['a', 'b'], [['a', 'b'], ...Array(loops).fill(['b', 'b'])]), 1), 'm'); return { y: frame.boxes[1].y, line: frame.fl } }
+  const [one, two, three] = [1, 2, 3].map(above)
+  assert(two.y - one.y >= one.line && three.y - two.y >= one.line, `${one.y} → ${two.y} → ${three.y}（名札 ${one.line}）`)
 })
 
 test('最上位は部品になっていない型だけを書いた順に並べ、区画は worlds の並びに依らず 境界 → ドメイン → 保存', () => {

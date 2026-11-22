@@ -8,7 +8,7 @@ const line: ModelType = { id: 'line', name: '明細', world: 'domain', form: 'li
 const order: ModelType = {
   id: 'order', name: '注文', world: 'domain', form: 'lifecycle',
   objects: [{ id: 'draft', name: '下書き', holds: { parts: [{ type: 'line' }] } }, { id: 'done', name: '完了', holds: { parts: [{ type: 'line' }], invariant: '全明細が出荷済' } }],
-  morphisms: [{ from: 'draft', to: 'done', by: '全明細が出荷済', when: { type: 'line', at: 'shipped', all: true } }],
+  morphisms: [{ from: 'draft', to: 'done', by: '全明細が出荷済', auto: true }],
 }
 const orders: ModelType = { id: 't_orders', name: 'orders', world: 'db', form: 'table', columns: [{ name: 'id', type: 'uuid', pk: true }, { name: 'customer_id', type: 'uuid', fk: 't_customers' }] }
 const customers: ModelType = { id: 't_customers', name: 'customers', world: 'db', form: 'table', columns: [{ name: 'id', type: 'uuid', pk: true }] }
@@ -32,17 +32,16 @@ describe('references', () => {
     expect(References.problems(model([{ ...line, objects: [] }]))).toEqual(['型「明細」に objects がない', '型「明細」の遷移「出荷する」の端「open」が箱にない', '型「明細」の遷移「出荷する」の端「shipped」が箱にない'])
   })
 
-  test('部品の型、遷移の両端、条件の型と状態、対応の両端がある', () => {
+  test('部品の型、遷移の両端、対応の両端がある', () => {
     expect(References.problems(model([order]))).toEqual([
-      '型「注文」の「下書き」の部品が指す型「line」がない', '型「注文」の「完了」の部品が指す型「line」がない', '型「注文」の遷移「全明細が出荷済」の条件の型「line」がない',
+      '型「注文」の「下書き」の部品が指す型「line」がない', '型「注文」の「完了」の部品が指す型「line」がない',
     ])
     expect(References.problems(model([{ ...order, morphisms: [{ from: 'draft', to: 'gone', by: '消す' }] }, line]))).toEqual(['型「注文」の遷移「消す」の端「gone」が箱にない'])
-    expect(References.problems(model([{ ...order, morphisms: [{ ...order.morphisms![0]!, when: { type: 'line', at: 'lost', all: false } }] }, line]))).toEqual(['型「注文」の遷移「全明細が出荷済」の条件の状態「lost」が型「明細」の箱にない'])
     expect(References.problems(model([order, line], [{ from: 'order', to: 't_orders' }]))).toEqual(['対応 order → t_orders の「t_orders」が型にない'])
   })
 
-  test('holds を省いた箱は unit、条件の all を省けばいずれか（どちらも問題にしない）', () => {
+  test('holds を省いた箱は unit（問題にしない）', () => {
     const kind: ModelType = { id: 'reason', name: '取消理由', world: 'domain', form: 'kind', objects: [{ id: 'mind', name: '気が変わった' }, { id: 'late', name: '届かない' }] }
-    expect(References.problems(model([kind, { ...order, morphisms: [{ from: 'draft', to: 'done', by: '出荷する', when: { type: 'line', at: 'shipped' } }] }, line]))).toEqual([])
+    expect(References.problems(model([kind, order, line]))).toEqual([])
   })
 })

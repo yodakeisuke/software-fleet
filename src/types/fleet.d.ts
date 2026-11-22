@@ -152,9 +152,8 @@ export type Part = { type: string; as?: string }
 export type Holds = 'unit' | { prim: string; invariant?: string } | { parts: Part[]; invariant?: string }
 // 箱の中の箱: 状態・値・選択肢。型の中で id が鍵。holds を省けば unit
 export type ModelObject = { id: string; name: string; at?: number[]; holds?: Holds; change?: Change }
-// all を省けば false（いずれか）
-export type When = { type: string; at: string; all?: boolean }
-export type Morphism = { from: string; to: string; by: string; when?: When; change?: Change }
+// auto = 命令ではなく、中に持つ型の状態が変わって起きる遷移（条件そのものは by の言葉で読む）
+export type Morphism = { from: string; to: string; by: string; auto?: boolean; change?: Change }
 export type Column = { name: string; type: string; pk?: boolean; fk?: string; change?: Change }
 export type ModelType = {
   id: string; name: string; world: World; form: Form; many?: string; doc?: string
