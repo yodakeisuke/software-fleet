@@ -1,4 +1,4 @@
-import type { Engine, FleetTool, JsonSchemaNode, Model, ModelInput } from '../../../types/fleet'
+import type { Engine, FleetTool, JsonSchemaNode, Model, ModelDoc, ModelInput } from '../../../types/fleet'
 import { FleetDb } from '../../../fleet/db/fleet-db'
 import { JsonSchema } from '../../../fleet/schema/json-schema'
 import { CodeModel } from '../logic/code-model'
@@ -29,14 +29,14 @@ const modelType = object({
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
 const logic = object({
   id: text('鍵。流れの段はこれで指す'), name: text(), layer: choice(['domain', 'usecase', 'persistence'], 'domain = I/O を呼ばない関数だけ（種類は出す線の型から導く）。persistence = DB や外部との入出力（読む・書く・送る）を中で呼ぶ関数。判断と書き込みが 1 つの関数なら persistence。usecase = それらを順に呼ぶ手順（入口の handler も）'),
-  note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), also: list(text(), 'この処理を通る、流れに描いていないユースケースの名前。改・削 の処理には必ず渡す（無ければ []）'), change: ref('change'),
+  note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), fails: list(text(), '失敗の出口の名前'), also: list(text(), 'この処理を通る、流れに描いていないユースケースの名前。改・削 の処理には必ず渡す（無ければ []）'), change: ref('change'),
 }, ['id', 'name', 'layer'], '処理 = 流れの箱')
 const wire = object({ name: text('線の名前。「型名〈状態｜状態〉 ✓ ×N」の形で構造の型と状態に結ばれる（例: 注文〈下書き〉、引当済の明細 ✓、明細 ×N）'), kind: choice(['api', 'stored'], 'API の求めと返事 / 保存されている値。省くと途中の値') }, ['name'])
 const step = object({
   logic: text('処理の id'), span: list(number, '箱が跨ぐ列 [左, 右]'), out: keyed(ref('wire'), '列の番号 → 箱が出した線（名前が変わる所だけ。確かめ済みは ✓）'), drop: list(number, '箱で終わる列'), change: ref('change'),
 }, ['logic', 'span'], '流れの 1 段 = 箱')
 const flow = object({
-  id: text('鍵'), name: text('ユースケースの名前'), columns: list(ref('wire'), '線。左が API、右が保存'), start: keyed(text(), '列の番号 → 上から入ってくる線の名前'), steps: list(ref('step'), '上から順'),
+  id: text('鍵'), name: text('ユースケースの名前。振る舞いの盤面があれば、そのコマンドかリードモデルの名前のまま'), columns: list(ref('wire'), '線。左が API、右が保存'), start: keyed(text(), '列の番号 → 上から入ってくる線の名前'), steps: list(ref('step'), '上から順'),
 }, ['id', 'name', 'columns', 'start', 'steps'], 'ユースケース = 流れの 1 列')
 
 // コードの中の設計図。ページが「構造」と「流れ」の 2 つの地図に投影する
@@ -54,9 +54,10 @@ const spec = {
   isDeferred: false,
 }
 
-// 今の設計図に渡した集まりを当てて、読んだ版に固定して書き直す。1 件でも問題があれば何も書かない
-const run = async (engine: Engine, input: unknown) => JsonSchema.check<ModelInput>(spec.inputSchema, input).either(
-  given => FleetDb.revise(engine, FleetDb.paths().model, doc => CodeModel.revise({ ...CodeModel.empty(), ...(doc as Partial<Model> | undefined) }, given), 'ModelRevised'),
-  async error => ({ deny: error }))
+// 今の設計図に渡した集まりを当てて、直した時刻を付け、読んだ版に固定して書き直す。1 件でも問題があれば何も書かない
+const run = async (engine: Engine, input: unknown) => JsonSchema.check<ModelInput>(spec.inputSchema, input).either(async given => {
+  const at = new Date(await engine.now()).toISOString()
+  return FleetDb.revise(engine, FleetDb.paths().model, doc => CodeModel.revise({ ...CodeModel.empty(), ...(doc as Partial<Model> | undefined) }, given).and((model): ModelDoc => ({ ...model, at })), 'ModelRevised')
+}, async error => ({ deny: error }))
 
 export const reviseModel = { tool: 'mcp__software-fleet__revise_model' as const, spec, run } satisfies FleetTool
