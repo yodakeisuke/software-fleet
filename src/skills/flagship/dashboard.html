@@ -258,6 +258,7 @@ a.le{color:var(--acc)}
 .ct{font-size:13px;line-height:1.55;white-space:pre-wrap}
 .cr{font-size:12.5px;line-height:1.55;font-weight:700;white-space:pre-wrap}
 .cw{font-size:11.5px;color:var(--muted)}
+.cmb{flex:1;min-height:40px;text-align:left;font-size:13px;font-weight:700;color:var(--acc)}
 .cdone{align-self:flex-end;font-size:12px;font-weight:700;color:var(--acc);min-height:32px}
 .sk{margin:0;padding:8px 10px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
 .sk.txt{white-space:pre-wrap;overflow-wrap:anywhere}
@@ -1115,7 +1116,7 @@ const flowFace = (svg, world, tipEl, jump) => {
       const bg = sv('g', { class: 'box' + chOf(b.ch), transform: `translate(${b.x},${b.y})`, 'data-logic': b.lg.id });
       const doc = [b.lg.note, b.also && 'ほかに通る流れ: ' + b.lg.also.join('、')].filter(Boolean).join('\n'); if (doc) bg.dataset.doc = doc;
       bg.append(sv('rect', { width: b.w, height: b.h, rx: 2, class: 'obj-r' }));
-      bg.append(text({ x: PAD, y: 9 + FONT.cap * .65, 'font-size': FONT.cap, class: 'cap mid' + (b.lg.layer === 'persistence' ? ' stored' : '') }, [b.kind + (b.lg.ref ? ' · ' + b.lg.ref : '')], { role: 'sub' }));
+      bg.append(text({ x: PAD, y: 9 + FONT.cap * .65, 'font-size': FONT.cap, class: 'cap mid' + (b.lg.layer === 'persistence' ? ' stored' : '') }, [b.kind], { role: 'sub' }));
       const y = 9 + FONT.cap * 1.3 + FONT.bn * .72, nm = text({ x: PAD, y, 'font-size': FONT.bn, class: 'bn mid' }, b.lines.map((l, k) => sv('tspan', { x: PAD, dy: k ? '1.3em' : 0 }, [l])), { role: 'bn', box: b, units: b.units, cy: b.h / 2, y });
       if (b.ch) nm.append(tspan(' ' + b.ch, 'chg'));
       bg.append(nm);
@@ -1281,7 +1282,7 @@ const hhmm = iso => (iso ? new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-
 const motion = () => !matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // --- 導出
-const required = (ship, review) => review?.required ?? ['architect', 'qa'].includes(ship)
+const required = (ship, review) => review?.required ?? ['architect', 'coder', 'qa'].includes(ship)
 const awaiting = (ship, status, review) => status.state === 'converged' && required(ship, review) && review?.approved_since !== status.since
 const yourTurn = () => {
   const closed = new Set(S.decisions.map(d => d.closes))
@@ -1398,15 +1399,16 @@ const remainingView = () => {
 }
 // レビュー待ちなら承認のボタン
 const approveAct = ship => (S.ships[ship] && awaiting(ship, S.ships[ship], S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : '')
-const reviewToggle = ship => {
-  const on = required(ship, S.reviews[ship])
-  return `<div class="ship"><span class="sm"><span class="sname">要レビュー</span></span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
+// ship 全体へのコメント（開いている数）と、要レビューの切り替え
+const reviewRow = ship => {
+  const on = required(ship, S.reviews[ship]), open = threadsOf(ship, '').filter(([, t]) => !t.resolved).length
+  return `<div class="ship"><button class="cmb" data-act="peek" data-peek="s:${ship}">コメント${open ? ` ${open}` : ''} ›</button><span class="sname">要レビュー</span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
 }
 const shipPage = ship => {
   const v = view(ship)
   return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>${linkActs(ship)}
     <div class="sr"><span class="dot ${v.cls}"></span><span class="st">${esc(v.label)}</span></div><p class="stxt">${esc(v.note)}</p>
-    ${reviewToggle(ship)}<div class="acts">${approveAct(ship)}</div>`
+    ${reviewRow(ship)}<div class="acts">${approveAct(ship)}</div>`
 }
 // requirement: 要求と、その裏返しのテストの 2 枚。DB の要求リストは区分の順に並んでいる
 const requirementPage = sub => {
@@ -1558,19 +1560,21 @@ const boardView = () => {
 const strays = () => {
   const { readModels, views, hotspots } = S.behavior
   const keys = new Set([...allMoments().map(m => `m:${m.command.name}`), ...readModels.map(r => `r:${r.name}`), ...views.map(v => `v:${v.screen}`), ...hotspots.map(h => `h:${h.question}`)])
-  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && !keys.has(t.on) && !t.resolved)
+  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && t.on !== '' && !keys.has(t.on) && !t.resolved)
   return list.length === 0 ? '' : sec('付箋が変わったコメント', list.map(([id, t]) => comment(id, t, t.on.slice(2))).join(''))
 }
 // 付箋の中身とコメント。付箋は m: 時点（コマンド名）・r: リードモデル・v: 読むだけの画面・h: 問い。消えていたら閉じる
 const peekSheet = () => {
   const cut = S.peek.indexOf(':'), kind = S.peek.slice(0, cut), name = S.peek.slice(cut + 1)
+  if (kind === 's') return sheet(`${NAME[name]}へのコメント`, `<div class="sq">${NAME[name]}へのコメント</div><div class="stxt">直してほしいこと・確かめたいことを、flagship が ${name} に回す</div>${threadsView(name, '')}`)
   const { views, readModels, hotspots } = S.behavior
   const found = { m: () => allMoments().find(m => m.command.name === name), r: () => readModels.find(r => r.name === name), v: () => views.find(v => v.screen === name), h: () => hotspots.find(h => h.question === name) }[kind]?.()
   if (!found) { S.peek = null; return '' }
   const body = { m: momentPeek, r: readPeek, v: viewPeek, h: hotspotPeek }[kind](found)
-  return `<div class="sheet" role="dialog" aria-modal="true" aria-label="付箋の中身"><div class="sbody gut">${body}${threadsView(S.peek)}</div>
-    <div class="sfoot gut"><button class="close" data-act="close">閉じる</button></div></div>`
+  return sheet('付箋の中身', `${body}${threadsView('behavior', S.peek)}`)
 }
+const sheet = (label, body) => `<div class="sheet" role="dialog" aria-modal="true" aria-label="${label}"><div class="sbody gut">${body}</div>
+    <div class="sfoot gut"><button class="close" data-act="close">閉じる</button></div></div>`
 const sec = (h, body) => `<div class="sec2"><div class="sh">${h}</div>${body}</div>`
 const momentPeek = m => {
   const by = m.by
@@ -1586,27 +1590,32 @@ const readPeek = r => `<div class="sq">${mark(r.change)} ${esc(r.name)}</div>${s
 const viewPeek = v => `<div class="sq">${mark(v.change)} ${esc(v.actor)} ▸ ${esc(v.screen)}</div><div class="stxt">読むだけの画面。「${esc(v.at)}」の時点で見る</div>
   ${sec('画面', `<pre class="sk">${mono(v.sketch)}</pre>`)}${v.reads.length ? sec('読む', `<div class="stxt">${joined(v.reads)}</div>`) : ''}`
 const hotspotPeek = h => `<div class="sq">未決定: ${esc(h.question)}</div>${sec('当面の仮定', `<div class="stxt">${esc(h.assumption)}</div>`)}${h.at ? sec('関わる事実', `<div class="stxt">${esc(h.at)}</div>`) : ''}`
-// 付箋へのコメントと返信。返信は behavior ship が書く。下ろすと薄くなる。sticky は、付箋が変わったコメントの元の付箋の名前
+// コメントと返信。返信を書けるのは behavior だけで、ほかの ship は直して収束し直すことで答える。下ろすと薄くなる。sticky は、付箋が変わったコメントの元の付箋の名前
 const comment = (id, t, sticky) => `<div class="cmt${t.resolved ? ' done' : ''}">${sticky ? `<div class="cw">「${esc(sticky)}」へ</div>` : ''}<div class="ct">${esc(t.text)}</div>
-    ${S.replies[id] ? `<div class="cr">↳ ${esc(S.replies[id].reply)}</div>` : '<div class="cw">behavior の返信を待っている</div>'}
+    ${S.replies[id] ? `<div class="cr">↳ ${esc(S.replies[id].reply)}</div>` : t.ship === 'behavior' ? '<div class="cw">behavior の返信を待っている</div>' : ''}
     ${t.resolved ? '' : `<button class="cdone" data-act="resolve" data-id="${esc(id)}">下ろす</button>`}</div>`
-const threadsView = key => {
-  const list = Object.entries(S.threads).filter(([, t]) => t.ship === 'behavior' && t.on === key).sort(([, a], [, b]) => String(a.at).localeCompare(String(b.at)))
-  const items = list.map(([id, t]) => comment(id, t)).join('')
-  return sec('コメント', `${items}${S.remarked ? `<p class="warn">${esc(S.remarked)}</p>` : ''}<textarea class="ft" data-free="c:${esc(key)}" maxlength="1000" aria-label="コメント" placeholder="この付箋にコメントする">${esc(S.drafts[`c:${key}`])}</textarea>
-    <button class="fb pri" data-act="remark" data-key="${esc(key)}">behavior に送る</button>`)
+// ship へのコメント。on は behavior の付箋の鍵か、'' で ship 全体
+const threadsOf = (ship, on) => Object.entries(S.threads).filter(([, t]) => t.ship === ship && t.on === on)
+const draftKey = (ship, on) => (on === '' ? `c:s:${ship}` : `c:${on}`)
+const threadsView = (ship, on) => {
+  const items = threadsOf(ship, on).sort(([, a], [, b]) => String(a.at).localeCompare(String(b.at))).map(([id, t]) => comment(id, t)).join('')
+  const key = draftKey(ship, on)
+  return sec('コメント', `${items}${S.remarked ? `<p class="warn">${esc(S.remarked)}</p>` : ''}<textarea class="ft" data-free="${esc(key)}" maxlength="1000" aria-label="コメント" placeholder="${on === '' ? `${NAME[ship]}にコメントする` : 'この付箋にコメントする'}">${esc(S.drafts[key])}</textarea>
+    <button class="fb pri" data-act="remark" data-ship="${ship}" data-key="${esc(on)}">${ship} に送る</button>`)
 }
-// コメントを DB に書き、flagship に送る（送れるのはタップの直後だけ）。flagship が behavior に回す
-const remark = async (key, button) => {
-  const text = (S.drafts[`c:${key}`] ?? '').trim()
-  if (!text) return document.querySelector(`[data-free="${CSS.escape(`c:${key}`)}"]`)?.focus()
+// コメントを DB に書き、flagship に送る（送れるのはタップの直後だけ）。flagship がその ship に回す
+const remark = async (ship, on, button) => {
+  const key = draftKey(ship, on)
+  const text = (S.drafts[key] ?? '').trim()
+  if (!text) return document.querySelector(`[data-free="${CSS.escape(key)}"]`)?.focus()
   const anchor = S.comments ? await S.comments.anchorFor(button).catch(() => null) : null
   const id = `comment-${Date.now()}`
-  S.drafts[`c:${key}`] = ''
+  S.drafts[key] = ''
   S.remarked = ''
   document.activeElement?.blur()
-  S.db.doc(`${S.paths.comments}/${id}`).set({ ship: 'behavior', on: key, text, at: new Date().toISOString() }).catch(fail)
-  const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `behavior の付箋「${key}」へのコメント（id: ${id}）。behavior に回してください:\n${text}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
+  S.db.doc(`${S.paths.comments}/${id}`).set({ ship, on, text, at: new Date().toISOString() }).catch(fail)
+  const what = on === '' ? `${ship} へのコメント` : `${ship} の付箋「${on}」へのコメント`
+  const sent = anchor ? await S.comments.sendToClaude({ anchor, text: `${what}（id: ${id}）。${ship} に回してください:\n${text}` }).catch(error => ({ error })) : { error: { code: 'not_granted' } }
   if (sent.threadId) return delivered()
   S.remarked = `flagship に届いていません（${sent.error?.code ?? 'unknown'}）。コメントは残りました`
   renderSheet()
@@ -1662,7 +1671,9 @@ const qaVerdict = list => {
   const v = S.quality.verdict
   if (!v) return '<div class="qv"><span class="qvm">判定はまだ</span><span class="cnt">qa がケースを消化しています</span></div>'
   const drift = v.merge === '可' && (list.some(x => x.outcome !== '合格') || openFindings().length > 0) ? '<p class="warn">判定のあとで、合格していないケースか未解決の発見が出た</p>' : ''
-  return `<div class="qv ${{ 可: 'ok', 条件つき: 'mid', 不可: 'ng' }[v.merge]}"><span class="cnt">マージしてよいか · ${hhmm(v.at)}</span><span class="qvm">${esc(v.merge)}</span><p class="stxt">${esc(v.why)}</p>${drift}</div>`
+  // 設計図はコードを直すたびに直る（coder の決まり）ので、判定より新しければ、判定は前のコードに対するもの
+  const moved = v.merge !== '不可' && S.model?.at > v.at ? `<p class="warn">判定のあと（${hhmm(S.model.at)}）に実装が変わった。今のコードはまだ確かめていない</p>` : ''
+  return `<div class="qv ${{ 可: 'ok', 条件つき: 'mid', 不可: 'ng' }[v.merge]}"><span class="cnt">マージしてよいか · ${hhmm(v.at)}</span><span class="qvm">${esc(v.merge)}</span><p class="stxt">${esc(v.why)}</p>${drift}${moved}</div>`
 }
 const qualityView = () => {
   const list = qaCases().map(c => ({ ...c, outcome: '未実行', ...checkOf(c) }))
@@ -1693,7 +1704,7 @@ const MAP = `<div class="cmap" id="cmap"><header class="chead gut"><a href="#">�
 const designed = () => S.model && (S.model.types.length > 0 || S.model.flows.length > 0)
 const coderPage = () => (unready() || !designed() ? `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.coder}</a>${unready() || '<p class="req wait">まだ設計図がありません</p>'}` : MAP)
 // coder のドック: 成果物（PR）・要レビュー・承認。地図が画面を使うので、ページの本体には置かない
-const coderDock = ship => `<div class="rdock gut cdock">${linkActs(ship)}${reviewToggle(ship)}${approveAct(ship)}</div>`
+const coderDock = ship => `<div class="rdock gut cdock">${linkActs(ship)}${reviewRow(ship)}${approveAct(ship)}</div>`
 const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.qa}</a>${linkActs('qa')}${unready() || (sub === 'found' ? foundView() : qualityView())}`
 // 自分のページを持つ ship。ページの本体と、ドックの 2 枚のタブ（dock があればそのドック）
 const PAGES = {
@@ -1708,7 +1719,7 @@ const PAGES = {
 const pageDock = (ship, sub = '') => {
   const page = PAGES[ship]
   const tab = ([to, label]) => `<a href="#${ship}${to ? `.${to}` : ''}"${to === sub ? ' aria-current="page"' : ''}>${esc(label)}</a>`
-  return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${reviewToggle(ship)}${approveAct(ship)}</div>`
+  return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${reviewRow(ship)}${approveAct(ship)}</div>`
 }
 // ドックの中身: ship のページならそのドック、それ以外は あなたの番 のレール
 const dockHtml = (ship, sub) => {
@@ -1920,7 +1931,7 @@ document.addEventListener('click', event => {
   if (act === 'open' && !S.locked) { S.open = ask; renderSheet() }
   if (act === 'close') { S.open = null; S.peek = null; renderSheet() }
   if (act === 'peek') { S.peek = el.dataset.peek; S.remarked = ''; renderSheet() }
-  if (act === 'remark') remark(el.dataset.key, el)
+  if (act === 'remark') remark(ship, el.dataset.key, el)
   if (act === 'resolve') resolveThread(el.dataset.id)
 })
 document.addEventListener('input', event => { if (event.target.dataset.free) S.drafts[event.target.dataset.free] = event.target.value })

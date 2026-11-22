@@ -10,8 +10,10 @@ describe('review', () => {
     expect(Review.since({ state: 'stuck', reason: 'x' }, '2026-10-18T10:00:00.000Z')).toEqual({ state: 'stuck', reason: 'x', since: '2026-10-18T10:00:00.000Z' })
   })
 
-  test('ユーザが決めない限り、architect と qa だけがレビュー必須', () => {
+  test('ユーザが決めない限り、architect・coder・qa だけがレビュー必須', () => {
     expect(Review.required('architect', undefined)).toBe(true)
+    expect(Review.required('coder', undefined)).toBe(true)
+    expect(Review.required('behavior', undefined)).toBe(false)
     expect(Review.required('qa', {})).toBe(true)
     expect(Review.required('ops', undefined)).toBe(false)
     expect(Review.required('qa', { required: false })).toBe(false)

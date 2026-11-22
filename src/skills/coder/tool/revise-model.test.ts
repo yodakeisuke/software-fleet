@@ -32,7 +32,14 @@ describe('revise-model', () => {
     const calls: DbCall[] = []
     const stored = { 'fleet/coder/deliverables/model': { ...CodeModel.empty(), name: '注文', types: [money] } }
     expect(await reviseModel.run(engineWith(stored, calls), { types: [order, money], tool: 'mcp__software-fleet__revise_model' })).toEqual({ result: 'ModelRevised' })
-    expect(calls.filter(call => call.action === 'set')).toEqual([{ action: 'set', collection: 'fleet/coder/deliverables', doc_id: 'model', if_version: 3, data: { ...CodeModel.empty(), name: '注文', types: [order, money] } }])
+    expect(calls.filter(call => call.action === 'set')).toEqual([{ action: 'set', collection: 'fleet/coder/deliverables', doc_id: 'model', if_version: 3, data: { ...CodeModel.empty(), name: '注文', types: [order, money], at: '1970-01-01T00:00:01.000Z' } }])
+  })
+
+  test('直すたびに、直した時刻を今にする（QA の判定がどのコードに対するものかをページが見る）', async () => {
+    const calls: DbCall[] = []
+    const stored = { 'fleet/coder/deliverables/model': { ...CodeModel.empty(), name: '注文', types: [money], at: '1969-12-31T00:00:00.000Z' } }
+    expect(await reviseModel.run(engineWith(stored, calls), { name: '注文' })).toEqual({ result: 'ModelRevised' })
+    expect(calls.find(call => call.action === 'set')?.data).toEqual({ ...CodeModel.empty(), name: '注文', types: [money], at: '1970-01-01T00:00:01.000Z' })
   })
 
   test('問題があれば何も書かず、全部を返す', async () => {

@@ -5,7 +5,7 @@
 ## 導出（保存しない）
 
 ```ts
-required     = Review.required ?? (architect | qa)
+required     = Review.required ?? (architect | coder | qa)
 レビュー待ち = converged ∧ required
              ∧ approved_since ≠ since
 あなたの番   = 未回答・未 close の Ask
