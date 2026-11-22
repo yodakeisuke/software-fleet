@@ -377,6 +377,7 @@ a.le{color:var(--acc)}
 .cvp .tip{position:absolute;z-index:2;width:max-content;max-width:min(300px,calc(100% - 32px));padding:10px 12px;border-radius:3px;background:var(--surface);box-shadow:0 4px 16px var(--shadow),0 0 0 1px var(--line);pointer-events:none;display:grid;gap:6px}
 .cvp .tip p{margin:0;font-size:14px;line-height:1.45;font-weight:600}
 .cvp .tip p.doc{font-size:13px;font-weight:400;white-space:pre-line}
+.cvp .tip p.of{font-size:12px;color:var(--muted)}
 .cvp .tip.pinned{pointer-events:auto}
 .cvp .tip.docked{left:12px!important;right:12px;top:auto!important;bottom:34px;width:auto;max-width:none}
 .cvp .tip.docked.up{top:12px!important;bottom:auto}
@@ -409,6 +410,8 @@ const fill = (e, attrs, kids) => { for (const [k, v] of Object.entries(attrs)) e
 const el = (tag, attrs = {}, kids = []) => fill(document.createElement(tag), attrs, kids);
 const sv = (tag, attrs = {}, kids = []) => fill(document.createElementNS(NS, tag), attrs, kids);
 // 盤面 m の中で、箱 r の見えている部分が下半分に寄っているか（留めた吹き出しを、その反対の端へ出す）
+// 留めた吹き出しは押した物から離れるので、どれの説明かを 1 行目で名乗る
+const about = name => (name ? [el('p', { class: 'of' }, [name])] : []);
 // 箱 r が盤面 m から出きったか（語っていた箱が見えなくなったら、吹き出しは消す。残ると、いま見えている箱の説明に見える）
 const gone = (r, m) => r.bottom < m.top || r.top > m.bottom || r.right < m.left || r.left > m.right;
 const low = (r, m) => Math.max(r.top, m.top) + Math.min(r.bottom, m.bottom) > m.top + m.bottom;
@@ -821,7 +824,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     if (tipOf) tipOf.classList.remove('told');
     tipOf = g && (g.dataset.inv || g.dataset.doc) ? g : null; tipEl.classList.toggle('docked', dock); if (tipOf) tipOf.classList.toggle('told', dock);
     if (!tipOf) { tipEl.hidden = true; return; }
-    tipEl.replaceChildren(...(tipOf.dataset.doc ? [el('p', { class: 'doc' }, [tipOf.dataset.doc])] : []), ...(tipOf.dataset.inv ? [el('p', {}, [tipOf.dataset.inv])] : []));
+    tipEl.replaceChildren(...(dock ? about((nodes.find(n => n.g === tipOf) || {}).label) : []), ...(tipOf.dataset.doc ? [el('p', { class: 'doc' }, [tipOf.dataset.doc])] : []), ...(tipOf.dataset.inv ? [el('p', {}, [tipOf.dataset.inv])] : []));
     tipEl.hidden = false; tipS = cam.s; placeTip();
   };
   const placeTip = () => {
@@ -1073,7 +1076,7 @@ const flowFace = (svg, world, tipEl, jump) => {
       bg.append(nm);
       b.fails.forEach((f, k) => bg.append(text({ x: PAD, y: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + FONT.fail * (k * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid' }, ['→ ' + f], { role: 'sub' })));
       if (b.also) bg.append(text({ x: PAD, y: 9 + FONT.cap * 1.3 + FONT.bn * 1.45 + FONT.fail * (b.fails.length * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid also' }, [b.also], { role: 'sub' }));
-      g.append(bg); boxes.push({ g: bg, x: X + b.x, y: Y + b.y, w: b.w, h: b.h });
+      g.append(bg); boxes.push({ g: bg, name: b.lg.name, x: X + b.x, y: Y + b.y, w: b.w, h: b.h });
     });
     return g;
   };
@@ -1128,7 +1131,7 @@ const flowFace = (svg, world, tipEl, jump) => {
   const showTip = (t, pin = false, dock = false) => {
     const kids = t ? says(t, pin) : []; tipPinned = pin && kids.length > 0; tipEl.classList.toggle('pinned', tipPinned); tipEl.classList.toggle('docked', dock);
     if (tipOf) tipOf.classList.remove('told');
-    tipOf = kids.length ? t : null; tipEl.hidden = !tipOf; if (tipOf) { tipOf.classList.toggle('told', dock); tipEl.replaceChildren(...kids); placeTip(); }
+    tipOf = kids.length ? t : null; tipEl.hidden = !tipOf; if (tipOf) { tipOf.classList.toggle('told', dock); tipEl.replaceChildren(...(dock ? about(t.dataset.name || (boxes.find(b => b.g === t) || {}).name) : []), ...kids); placeTip(); }
   };
   const placeTip = () => {
     if (!tipOf) return;
