@@ -339,21 +339,32 @@ test('丸ごと新しい流れは題名に 1 度だけ印を出し、箱には�
 })
 
 test('凡例は、その面のその設計図に出ている色だけ', () => {
-  assert.deepEqual(CoderMap.legendOf(MODEL, 'struct'), { api: true, db: true, new: true, mod: true })
+  assert.deepEqual(CoderMap.legendOf(MODEL, 'struct'), { api: true, db: true, new: true, mod: true, imp: true, chk: false })
   const plain = { ...machine(['a', 'b'], [['a', 'b']]), logic: [{ id: 'l', name: '進める', layer: 'domain' }], flows: [{ id: 'f', name: '進める', columns: [{ name: '機械' }], start: { 0: '機械〈a〉' }, steps: [{ logic: 'l', span: [0, 0], out: { 0: { name: '機械〈b〉' } } }] }] }
-  assert.deepEqual(CoderMap.legendOf(plain, 'struct'), { api: false, db: false, new: false, mod: false })
-  assert.deepEqual(CoderMap.legendOf(plain, 'flow'), { api: false, db: false, new: false, mod: false })
+  assert.deepEqual(CoderMap.legendOf(plain, 'struct'), { api: false, db: false, new: false, mod: false, imp: true, chk: false })
+  assert.deepEqual(CoderMap.legendOf(plain, 'flow'), { api: false, db: false, new: false, mod: false, imp: false, chk: false })
   // 削だけでも、畳んだ箱は「改」で告げる
   const cut = structuredClone(plain)
   cut.types[0].morphisms[0].change = '削'
-  assert.deepEqual(CoderMap.legendOf(cut, 'struct'), { api: false, db: false, new: false, mod: true })
+  assert.deepEqual(CoderMap.legendOf(cut, 'struct'), { api: false, db: false, new: false, mod: true, imp: true, chk: false })
+  // コードで型になっていない形（code の無い型。破線の枠）があるときだけ、構造の面に出る。表は数えない
+  assert.equal(CoderMap.legendOf(plain, 'struct').imp, true)
+  assert.equal(CoderMap.legendOf(plain, 'flow').imp, false)
+  const named = structuredClone(plain)
+  named.types[0].code = 'Machine'
+  assert.equal(CoderMap.legendOf(named, 'struct').imp, false)
+  // 流れの線に ✓ があるときだけ、流れの面に ✓ の意味が出る
+  const proven = structuredClone(plain)
+  proven.flows[0].steps[0].out[0].name = '機械〈b〉 ✓'
+  assert.equal(CoderMap.legendOf(proven, 'flow').chk, true)
+  assert.equal(CoderMap.legendOf(proven, 'struct').chk, false)
 })
 
 test('型がまだ無い・流れがまだ無い・段がまだ無い設計図も置ける', () => {
   const noTypes = { ...MODEL, types: [], maps: [], flows: [{ id: 'f', name: '空の流れ', columns: [{ name: '値' }], start: { 0: '値' }, steps: [] }] }
   assert.deepEqual(structure(noTypes).home(PHONE).placed.cols, [])
   assert.equal(CoderMap.Flow.place(noTypes, PHONE).flows[0].whole, undefined)
-  assert.deepEqual(CoderMap.legendOf(noTypes, 'struct'), { api: false, db: false, new: false, mod: false })
+  assert.deepEqual(CoderMap.legendOf(noTypes, 'struct'), { api: false, db: false, new: false, mod: false, imp: false, chk: false })
   assert.deepEqual(CoderMap.Flow.place({ ...MODEL, flows: [] }, PHONE).flows, [])
   const unit = { id: 'ok', name: '受け付けた', world: 'api', form: 'record', objects: [{ id: 'v', name: '受け付けた' }] }
   assert.equal(frameOf(placed({ ...MODEL, types: [...MODEL.types, unit] }, 2), 'ok').leaf, true)

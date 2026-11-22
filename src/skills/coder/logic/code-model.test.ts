@@ -28,11 +28,6 @@ describe('code-model', () => {
     expect(revised(base, { logic: [{ ...find, change: '削', also: ['注文を取り消す'] }, { ...find, id: 'new', change: '新' }, { ...find, id: 'old' }] })).toMatchObject({ logic: [{ id: 'find' }, { id: 'new' }, { id: 'old' }] })
   })
 
-  test('箱に載らないこと（決めたこと・残した穴）は caveats に置く', () => {
-    const caveats: Model['caveats'] = [{ kind: '決めた', what: '取り消した注文は再開できない' }, { kind: '残した', what: '管理画面は新しい状態を表示できない' }]
-    expect(revised(base, { caveats })).toEqual({ ...base, caveats })
-  })
-
   test('問題が 1 つでもあれば何も通さず、全部を 1 つの文にする', () => {
     const flows: Model['flows'] = [{ id: 'f', name: '確定する', columns: [{ name: '注文' }], start: {}, steps: [{ logic: 'none', span: [0, 0] }] }]
     expect(revised(base, { maps: [{ from: 'order', to: 'none' }], flows })).toBe('対応 order → none の「none」が型にない / 流れ「確定する」の段の処理「none」が logic にない')

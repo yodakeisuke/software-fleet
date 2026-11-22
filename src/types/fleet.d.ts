@@ -148,6 +148,7 @@ export type Change = '新' | '改' | '削'
 export type World = 'api' | 'domain' | 'db'
 // 型の形。lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表
 export type Form = 'lifecycle' | 'value' | 'kind' | 'record' | 'table'
+// code = コードでこの形を持つ物の名前。名前を言えない形（素の値・列の値・規約で持っているだけ）は、地図が破線の枠で描く。table は列がそのままコードなので要らない
 export type Part = { type: string; as?: string }
 export type Holds = 'unit' | { prim: string; invariant?: string } | { parts: Part[]; invariant?: string }
 // 箱の中の箱: 状態・値・選択肢。型の中で id が鍵。holds を省けば unit
@@ -156,7 +157,7 @@ export type ModelObject = { id: string; name: string; at?: number[]; holds?: Hol
 export type Morphism = { from: string; to: string; by: string; auto?: boolean; change?: Change }
 export type Column = { name: string; type: string; pk?: boolean; fk?: string; change?: Change }
 export type ModelType = {
-  id: string; name: string; world: World; form: Form; many?: string; doc?: string
+  id: string; name: string; world: World; form: Form; many?: string; doc?: string; code?: string
   objects?: ModelObject[]; morphisms?: Morphism[]; columns?: Column[]; change?: Change
 }
 export type Mapping = { from: string; to: string }
@@ -167,9 +168,7 @@ export type Wire = { name: string; kind?: 'api' | 'stored' }
 // 流れの 1 段。span は [左の列, 右の列]、out は列 → 箱が出した線、drop は箱で終わる列
 export type Step = { logic: string; span: number[]; out?: Record<string, Wire>; drop?: number[]; change?: Change }
 export type ModelFlow = { id: string; name: string; columns: Wire[]; start: Record<string, string>; steps: Step[] }
-// 箱に載らない、レビューで知るべきこと。決めた = 依頼に無いのに coder が決めた仕様、残した = 知っていて直していない穴
-export type Caveat = { kind: '決めた' | '残した'; what: string }
-export type Model = { name: string; worlds: { id: World; name: string }[]; types: ModelType[]; maps: Mapping[]; logic: Logic[]; flows: ModelFlow[]; caveats: Caveat[] }
+export type Model = { name: string; worlds: { id: World; name: string }[]; types: ModelType[]; maps: Mapping[]; logic: Logic[]; flows: ModelFlow[] }
 // 渡した集まりはその全体で置き換え、渡さなければ今のまま
 export type ModelInput = Partial<Model>
 

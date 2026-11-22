@@ -23,6 +23,7 @@ const modelType = object({
   id: text('鍵。部品・対応・fk はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
   many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。箱に重ねるか押すと出る'),
+  code: text('コードでこの形を持つ物の名前（型・クラス・作り手の関数。例: OrderState）。lifecycle・kind なら、箱の 1 つ 1 つがその変種になっている型。名前を言えない形（素の値・列の値・規約で持っているだけ）は省く。省くと破線の枠で出る。table は要らない'),
   objects: list(ref('object'), 'table 以外。lifecycle・kind は取りうる形を並べる（どれか 1 つ）。value・record は 1 つで、項目は holds.parts'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
 }, ['id', 'name', 'world', 'form'])
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
@@ -41,7 +42,7 @@ const flow = object({
 // コードの中の設計図。ページが「構造」と「流れ」の 2 つの地図に投影する
 const spec = {
   name: 'revise_model',
-  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows・caveats）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
+  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
   inputSchema: { ...object({
     name: text('この設計図の名前（例: 注文）'),
     worlds: list(object({ id: choice(['api', 'domain', 'db']), name: text('地図に出る区画の名前（例: 境界 · API、保存 · RDB）') }, ['id', 'name']), '3 つの世界。名前を変えたいときだけ渡す'),
@@ -49,7 +50,6 @@ const spec = {
     maps: list(ref('map')),
     logic: list(ref('logic')),
     flows: list(ref('flow')),
-    caveats: list(object({ kind: choice(['決めた', '残した'], '決めた = 依頼に無いのに自分で決めた仕様、残した = 知っていて直していない穴（未対応の利用側、既存処理との競合など）'), what: text('1 文') }, ['kind', 'what']), '箱に載らない、レビューで知るべきこと。地図の上に並ぶ'),
   }, []), $defs: { change, holds, object: modelObject, morphism, column, type: modelType, map, logic, wire, step, flow } },
   isDeferred: false,
 }
