@@ -319,7 +319,9 @@ a.le{color:var(--acc)}
 .ccav summary{display:flex;align-items:center;gap:6px;min-height:40px;font-weight:600;cursor:pointer;list-style:none}
 .ccav summary::-webkit-details-marker{display:none}
 .ccav summary::after{content:'▾';margin-left:auto;color:var(--muted)}.ccav[open] summary::after{content:'▴'}
-.ccav ul{position:absolute;z-index:3;left:0;right:0;top:100%;max-height:60vh;overflow:auto;margin:0;padding:4px 16px 12px;list-style:none;background:var(--surface);box-shadow:0 8px 16px var(--shadow),0 1px 0 var(--line)}
+.ccav ul{position:absolute;z-index:3;left:0;right:0;top:100%;max-height:60vh;overflow:auto;margin:0;padding:4px 16px 12px;list-style:none;box-shadow:0 8px 16px var(--shadow),0 1px 0 var(--line);
+  /* 続きがある端にだけ影を出す（端まで送ると、中身と一緒に動く地の色が影を覆う） */
+  --more:color-mix(in oklch,var(--fg) 22%,transparent);background:linear-gradient(var(--surface) 40%,transparent) top/100% 28px no-repeat local,linear-gradient(transparent,var(--surface) 60%) bottom/100% 28px no-repeat local,linear-gradient(var(--more),transparent) top/100% 12px no-repeat scroll,linear-gradient(transparent,var(--more)) bottom/100% 12px no-repeat scroll;background-color:var(--surface)}
 .ccav li{display:grid;grid-template-columns:3.2em 1fr;gap:8px;padding:8px 0;line-height:1.5;border-top:1px solid var(--line)}
 .ccav li b{color:var(--muted);font-weight:600}
 .cvp{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--bg);font-size:14px;line-height:1.4}
@@ -407,6 +409,8 @@ const fill = (e, attrs, kids) => { for (const [k, v] of Object.entries(attrs)) e
 const el = (tag, attrs = {}, kids = []) => fill(document.createElement(tag), attrs, kids);
 const sv = (tag, attrs = {}, kids = []) => fill(document.createElementNS(NS, tag), attrs, kids);
 // 盤面 m の中で、箱 r の見えている部分が下半分に寄っているか（留めた吹き出しを、その反対の端へ出す）
+// 箱 r が盤面 m から出きったか（語っていた箱が見えなくなったら、吹き出しは消す。残ると、いま見えている箱の説明に見える）
+const gone = (r, m) => r.bottom < m.top || r.top > m.bottom || r.right < m.left || r.left > m.right;
 const low = (r, m) => Math.max(r.top, m.top) + Math.min(r.bottom, m.bottom) > m.top + m.bottom;
 const tspan = (text, cls) => sv('tspan', { class: cls }, [text]);
 const textWidth = (s, f) => f * [...s].reduce((a, ch) => a + (ch.charCodeAt(0) < 0x2000 ? .6 : 1), 0);
@@ -505,8 +509,8 @@ const Structure = () => {
       if (gs !== gt) { a.laneT = take(colN, gt); a.gr = Math.max(ca.r, cb.r); a.laneR = take(rowN, a.gr); }
       return a;
     });
-    // 箱の横の出入り口（F を単位にした高さ）。名札がその口に付く矢だけ、名札 1 行ぶん空ける。まっすぐな矢は両端で同じ高さ
-    const slot = (keys, named) => { const y = Math.max(...keys.map(k => port[k] || 0)) + (named && keys.some(k => port[k]) ? .4 : 0); keys.forEach(k => { port[k] = y + .45; }); return y; };
+    // 箱の横の出入り口（F を単位にした高さ）。名札がその口に付く矢だけ、名札 1 行ぶん空ける（名札が上の矢にも、その変更の下敷きにも触れない幅）。まっすぐな矢は両端で同じ高さ
+    const slot = (keys, named) => { const y = Math.max(...keys.map(k => port[k] || 0)) + (named && keys.some(k => port[k]) ? .6 : 0); keys.forEach(k => { port[k] = y + .45; }); return y; };
     for (const a of out) if (a.kind === 'h') { const r = a.cb.c > a.ca.c; a.p = slot([a.m.from + (r ? '>' : '<'), a.m.to + (r ? '<' : '>')], true); }
     for (const a of out) if (a.kind === 'bus') { const one = a.gs === a.gt; a.pS = slot([a.m.from + (a.right ? '>' : '<')], one && a.ca.c === a.gs); a.pT = slot([a.m.to + (a.left ? '<' : '>')], one && a.cb.c === a.gs); }
     out.port = port; out.colN = colN;
@@ -549,7 +553,8 @@ const Structure = () => {
       const holds = bare.holds || 'unit';
       n.inv = holds.invariant; n.doc = t.doc;
       if (holds === 'unit') { n.w = n.minW; n.h = 2 * pad + ft * 1.4; n.leaf = true; return n; }
-      if (holds.prim) { n.prim = holds.prim; n.w = n.minW + ft * 2 + textWidth(n.prim, ft); n.h = 2 * pad + ft * 1.4; return n; } // 素の値は 1 行: 名前 … 型
+      // 素の値は 1 行: 名前 … 型。型の字が読めない遠さでは、ほかの箱と同じく名前だけに畳む（広い空の箱にしない）
+      if (holds.prim) { n.need = d; if (d > OPEN) return shutBox(n); n.prim = holds.prim; n.w = n.minW + ft * 2 + textWidth(n.prim, ft); n.h = 2 * pad + ft * 1.4; return n; }
       n.need = d + 1; if (d + 1 > OPEN) return shutBox(n);
       n.rec = record(holds.parts, d + 1, sub); n.rec.x = pad; n.rec.y = top;
       return sized(n, top);
@@ -788,7 +793,9 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     if (n.rec) inner.append(renderRecord(n.rec, AX, AY, key));
     if (n.boxes) {
       n.arrowEls = [...n.lanes.map(a => ({ m: a.m, els: arrow(n, a) })), ...n.loops.map(m => ({ m, els: loop(n, m) }))];
-      for (const a of n.arrowEls) inner.append(...a.els);
+      // 変更の下敷きは、どの矢の名札よりも下に敷く（隣の矢の名札を塗りつぶさない）
+      const els = n.arrowEls.flatMap(a => a.els), under = e => e.classList.contains('hl');
+      inner.append(...els.filter(under), ...els.filter(e => !under(e)));
       for (const q of n.boxes) { q.owner = n; inner.append(renderObj(q, AX, AY, key + '/' + q.o.id)); }
     }
     g.append(inner);
@@ -821,8 +828,8 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     if (!tipOf) return;
     if (tipHover && cam.s !== tipS) { showTip(null); return; }
     const m = svg.parentNode.getBoundingClientRect(), r = tipOf.querySelector(':scope > rect').getBoundingClientRect(), t = tipEl.getBoundingClientRect();
-    if (r.bottom < m.top || r.top > m.bottom || r.right < m.left || r.left > m.right) { tipEl.style.visibility = 'hidden'; return; }
-    tipEl.style.visibility = ''; if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
+    if (gone(r, m)) { showTip(null); return; }
+    if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
     const x = Math.max(12, Math.min(Math.max(r.left, m.left) - m.left, m.width - t.width - 12));
     const above = r.top - m.top - t.height - 6, y = above >= 8 ? above : Math.max(r.top - m.top, 0) + 36;
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
@@ -1126,6 +1133,7 @@ const flowFace = (svg, world, tipEl, jump) => {
   const placeTip = () => {
     if (!tipOf) return;
     const m = svg.parentNode.getBoundingClientRect(), r = (tipOf.classList.contains('box') ? tipOf.firstChild : tipOf.classList.contains('hit') ? world.querySelector(`.wn[data-w="${tipOf.dataset.w}"]`) || tipOf : tipOf).getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+    if (gone(r, m)) { showTip(null); return; }
     if (tipEl.classList.contains('docked')) { tipEl.classList.toggle('up', low(r, m)); return; }
     const x = Math.max(12, Math.min(r.left - m.left, m.width - t.width - 12)), above = r.top - m.top - t.height - 6;
     tipEl.style.left = x + 'px'; tipEl.style.top = (above >= 8 ? above : r.bottom - m.top + 8) + 'px';
@@ -1172,11 +1180,11 @@ class View {
   }
   open(keep) {
     this.q.title.textContent = this.model.name;
-    // 古い版が書いた設計図には caveats が無い
-    const caveats = this.model.caveats || [], count = kind => caveats.filter(c => c.kind === kind).length, [summary, list] = this.q.caveats.children;
-    this.q.caveats.hidden = !caveats.length; this.q.caveats.open = false;
-    summary.textContent = [['決めた', 'coder が決めたこと'], ['残した', '残した穴']].filter(([kind]) => count(kind)).map(([kind, label]) => `${label} ${count(kind)}`).join(' · ');
-    list.replaceChildren(...caveats.map(c => el('li', {}, [el('b', {}, [c.kind]), el('span', {}, [c.what])])));
+    // 穴を先に並べる（マージの判断を止めるのは穴の方）。古い版が書いた設計図には caveats が無い
+    const kinds = [['残した', '残した穴'], ['決めた', 'coder が決めたこと']].map(([kind, label]) => ({ label, items: (this.model.caveats || []).filter(c => c.kind === kind) })).filter(k => k.items.length), [summary, list] = this.q.caveats.children;
+    this.q.caveats.hidden = !kinds.length; this.q.caveats.open = false;
+    summary.textContent = kinds.map(k => `${k.label} ${k.items.length}`).join(' · ');
+    list.replaceChildren(...kinds.flatMap(k => k.items).map(c => el('li', {}, [el('b', {}, [c.kind]), el('span', {}, [c.what])])));
     for (const face of Object.values(this.faces)) face.open(this.model, keep);
     if (this.face) this.show(this.face);
   }
