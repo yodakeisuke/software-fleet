@@ -28,7 +28,7 @@ const modelType = object({
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
 const logic = object({
   id: text('鍵。流れの段はこれで指す'), name: text(), layer: choice(['domain', 'usecase', 'persistence'], 'domain の種類は出す線の型から導く'),
-  note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), change: ref('change'),
+  note: text('層の補足（例: 外部に問う（権限）、版を確かめて書く）'), ref: text('振る舞い盤面の番号（C3 = コマンド、R2 = リードモデル）'), fails: list(text(), '失敗の出口の名前'), also: list(text(), 'この処理を通る、流れに描いていないユースケースの名前。改・削 の処理には必ず渡す（無ければ []）'), change: ref('change'),
 }, ['id', 'name', 'layer'], '処理 = 流れの箱')
 const wire = object({ name: text('線の名前。「型名〈状態｜状態〉 ✓ ×N」の形で構造の型と状態に結ばれる（例: 注文〈下書き〉、引当済の明細 ✓、明細 ×N）'), kind: choice(['api', 'stored'], 'API の求めと返事 / 保存されている値。省くと途中の値') }, ['name'])
 const step = object({
@@ -41,7 +41,7 @@ const flow = object({
 // コードの中の設計図。ページが「構造」と「流れ」の 2 つの地図に投影する
 const spec = {
   name: 'revise_model',
-  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
+  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows・caveats）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
   inputSchema: { ...object({
     name: text('この設計図の名前（例: 注文）'),
     worlds: list(object({ id: choice(['api', 'domain', 'db']), name: text('地図に出る区画の名前（例: 境界 · API、保存 · RDB）') }, ['id', 'name']), '3 つの世界。名前を変えたいときだけ渡す'),
@@ -49,6 +49,7 @@ const spec = {
     maps: list(ref('map')),
     logic: list(ref('logic')),
     flows: list(ref('flow')),
+    caveats: list(object({ kind: choice(['決めた', '残した'], '決めた = 依頼に無いのに自分で決めた仕様、残した = 知っていて直していない穴（未対応の利用側、既存処理との競合など）'), what: text('1 文') }, ['kind', 'what']), '箱に載らない、レビューで知るべきこと。地図の上に並ぶ'),
   }, []), $defs: { change, holds, object: modelObject, morphism, column, type: modelType, map, logic, wire, step, flow } },
   isDeferred: false,
 }

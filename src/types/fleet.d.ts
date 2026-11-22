@@ -161,12 +161,15 @@ export type ModelType = {
 }
 export type Mapping = { from: string; to: string }
 export type Layer = 'domain' | 'usecase' | 'persistence'
-export type Logic = { id: string; name: string; layer: Layer; note?: string; ref?: string; fails?: string[]; change?: Change }
+// also = この処理を通る、流れに描いていないユースケースの名前（意味を変えた処理が、ほかの誰に効くか）
+export type Logic = { id: string; name: string; layer: Layer; note?: string; ref?: string; fails?: string[]; also?: string[]; change?: Change }
 export type Wire = { name: string; kind?: 'api' | 'stored' }
 // 流れの 1 段。span は [左の列, 右の列]、out は列 → 箱が出した線、drop は箱で終わる列
 export type Step = { logic: string; span: number[]; out?: Record<string, Wire>; drop?: number[]; change?: Change }
 export type ModelFlow = { id: string; name: string; columns: Wire[]; start: Record<string, string>; steps: Step[] }
-export type Model = { name: string; worlds: { id: World; name: string }[]; types: ModelType[]; maps: Mapping[]; logic: Logic[]; flows: ModelFlow[] }
+// 箱に載らない、レビューで知るべきこと。決めた = 依頼に無いのに coder が決めた仕様、残した = 知っていて直していない穴
+export type Caveat = { kind: '決めた' | '残した'; what: string }
+export type Model = { name: string; worlds: { id: World; name: string }[]; types: ModelType[]; maps: Mapping[]; logic: Logic[]; flows: ModelFlow[]; caveats: Caveat[] }
 // 渡した集まりはその全体で置き換え、渡さなければ今のまま
 export type ModelInput = Partial<Model>
 
