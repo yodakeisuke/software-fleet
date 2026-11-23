@@ -13,7 +13,8 @@
   --em-rm-bg:oklch(0.89 0.035 165);--em-cmd-bg:oklch(0.88 0.035 240);--em-ev-bg:oklch(0.88 0.055 75);--em-pol-bg:oklch(0.93 0.02 305);
   --em-hot:oklch(0.55 0.09 355);--em-hot-bg:oklch(0.93 0.03 355);
   --cm-edge:oklch(0.62 0.02 240);--cm-api:oklch(0.5 0.15 315);--cm-db:oklch(0.5 0.13 245);--cm-add:oklch(0.5 0.1 155);--cm-mod:oklch(0.52 0.11 65);--cm-add-bg:oklch(0.94 0.05 155);--cm-mod-bg:oklch(0.94 0.06 85);
-  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Hiragino Sans","Yu Gothic UI",Meiryo,monospace; /* 英数は等幅、日本語は本文と同じ字（Windows で MS ゴシックに落とさない） */
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:oklch(0.21 0.018 240);--dim:oklch(0.25 0.021 240);--surface:oklch(0.3 0.024 240);--fg:oklch(0.94 0.006 240);--muted:oklch(0.76 0.015 240);
@@ -111,7 +112,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .logi{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .lt{font-size:13px;font-weight:700}
 .lw{font-size:12px;color:var(--muted)}
-.le{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);word-break:break-all;text-decoration:none}
+.le{font-size:11px;font-family:var(--mono);color:var(--muted);word-break:break-all;text-decoration:none}
 a.le{color:var(--acc)}
 .dock{--bg:var(--chrome);--fg:var(--on-chrome);--muted:var(--on-chrome2);--line:var(--on-chrome2);--acc:var(--on-chrome);--surface:var(--chrome);position:relative;flex:none;display:flex;flex-direction:column;gap:6px;padding-top:12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--chrome);color:var(--fg)}
 .nav{position:absolute;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:1;display:flex;align-items:center}
@@ -230,7 +231,7 @@ a.le{color:var(--acc)}
 .emc.pol{background:var(--em-pol-bg);box-shadow:0 0 0 1px color-mix(in oklch,var(--em-pol) 45%,transparent)}
 .emk{font-size:9.5px;color:var(--muted)}
 .emt{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;padding-right:16px}
-.emsk{margin:0;flex:1;min-height:0;overflow:hidden;font:6px/1.25 ui-monospace,"SFMono-Regular",Menlo,monospace;color:var(--muted);white-space:pre}
+.emsk{margin:0;flex:1;min-height:0;overflow:hidden;font:6px/1.25 var(--mono);color:var(--muted);white-space:pre}
 .ems{font-weight:700;box-shadow:0 1px 2px var(--shadow)}
 .ems span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .ems.cmd{background:var(--em-cmd-bg)}.ems.rm{background:var(--em-rm-bg)}.ems.ev{background:var(--em-ev-bg)}
@@ -260,7 +261,7 @@ a.le{color:var(--acc)}
 .cw{font-size:11.5px;color:var(--muted)}
 .cmb{flex:1;min-height:40px;text-align:left;font-size:13px;font-weight:700;color:var(--acc)}
 .cdone{align-self:flex-end;font-size:12px;font-weight:700;color:var(--acc);min-height:32px}
-.sk{margin:0;padding:8px 10px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
+.sk{margin:0;padding:8px 10px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 var(--mono);white-space:pre;overflow-x:auto}
 .sk.txt{white-space:pre-wrap;overflow-wrap:anywhere}
 .w2{display:inline-block;width:2ch;text-align:center}
 .tk{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -342,7 +343,7 @@ a.le{color:var(--acc)}
 .cvp .row .ti{font-weight:400}
 .cvp .form{fill:var(--muted);font-weight:400}
 .cvp .ml{fill:var(--muted);stroke:var(--bg);paint-order:stroke;stroke-linejoin:round}
-.cvp .prim{fill:var(--muted);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.cvp .prim{fill:var(--muted);font-family:var(--mono)}
 .cvp .floor .rest,.cvp .floor .form{display:none}
 .cvp .wl{fill:var(--muted);font-weight:600;letter-spacing:.04em}
 .cvp .wl.api{fill:var(--cm-api)}.cvp .wl.db{fill:var(--cm-db)}
@@ -437,7 +438,7 @@ const legendOf = (M, face) => {
 
 // ---------- 構造の配置。文法は 3 つ: 枠 = 型、離れて並ぶ箱 = どれか 1 つ（状態・種類）、1 つの箱を罫線で割った行 = 全部そろう（組）。矢 = 遷移
 // 寸法は入れ子 1 段ごとに .5 倍の世界単位。開く深さ OPEN より深い箱は名前だけの大きさに畳む（場所は、いま読めるものにだけ使う）
-const unitAt = d => 64 * Math.pow(.5, d), DEEP = 7, MAXS = 14; // DEEP より深い入れ子と、自分を含む型は、名前だけの行にする
+const unitAt = d => 64 * Math.pow(.5, d), DEEP = 7, MAXS = 14, MINS = 10 / (unitAt(1) * .96); // DEEP より深い入れ子と、自分を含む型は、名前だけの行にする
 const openAt = D => (D <= 0 ? 0 : 14 / unitAt(D)); // 深さ D の箱が開く（中身が読める）倍率
 const partsOf = o => (o.holds && o.holds.parts) || [];
 const Structure = () => {
@@ -624,18 +625,23 @@ const Structure = () => {
     return { depth: D, cols, W, H };
   };
   // 寄れるのは、いちばん深い箱の字が楽に読める倍率まで。その先は何も増えず、余白だけの白い画面に落ちる
-  const clamp = (p, v, s) => Math.min(MAXS, openAt(far) * 2, Math.max(.3, Math.min(v.w / p.W, v.h / p.H) * .5, s));
-  const fitAll = (p, v) => clamp(p, v, Math.min(v.w / p.W, v.h / p.H) * .94);
+  // 引けるのは、畳んだ型の名前が 10px で読める倍率（MINS）まで。下限は図の大きさに依らない（開いた図と畳んだ図で下限が違うと、引くたびに開いて閉じてを繰り返す）
+  const clamp = s => Math.min(MAXS, openAt(far) * 2, Math.max(MINS, s));
+  const fitAll = (p, v) => clamp(Math.min(v.w / p.W, v.h / p.H) * .94);
   // 最初の画面: 全体が収まって名前が読める範囲で、いちばん深くまで開いた図。畳んでも収まらない地図は、名前が読める大きさで左上から（続きは動かして見る）
   const home = v => {
     memo = { shelf: {}, wrap: {} }; place(DEEP);
     let D = 0; while (D < DEEP && fitAll(place(D + 1), v) >= openAt(D + 1)) D++;
     const placed = place(D), s = Math.min(D ? fitAll(placed, v) : Infinity, openAt(D + 1) * .96);
     // 最初の世界の名前を上の帯のすぐ下に置く
-    const label = placed.cols.length ? placed.cols[0].top * s - Math.min(64 * s, 16) : 0;
-    return { placed, cam: { s, tx: Math.max(16, (v.w - placed.W * s) / 2), ty: 26 - label } };
+    return { placed, cam: { s, tx: Math.max(16, (v.w - placed.W * s) / 2), ty: 26 - label(placed, s) } };
   };
-  return { use, place, home, clamp, order: () => place(DEEP) };
+  // 世界の名前の上の端（画面の px）。図の上の端はここ
+  const label = (p, s) => (p.cols.length ? p.cols[0].top * s - Math.min(64 * s, 16) : 0);
+  // 動かせる範囲。地図が画面に収まる向きは画面の中に置き、収まらない向きは端より先の空きを見せない（引けば全体が見え、どこで引いても地図が隅へ逃げない）
+  const span = (t, len, room, head) => Math.min(Math.max(t, Math.min(head, room - 16 - len)), Math.max(head, room - 16 - len));
+  const bound = (p, v, c) => { const top = label(p, c.s); return { s: c.s, tx: span(c.tx, p.W * c.s, v.w, 16), ty: span(c.ty + top, p.H * c.s - top, v.h, 26) - top }; };
+  return { use, place, home, clamp, bound, order: () => place(DEEP) };
 };
 // 倍率から開く深さを決める。境目では少し粘る（行ったり来たりで図が組み変わらないように）
 const levelOf = (s, open) => { let D = 0; while (D < DEEP && s >= openAt(D + 1)) D++; return D < open && s > openAt(open) * .93 ? open : D; };
@@ -875,7 +881,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     for (const m of marks) {
       const n = nodes.find(n => n.key === m.key); if (!n) continue;
       // 箱が閉じて小さくなったら、指は箱の中の同じ割合の所に残す（開いた箱の右端で引いても、閉じた箱が画面の外へ飛ばない）
-      const tx = px - (n.x + m.u * Math.min(1, n.w / m.w)) * cam.s, ty = py - (n.y + m.v * Math.min(1, n.h / m.h)) * cam.s;
+      const { tx, ty } = eng.bound(P, view(), { s: cam.s, tx: px - (n.x + m.u * Math.min(1, n.w / m.w)) * cam.s, ty: py - (n.y + m.v * Math.min(1, n.h / m.h)) * cam.s });
       shift = { x: tx - cam.tx, y: ty - cam.ty }; cam.tx = tx; cam.ty = ty; break;
     }
     world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`); // 組み直した図を、すぐ合わせたカメラで置く（置く前に画面の位置を測ると、押した箱が画面の外に見えて吹き出しが消える）
@@ -910,8 +916,9 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   };
   const apply = () => {
     if (!hold) { const D = levelOf(cam.s, P.depth); if (D !== P.depth) { const v = view(), p = aim || [v.w / 2, v.h / 2]; relevel(D, p[0], p[1]); } }
+    cam = eng.bound(P, view(), cam);
     world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`);
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); if (!moving) cam = keepInk(svg, world, cam); crumbs(); placeTip(); });
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); crumbs(); placeTip(); });
   };
   const put = (c, at) => { cam = c; if (at) aim = at; shift = null; apply(); return shift; };
   // keep = 動いている間は開く深さを変えない（寄る先の深さはもう決めてある）
@@ -920,8 +927,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     moving = true; hold = !!keep;
     glideCam(cam, c, put, () => { moving = false; hold = false; apply(); });
   };
-  const clamp = s => eng.clamp(P, view(), s);
-  const fitRect = (x, y, w, h) => { const v = view(), s = clamp(Math.min(v.w / w, v.h / h) * .9); return { s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; };
+  const fitRect = (x, y, w, h) => { const v = view(), s = eng.clamp(Math.min(v.w / w, v.h / h) * .9); return { s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; };
   const home = () => { const h = eng.home(view()); touched = false; pinned = traced = shown = null; draw(h.placed); hold = false; cam = h.cam; apply(); };
   // 箱に寄る: その箱の中身が開く深さに組み直す。倍率は、もう読めていて箱が収まるなら変えない（押すたびに寄り具合を変えない）。
   // 読めなければ読める所まで寄り、収まらなければ収まる所まで引く。画面より大きい箱は左上を合わせる。収まって見えている箱は動かさない（center = 流れの面から来たときは中央へ）
@@ -936,7 +942,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     setCam({ s, tx: inX ? cam.tx : n.w * s > v.w - 32 ? 16 - n.x * s : v.w / 2 - (n.x + n.w / 2) * s, ty: inY ? cam.ty : n.h * s > v.h - 32 ? 16 - n.y * s : v.h / 2 - (n.y + n.h / 2) * s }, true, true);
     return n;
   };
-  const zoomAt = (k, px, py, animate = true) => { aim = [px, py]; const s = clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
+  const zoomAt = (k, px, py, animate = true) => { aim = [px, py]; const s = eng.clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
   // 今いる場所: 画面の中央を含み、画面の幅をほぼ占めていて、見出しが画面の上に出てしまった箱を外から順に（見出しが見えているなら、地図が自分で言っている）
   const crumbs = () => {
     const v = view(), wx = (v.w / 2 - cam.tx) / cam.s, wy = (v.h / 2 - cam.ty) / cam.s, top = -cam.ty / cam.s;
@@ -953,7 +959,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   const stateOf = t => { const g = t.closest && t.closest('.pt'), n = g && nodes.find(n => n.g === g); return n ? n.key : null; };
   const typed = g => { const c = g && g.closest('.cat[data-type]'); return c && M.maps.some(m => m.from === c.dataset.type || m.to === c.dataset.type) ? c.dataset.type : null; };
   const local = gestures(svg, {
-    cam: () => cam, put, clamp, zoomAt, touch: () => { touched = true; },
+    cam: () => cam, put, clamp: eng.clamp, zoomAt, touch: () => { touched = true; },
     hover: e => {
       if (moving) return;
       const t = noted(e, e.target);

@@ -282,6 +282,25 @@ test('配置は画面に依らない。どの画面でも同じ 1 枚で、画�
   for (const v of [PHONE, WIDE]) { const { placed: board } = structure(MODEL).home(v); assert.deepEqual(spots(board), spots(placed(MODEL, board.depth))) }
 })
 
+test('引ける下限は図の大きさにも画面にも依らない（依ると、引くたびに開いて閉じてを繰り返す）', () => {
+  const engine = structure(MODEL)
+  const floors = [PHONE, WIDE].map(v => { engine.home(v); return engine.clamp(0) })
+  assert.equal(floors[0], floors[1])
+  assert(floors[0] < CoderMap.openAt(1) * 0.93)
+})
+
+test('動かせる範囲: 画面に収まる向きは画面の中に置き、収まらない向きは端より先の空きを見せない', () => {
+  const engine = structure(MODEL), { placed: board, cam } = engine.home(PHONE)
+  const far = engine.bound(board, PHONE, { s: cam.s, tx: 9999, ty: 9999 }), near = engine.bound(board, PHONE, { s: cam.s, tx: -9999, ty: -9999 })
+  // 幅は収まらない: 左の端より左、右の端より右は見せない
+  assert.equal(far.tx, 16)
+  assert.equal(near.tx + board.W * cam.s, PHONE.w - 16)
+  // 高さは収まる: 上にも下にも、はみ出さない
+  assert.equal(near.ty, cam.ty)
+  assert.equal(far.ty + board.H * cam.s, PHONE.h - 16)
+  assert.deepEqual(engine.bound(board, PHONE, cam), cam)
+})
+
 test('倍率が上がると 1 段ずつ開き、境目では少し粘る', () => {
   const { openAt, levelOf } = CoderMap
   assert.equal(levelOf(openAt(1) * 0.99, 0), 0)
