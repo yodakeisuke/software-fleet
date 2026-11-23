@@ -9,9 +9,11 @@ const order = { id: 'order', name: '注文', world: 'domain', form: 'lifecycle',
 const money = { id: 'money', name: '金額', world: 'domain', form: 'value', objects: [{ id: 'v', name: '金額', holds: { prim: '整数', invariant: '0 以上' } }] }
 const shape = (input: unknown) => JsonSchema.check(reviseModel.spec.inputSchema, input).either<unknown>(() => '', e => e)
 // DB の中身（"collection/id" ごと）を持つ engine。呼び出しを calls に残す
-const engineWith = (stored: Record<string, object>, calls: DbCall[]) => ({
+// code は、いまのコード（ファイル → 中身）を持つ engine に照合される
+const engineWith = (stored: Record<string, object>, calls: DbCall[], code: Record<string, string> = {}) => ({
   fleet: async () => ({ url: 'https://claude.ai/artifact/abc', role: 'coder' }),
   now: async () => 1000,
+  sources: async (files: string[]) => Object.fromEntries(files.map(file => [file, code[file]])),
   db: async (_url: string, call: DbCall) => {
     calls.push(call)
     const doc = stored[`${call.collection}/${call.doc_id}`]
@@ -40,6 +42,19 @@ describe('revise-model', () => {
     const stored = { 'fleet/coder/deliverables/model': { ...CodeModel.empty(), name: '注文', types: [money], at: '1969-12-31T00:00:00.000Z' } }
     expect(await reviseModel.run(engineWith(stored, calls), { name: '注文' })).toEqual({ result: 'ModelRevised' })
     expect(calls.find(call => call.action === 'set')?.data).toEqual({ ...CodeModel.empty(), name: '注文', types: [money], at: '1970-01-01T00:00:01.000Z' })
+  })
+
+  test('型の code を、いまのコードと照合してから書く。渡していない型の code も、呼ぶたびに照合し直す', async () => {
+    const calls: DbCall[] = []
+    const typed = { ...order, code: 'src/order.ts#OrderState' }
+    const code = { 'src/order.ts': 'export type OrderState = Draft' }
+    expect(await reviseModel.run(engineWith({}, calls, code), { name: '注文', types: [typed, money] })).toEqual({ result: 'ModelRevised' })
+    expect(calls.find(call => call.action === 'set')?.data).toMatchObject({ types: [typed, money] })
+    const stored = { 'fleet/coder/deliverables/model': { ...CodeModel.empty(), name: '注文', types: [typed, money] } }
+    const renamed: DbCall[] = []
+    expect(await reviseModel.run(engineWith(stored, renamed, { 'src/order.ts': 'export type OrderStatus = Draft' }), { logic: [] })).toEqual({ deny: '型「注文」の code の名前「OrderState」が src/order.ts に無い' })
+    expect(await reviseModel.run(engineWith(stored, renamed), { logic: [] })).toEqual({ deny: '型「注文」の code のファイル「src/order.ts」が読めない（プロジェクトのルートからのパス）' })
+    expect(renamed.map(call => call.action)).toEqual(['get', 'get'])
   })
 
   test('問題があれば何も書かず、全部を返す', async () => {

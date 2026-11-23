@@ -1,5 +1,6 @@
 import type { EngineInterface, Register } from 'claude-code'
 import type { Engine, FleetTool, ShipName } from '../types/fleet'
+import { Result } from '../fleet/logic/result'
 import { allowOwnDb } from '../fleet/hook/allow-own-db'
 import { forbidPreviewServer } from '../fleet/hook/forbid-preview-server'
 import { forbidRawWrite } from '../fleet/hook/forbid-raw-write'
@@ -14,6 +15,7 @@ import { setRemaining } from '../skills/flagship/tool/set-remaining'
 import { reviseBehavior } from '../skills/behavior/tool/revise-behavior'
 import { reviseRequirements } from '../skills/requirement/tool/revise-requirements'
 import { reviseQuality } from '../skills/qa/tool/revise-quality'
+import { forbidStaleMap } from '../skills/coder/hook/forbid-stale-map'
 import { reviseModel } from '../skills/coder/tool/revise-model'
 
 // 組み立て役。$ を engine（関数の束）にして tool・hook に渡す。$ と $.state の鍵はこのファイルにだけ書く
@@ -30,6 +32,10 @@ const engine = ($: EngineInterface): Engine => ({
   db: async (url, call) => {
     const reply = await $.tool.call({ tool: 'ArtifactData', url, ...call })
     return { text: reply.text, deny: reply.deny, ...(reply.isError === true ? { isError: true as const } : {}) }
+  },
+  sources: async files => {
+    const root = await $.session.root()
+    return Object.fromEntries(await Promise.all(files.map(async file => [file, await Result.given($.fs.read(`${root}/${file}`)).then(read => read.either<string | undefined>(text => text, () => undefined))] as const)))
   },
 })
 
@@ -67,7 +73,10 @@ export const register: Register = on => {
   on('tool.call', { tool: askUser.tool }, ($, e) => askUser.run(engine($), e))
   on('tool.call', { tool: recordDecision.tool }, ($, e) => recordDecision.run(engine($), e))
   on('tool.call', { tool: setRemaining.tool }, ($, e) => setRemaining.run(engine($), e))
-  on('tool.call', { tool: reportStatus.tool }, ($, e) => reportStatus.run(engine($), e))
+  on('tool.call', { tool: reportStatus.tool }, async ($, e) => {
+    const deny = await forbidStaleMap(engine($), e)
+    return deny === undefined ? reportStatus.run(engine($), e) : { deny }
+  })
   on('tool.call', { tool: setLinks.tool }, ($, e) => setLinks.run(engine($), e))
   on('tool.call', { tool: reviseRequirements.tool }, ($, e) => reviseRequirements.run(engine($), e))
   on('tool.call', { tool: reviseBehavior.tool }, ($, e) => reviseBehavior.run(engine($), e))

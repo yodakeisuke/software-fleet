@@ -17,8 +17,22 @@ const world = (on: On) => {
   on('state.set', async (_$, e) => { state.set(e.key, e.value); return { value: { isSet: true, version: 1 } } })
   on('tool.register', async (_$, e) => { registered.push(e.name); return { value: { tool: `mcp__software-fleet__${e.name}` } } })
   on('tool.call', { tool: 'Skill' }, async () => ({ result: 'skill loaded' }))
-  on('tool.call', { tool: 'ArtifactData' }, async (_$, e) => { writes.push(e as Record<string, unknown>); return { result: '' } })
-  return { registered, writes, state }
+  // DB に在る文書（"collection/id" → 中身）。置いたものだけ、core が返す形（text）で読める
+  const docs = new Map<string, unknown>()
+  on('tool.call', { tool: 'ArtifactData' }, async (_$, e) => {
+    writes.push(e as Record<string, unknown>)
+    const doc = e.action === 'get' ? docs.get(`${e.collection}/${e.doc_id}`) : undefined
+    return doc === undefined ? { result: '' } : { result: '', text: `{"id":"${e.doc_id}","data":${JSON.stringify(doc)},"version":1}` }
+  })
+  // いまのコード（プロジェクトのルートは /repo）。無いファイルは読めない
+  const code = new Map<string, string>()
+  on('session.root', async () => ({ value: '/repo' }))
+  on('fs.read', async (_$, e) => {
+    const text = code.get(e.path)
+    if (text === undefined) throw new Error(`ENOENT: ${e.path}`)
+    return { value: text }
+  })
+  return { registered, writes, state, code, docs }
 }
 
 describe('register', () => {
@@ -76,6 +90,20 @@ describe('register', () => {
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/ships/links', doc_id: 'coder', data: { links } })
     expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_model', name: '注文' })).toEqual({ result: 'ModelRevised' })
     expect(writes.at(-1)).toMatchObject({ url: fleet, action: 'set', collection: 'fleet/coder/deliverables', doc_id: 'model', data: { name: '注文' } })
+  })
+
+  test('coder の地図の実線は、いまのコードと照合した型だけ。コードから消えたら、設計図も収束の報告も拒む', { timeoutMs: 15000 }, async ($, on) => {
+    const { writes, code, docs } = world(on)
+    await $.tool.call({ tool: 'Skill', skill: 'software-fleet:coder', args: fleet })
+    const types = [{ id: 'order', name: '注文', world: 'domain' as const, form: 'value' as const, change: '新' as const, code: 'src/order.ts#OrderState', objects: [{ id: 'v', name: '注文' }] }]
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_model', name: '注文', types })).toEqual({ deny: '型「注文」の code のファイル「src/order.ts」が読めない（プロジェクトのルートからのパス）' })
+    code.set('/repo/src/order.ts', 'export type OrderState = Draft | Placed')
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__revise_model', name: '注文', types })).toEqual({ result: 'ModelRevised' })
+    docs.set('fleet/coder/deliverables/model', writes.at(-1)?.data)
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__report_status', status: { state: 'converged' } })).toMatchObject({ result: expect.stringContaining('StatusReported') })
+    code.set('/repo/src/order.ts', 'export type OrderStatus = Draft | Placed')
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__report_status', status: { state: 'converged' } })).toEqual({ deny: '地図がいまのコードとずれている。revise_model で直してから報告する: 型「注文」の code の名前「OrderState」が src/order.ts に無い' })
+    expect(await $.tool.call({ tool: 'mcp__software-fleet__report_status', status: { state: 'working', doing: '地図を直す' } })).toEqual({ result: 'StatusReported' })
   })
 
   for (const [ship, document, doc_id] of [['cs', 'guide', 'guide'], ['ops', 'operationsDesign', 'operations-design']] as const) {

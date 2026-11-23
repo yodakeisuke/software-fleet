@@ -44,8 +44,9 @@ const split = (path: string) => ({ collection: path.slice(0, path.lastIndexOf('/
 // 書けなかった理由
 const refused = (reply: { text?: string; deny?: string }, path: string): ToolReply => ({ deny: reply.deny ?? reply.text ?? `${path} を書けなかった` })
 
-// 今の中身（なければ undefined）から、新しい中身を作る。作れなければ理由
-type Next = (data: Record<string, unknown> | undefined) => { either: <R>(onOk: (value: object) => R, onError: (error: string) => R) => R }
+// 今の中身（なければ undefined）から、新しい中身を作る。作れなければ理由。作るのに外を読むなら Promise で返す
+type Made = { either: <R>(onOk: (value: object) => R, onError: (error: string) => R) => R }
+type Next = (data: Record<string, unknown> | undefined) => Made | Promise<Made>
 
 // 文書を 1 つ書く。今の版を読んでから、その版に固定して書く（古い版への書き込みは DB が拒む）
 const put = (engine: Engine, path: string, data: object, done: string) => revise(engine, path, () => Result.given<Data<object, string>>({ ok: true, value: data }), done)
@@ -57,7 +58,7 @@ const revise = async (engine: Engine, path: string, next: Next, done: string): P
   if (session === undefined) return { deny: 'このセッションは fleet に乗っていない' }
   const got = await engine.db(session.url, { action: 'get', ...split(path) })
   if (got.isError === true || got.deny !== undefined) return { deny: got.deny ?? got.text ?? `${path} を読めなかった` }
-  return (await stored(got.text ?? '')).either(doc => next(doc?.data).either(async data => {
+  return (await stored(got.text ?? '')).either(async doc => (await next(doc?.data)).either(async data => {
     const wrote = await engine.db(session.url, { action: 'set', ...split(path), data, ...(doc === undefined ? {} : { if_version: doc.version }) })
     return (await landed(engine, path, data, wrote)) ? { result: done } : refused(wrote, path)
   }, async error => ({ deny: error })), async error => ({ deny: `${path} を読めなかった（${error}）` }))
