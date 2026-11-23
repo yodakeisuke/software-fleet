@@ -201,6 +201,13 @@ a.le{color:var(--acc)}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:3px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
 .seg a{min-height:40px;border-radius:3px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .seg a[aria-current]{background:var(--fg);color:var(--bg)}
+.seg a[aria-disabled]{opacity:.4;pointer-events:none}
+/* ship のページのドックは 2 段: 見る・伝える（ページの切り替えとコメント）、決める（要レビューと承認）。承認は親指の側（右）に広く */
+.drow{display:flex;align-items:center;gap:8px;min-height:48px}
+.drow .seg{flex:1;min-width:0}
+.drow .cmb{flex:none;min-height:46px;padding:0 14px;border-radius:3px;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--fg);white-space:nowrap}
+.drow .sname{padding-right:2px}
+.drow .act{flex:1;width:auto}
 /* cs・ops の文書: 章と部品を描く */
 .dsec{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .dh{margin:0;font-size:15px;line-height:1.5}
@@ -298,7 +305,7 @@ a.le{color:var(--acc)}
 .qb small{font-size:11.5px;color:var(--muted)}
 .qshots{display:flex;gap:6px;overflow-x:auto;padding-top:4px}
 .qshots img{height:96px;border-radius:3px;box-shadow:0 0 0 1px var(--line);background:var(--surface)}
-/* coder: 設計図の地図。幅いっぱいに、上の帯（戻る・題名・構造と流れ）と盤面。2 つの面は同じ設計図の投影で、重ねて置き、片方だけ見せる
+/* coder: 設計図の地図。幅いっぱいに、上の帯（戻る・題名）と盤面。面（構造・流れ）の切り替えは、ほかの ship と同じく下のドック。2 つの面は同じ設計図の投影で、重ねて置き、片方だけ見せる
    色は 2 つの軸に分ける: どの世界か = 字と線の色（API・保存。ドメインは無彩）、今回の変更 = 蛍光ペンの塗り（新・改。削は薄く） */
 .app:has(.cmap){max-width:none}
 .glance:has(> .cmap){padding:0;overflow:hidden}
@@ -313,10 +320,6 @@ a.le{color:var(--acc)}
 .crumbs button{min-height:36px;white-space:nowrap}
 .crumbs button:last-child{color:var(--fg);font-weight:600}
 .cmap[data-view="flow"] .crumbs{display:none}
-.ctabs{flex:none;display:grid;grid-template-columns:repeat(2,60px);gap:3px;height:36px;padding:3px;border-radius:3px;background:color-mix(in oklch,var(--on-chrome) 8%,transparent)}
-.ctabs a{display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:3px;color:var(--on-chrome)}
-.ctabs a[aria-current]{font-weight:600;background:var(--fill);color:var(--on-fill)}
-.ctabs a[aria-disabled]{opacity:.4;pointer-events:none}
 /* 箱に載らないこと（coder が決めたこと・残した穴）。地図の上に 1 行で数を出し、押すと地図に重ねて並べる */
 .cvp{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--bg);font-size:14px;line-height:1.4}
 .cvp svg{position:absolute;inset:0 0 26px;display:block;width:100%;height:calc(100% - 26px);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
@@ -387,7 +390,10 @@ a.le{color:var(--acc)}
 .cleg [data-k="new"]{color:var(--cm-add);background:var(--cm-add-bg)}.cleg [data-k="mod"]{color:var(--cm-mod);background:var(--cm-mod-bg)}
 .cleg [data-k="new"],.cleg [hidden]+[data-k="mod"]{margin-left:6px}
 .cleg [data-k="imp"]{margin-block:-3px;padding:2px 4px;border:1px dashed var(--cm-edge);border-radius:2px;color:var(--muted)}
-.cdock{width:100%;max-width:520px;margin:0 auto}
+/* 次の変更へ: 凡例の帯の右端。押すたびに、今回の変更を図の順に 1 つずつ見せる（色の付いた箱を、なぞって探さない） */
+.cleg button{position:relative;margin-left:auto;pointer-events:auto;font-size:12px;font-weight:600;line-height:1;color:var(--acc);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cleg button::before{content:"";position:absolute;inset:-14px -12px -6px}
+.app:has(.cmap) .rdock{width:100%;max-width:520px;margin:0 auto}
 @media (prefers-reduced-motion:reduce){.spin,.tfill{animation:none}.knob,.act{transition:none}.cvp .born{animation:none}}
 </style>
 
@@ -623,7 +629,8 @@ const Structure = () => {
   // 図を組む。世界ごとに最上位の型を棚に詰める。縦長の画面は世界を縦に、横長は横に
   const place = (D, v) => {
     OPEN = D; VW = v.h > v.w ? v.w : 0;
-    const tall = v.h > v.w, F0 = unitAt(0), gap = unitAt(1) * .9, top = F0 * 1.7, shown = tops();
+    // 縦長の画面は世界を縦に積むので、世界の名前の場所と世界の間は、開いた深さの単位で取る（図の単位のままだと、寄るほど空白が育ち、次の世界が画面の外へ出る）
+    const tall = v.h > v.w, F0 = unitAt(0), gap = unitAt(1) * .9, top = tall ? unitAt(D) * 1.2 : F0 * 1.7, shown = tops();
     const cols = WORLDS.map(id => M.worlds.find(w => w.id === id)).map(w => ({ w, top, frames: shown.filter(t => t.world === w.id).map(t => frame(t, undefined, 1, false, [])) })).filter(c => c.frames.length);
     const widest = max(cols.flatMap(c => c.frames.map(f => f.w)));
     let X = 0, Y = 0, W = 0, H = 0;
@@ -638,7 +645,7 @@ const Structure = () => {
       });
       const ch = y + rowH;
       c.x = X; c.y = Y; W = Math.max(W, X + cw); H = Math.max(H, Y + ch);
-      if (tall) Y += ch + F0 * 2; else X += cw + F0 * 2;
+      if (tall) Y += ch + unitAt(D); else X += cw + F0 * 2;
     }
     return { depth: D, cols, W, H };
   };
@@ -651,7 +658,9 @@ const Structure = () => {
     memo = { shelf: {}, wrap: {} }; place(DEEP, v);
     let D = 0; while (D < DEEP && fitAll(place(D + 1, v), v).s >= openAt(D + 1)) D++;
     const placed = place(D, v), s = Math.min(fitAll(placed, v).s, openAt(D + 1) * .96);
-    return { placed, cam: { s, tx: Math.max(12, (v.w - placed.W * s) / 2), ty: 16 } };
+    // 最初の世界の名前を上の帯のすぐ下に置く。縦長の画面は、左の端を題名にそろえる（真ん中に浮かせない）
+    const label = placed.cols.length ? placed.cols[0].top * s - Math.min(64 * s, 16) : 0;
+    return { placed, cam: { s, tx: v.h > v.w ? 16 : Math.max(12, (v.w - placed.W * s) / 2), ty: 26 - label } };
   };
   return { use, place, home, clamp, order: v => place(DEEP, v) };
 };
@@ -933,25 +942,28 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   };
   const put = (c, at) => { cam = c; if (at) aim = at; shift = null; apply(); return shift; };
   // keep = 動いている間は開く深さを変えない（寄る先の深さはもう決めてある）
-  const setCam = (c, animate, keep) => {
-    if (!animate || still()) { hold = false; put(c); return; }
+  const setCam = (c, animate, keep, then = () => {}) => {
+    if (!animate || still()) { hold = false; put(c); then(); return; }
     moving = true; hold = !!keep;
-    glideCam(cam, c, put, () => { moving = false; hold = false; apply(); });
+    glideCam(cam, c, put, () => { moving = false; hold = false; apply(); then(); });
   };
   const clamp = s => eng.clamp(P, view(), s);
   const fitRect = (x, y, w, h) => { const v = view(), s = clamp(Math.min(v.w / w, v.h / h) * .9); return { s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; };
   const home = () => { const h = eng.home(view()); touched = false; pinned = traced = shown = null; draw(h.placed); hold = false; cam = h.cam; apply(); };
   // 箱に寄る: その箱の中身が開く深さに組み直す。倍率は、もう読めていて箱が収まるなら変えない（押すたびに寄り具合を変えない）。
   // 読めなければ読める所まで寄り、収まらなければ収まる所まで引く。画面より大きい箱は左上を合わせる。収まって見えている箱は動かさない（center = 流れの面から来たときは中央へ）
-  const focus = (key, px, py, center) => {
+  const focus = (key, px, py, center, then = () => {}) => {
     let n = nodes.find(n => n.key === key); if (!n) return null;
     const D = Math.min(DEEP, n.need ?? P.depth);
     if (D !== P.depth) { relevel(D, px, py); n = nodes.find(n => n.key === key); }
     const v = view(), lo = Math.max(openAt(D) * 1.05, .4), hi = Math.max(lo, Math.min(fitRect(n.x, n.y, n.w, n.h).s, openAt(D + 1) * .96)), s = cam.s >= lo ? Math.min(cam.s, hi) : Math.min(hi, lo * 1.2);
     // 動かすのは、はみ出している向きだけ
     const same = s === cam.s && !center, x = n.x * s + cam.tx, y = n.y * s + cam.ty, inX = same && x >= 8 && x + n.w * s <= v.w - 8, inY = same && y >= 8 && y + n.h * s <= v.h - 8;
-    if (inX && inY) return n;
-    setCam({ s, tx: inX ? cam.tx : n.w * s > v.w - 32 ? 16 - n.x * s : v.w / 2 - (n.x + n.w / 2) * s, ty: inY ? cam.ty : n.h * s > v.h - 32 ? 16 - n.y * s : v.h / 2 - (n.y + n.h / 2) * s }, true, true);
+    if (inX && inY) { then(); return n; }
+    // 縦長の画面では、箱は真ん中でなく上に置く（下の端には留めた吹き出しが出る。真ん中に置くと、上が空いたまま、続きが吹き出しに隠れる）
+    // 横は真ん中へ。ただし図の左の端より左は空けない（最初の画面と同じ左の端にそろう）
+    const tall = v.h > v.w, up = tall ? Math.min(64, (v.h - n.h * s) / 2) : (v.h - n.h * s) / 2, mid = v.w / 2 - (n.x + n.w / 2) * s;
+    setCam({ s, tx: inX ? cam.tx : n.w * s > v.w - 32 ? 16 - n.x * s : tall ? Math.min(16, mid) : mid, ty: inY ? cam.ty : n.h * s > v.h - 32 ? 16 - n.y * s : up - n.y * s }, true, true, then);
     return n;
   };
   const zoomAt = (k, px, py, animate = true) => { aim = [px, py]; const s = clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
@@ -998,6 +1010,16 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     return n && n.head && (local(e)[1] - cam.ty) / cam.s > n.y + n.head ? null : g;
   };
 
+  // 流れの面から来る: 線が結ばれた型を探し（畳まれていれば開いて）、そこへ寄って縁を濃くする。say = 着いたら、押したときと同じく名乗る（「次の変更へ」で来たとき）
+  const goto = (id, say) => {
+    const find = () => nodes.filter(n => n.n.kind === 'frame' && n.n.t && n.n.t.id === id).sort((a, b) => a.key.length - b.key.length)[0];
+    let D = P.depth, n; while (!(n = find()) && D < DEEP) build(++D);
+    if (!n) return; const v = view();
+    touched = true; pinned = null; traced = null; shown = n.key; showTip(null); const key = n.key;
+    focus(key, v.w / 2, v.h / 2, true, say ? () => { const at = nodes.find(n => n.key === key); if (at) { showTip(at.g, true); tipHover = false; } } : undefined); showLinks(null);
+  };
+  // 今回の変更: 自分か中に印のある最上位の型を、図の順に
+  const changed = () => P.cols.flatMap(c => c.frames).filter(f => f.change || f.within);
   return {
     // 設計図を受ける。keep = 触っていたら、見ている場所と開き具合を保つ
     open: (model, keep) => {
@@ -1007,13 +1029,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     },
     home,
     resize: () => { if (!touched) home(); },
-    // 流れの面から来る: 線が結ばれた型を探し（畳まれていれば開いて）、そこへ寄って縁を濃くする
-    goto: id => {
-      const find = () => nodes.filter(n => n.n.kind === 'frame' && n.n.t && n.n.t.id === id).sort((a, b) => a.key.length - b.key.length)[0];
-      let D = P.depth, n; while (!(n = find()) && D < DEEP) build(++D);
-      if (!n) return; const v = view();
-      touched = true; pinned = null; traced = null; shown = n.key; showTip(null); focus(n.key, v.w / 2, v.h / 2, true); showLinks(null);
-    },
+    goto, changes: () => changed().length, visit: i => goto(changed()[i].t.id, true),
   };
 };
 
@@ -1122,7 +1138,8 @@ const flowFace = (svg, world, tipEl, jump) => {
       bg.append(nm);
       b.fails.forEach((f, k) => bg.append(text({ x: PAD, y: b.top + FONT.fail * (k * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid' }, ['→ ' + f], { role: 'sub' })));
       if (b.also) bg.append(text({ x: PAD, y: b.top + FONT.fail * (b.fails.length * 1.4 + .7), 'font-size': FONT.fail, class: 'fail mid also' }, [b.also], { role: 'sub' }));
-      g.append(bg); boxes.push({ g: bg, name: b.lg.name, x: X + b.x, y: Y + b.y, w: b.w, h: b.h });
+      // changed = 「次の変更へ」が止まる箱。丸ごと新しい流れは最初の箱だけ
+      g.append(bg); boxes.push({ g: bg, name: b.lg.name, x: X + b.x, y: Y + b.y, w: b.w, h: b.h, changed: lay.whole ? b === bx[0] : !!b.ch });
     });
     return g;
   };
@@ -1150,15 +1167,16 @@ const flowFace = (svg, world, tipEl, jump) => {
   const put = c => { cam = c; apply(); };
   // 寄れる上限は、字が育ちきる倍率（1.1 強）の少し上。その先は箱と余白だけが育つ
   const clamp = s => { const v = view(); return Math.min(1.4, Math.max(.2, Math.min(v.w / W, v.h / H) * .5, s)); };
-  const setCam = (c, animate) => { if (!animate || still()) put(c); else glideCam(cam, c, put, () => {}); };
+  const setCam = (c, animate, done = () => {}) => { if (!animate || still()) { put(c); done(); } else glideCam(cam, c, put, done); };
   // 全体: 幅に合わせ、上から。添え書きが読める倍率を下回らず、入りきらない分は動かして見る
   const home = () => { touched = false; traced = same = null; showTip(null); build(); const v = view(), s = clamp(Math.min(Math.max(v.w / W * .96, READ), 1.1)); put({ s, tx: Math.max(10, (v.w - W * s) / 2), ty: 16 }); };
   const zoomAt = (k, px, py, animate = true) => { const s = clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
   // 箱に寄る: 添え書きが読めているなら倍率は変えず、はみ出したぶんだけ動かす（押すたびに寄り具合が変わると、居場所を失う）。画面より大きい箱は頭を合わせる
-  const focus = b => {
+  // lift = 「次の変更へ」で来たとき。箱を画面の上寄りに置く（手前の線と箱が見え、下の端の吹き出しに隠れない）
+  const focus = (b, lift, done) => {
     const v = view(), s = Math.max(cam.s, READ);
     const slide = (t, at, len, room) => { const t0 = t + (at + len / 2) * (cam.s - s), a = at * s + t0; return len * s > room - 32 ? 16 - at * s : a < 16 ? t0 + 16 - a : a + len * s > room - 16 ? t0 + room - 16 - a - len * s : t0; };
-    setCam({ s, tx: slide(cam.tx, b.x, b.w, v.w), ty: slide(cam.ty, b.y, b.h, v.h) }, true);
+    setCam({ s, tx: slide(cam.tx, b.x, b.w, v.w), ty: lift ? v.h * .25 - b.y * s : slide(cam.ty, b.y, b.h, v.h) }, true, done);
   };
 
   // 1 つ奥の情報。線に重ねると、その値が生まれてから受け取られるまでが濃くなり、型の意図と不変条件が出る。箱に重ねると、同じ処理を使うほかの流れの箱が分かる
@@ -1222,12 +1240,15 @@ const flowFace = (svg, world, tipEl, jump) => {
     },
     home,
     resize: () => { if (!touched) home(); },
+    // 今回の変更の箱を、図の順に。着いたら、押したときと同じく名乗る
+    changes: () => boxes.filter(b => b.changed).length,
+    visit: i => { const b = boxes.filter(b => b.changed)[i]; touched = true; hush(); focus(b, true, () => showTip(b.g, false, true)); },
   };
 };
 
 // ---------- 1 つの地図。設計図は setModel で受け、attach した要素（ページの .cmap）の 2 つの SVG に描く。面は同じ設計図の投影で、重ねて置き、片方だけ見せる
 class View {
-  constructor() { this.el = null; this.q = null; this.faces = null; this.model = null; this.json = ''; this.face = ''; }
+  constructor() { this.el = null; this.q = null; this.faces = null; this.model = null; this.json = ''; this.face = ''; this.at = {}; } // at = 面ごとの、いま見せている変更の番号
   // 設計図が書き換わったら組み直す。触っていなければ全体に戻し、触っていれば見ている場所を保つ
   setModel(m) {
     const json = JSON.stringify(m); if (json === this.json) return;
@@ -1235,7 +1256,7 @@ class View {
     if (this.el && this.el.isConnected) this.open(true);
   }
   open(keep) {
-    this.q.title.textContent = this.model.name;
+    this.q.title.textContent = this.model.name; this.at = {};
     for (const face of Object.values(this.faces)) face.open(this.model, keep);
     if (this.face) this.show(this.face);
   }
@@ -1244,26 +1265,28 @@ class View {
     if (this.el === el) return;
     const pick = name => el.querySelector(`[data-m="${name}"]`), first = !this.el;
     this.el = el; this.face = '';
-    this.q = { title: pick('title'), struct: pick('struct'), flow: pick('flow'), legend: pick('legend') };
+    this.q = { title: pick('title'), legend: pick('legend'), next: pick('next') };
     this.faces = {
       struct: structFace(pick('struct-svg'), pick('struct-svg').firstElementChild, pick('struct-tip'), pick('crumbs')),
       flow: flowFace(pick('flow-svg'), pick('flow-svg').firstElementChild, pick('flow-tip'), id => this.jump(id)),
     };
-    this.q.title.addEventListener('click', () => this.faces[this.face].home());
+    this.q.title.addEventListener('click', () => { this.faces[this.face].home(); delete this.at[this.face]; this.say(); });
+    this.q.next.addEventListener('click', () => this.next());
     if (first) addEventListener('resize', () => { if (this.el.isConnected) for (const face of Object.values(this.faces)) face.resize(); });
     this.open(false);
   }
   // 面を見せる。中身の無い面（型が無い・流れが無い）は見せず、もう片方を見せる
   show(want) {
-    const m = this.model, q = this.q, face = want === 'flow' ? (m.flows.length ? 'flow' : 'struct') : (m.types.length ? 'struct' : 'flow');
+    const m = this.model, face = want === 'flow' ? (m.flows.length ? 'flow' : 'struct') : (m.types.length ? 'struct' : 'flow');
     this.face = face; this.el.dataset.view = face;
-    for (const [name, has] of [['struct', m.types.length], ['flow', m.flows.length]]) {
-      q[name].toggleAttribute('aria-current', name === face); q[name].toggleAttribute('aria-disabled', !has);
-    }
-    const on = legendOf(m, face); for (const s of q.legend.children) s.hidden = !on[s.dataset.k];
+    const on = legendOf(m, face); for (const s of this.q.legend.querySelectorAll('[data-k]')) s.hidden = !on[s.dataset.k];
+    this.say();
   }
+  // 次の変更へ: 押すたびに、その面の今回の変更を図の順に 1 つずつ見せ、最後の次は最初に戻る。何番目かを名乗る
+  next() { const face = this.faces[this.face], n = face.changes(); if (!n) return; face.visit(this.at[this.face] = ((this.at[this.face] ?? -1) + 1) % n); this.say(); }
+  say() { const n = this.faces[this.face].changes(), i = this.at[this.face]; this.q.next.hidden = !n; this.q.next.textContent = `変更 ${i === undefined ? '' : `${i + 1}/`}${n} ›`; }
   // 流れの線から、構造のその型へ飛ぶ
-  jump(id) { this.show('struct'); this.faces.struct.goto(id); location.hash = this.q.struct.getAttribute('href'); }
+  jump(id) { this.show('struct'); this.faces.struct.goto(id); location.hash = '#coder'; }
 }
 return { View, Structure, Flow, typeOf, statesOf, levelOf, legendOf, openAt, DEEP };
 })()
@@ -1400,10 +1423,15 @@ const remainingView = () => {
 // レビュー待ちなら承認のボタン
 const approveAct = ship => (S.ships[ship] && awaiting(ship, S.ships[ship], S.reviews[ship]) ? `<button class="act pri" data-act="approve" data-ship="${ship}"><span class="al">${approveLabel(ship)}</span></button>` : '')
 // ship 全体へのコメント（開いている数）と、要レビューの切り替え
-const reviewRow = ship => {
-  const on = required(ship, S.reviews[ship]), open = threadsOf(ship, '').filter(([, t]) => !t.resolved).length
-  return `<div class="ship"><button class="cmb" data-act="peek" data-peek="s:${ship}">コメント${open ? ` ${open}` : ''} ›</button><span class="sname">要レビュー</span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button></div>`
+const commentAct = ship => {
+  const open = threadsOf(ship, '').filter(([, t]) => !t.resolved).length
+  return `<button class="cmb" data-act="peek" data-peek="s:${ship}">コメント${open ? ` ${open}` : ''} ›</button>`
 }
+const reviewSwitch = ship => {
+  const on = required(ship, S.reviews[ship])
+  return `<span class="sname">要レビュー</span><button class="sw${on ? ' on' : ''}" data-act="toggle" data-ship="${ship}" aria-pressed="${on}" aria-label="${ship} を要レビューにする"><span class="trk"><span class="knob"></span></span></button>`
+}
+const reviewRow = ship => `<div class="ship">${commentAct(ship)}${reviewSwitch(ship)}</div>`
 const shipPage = ship => {
   const v = view(ship)
   return `<a class="back" href="#">‹ ダッシュボード</a><div class="big">${NAME[ship]}</div>${linkActs(ship)}
@@ -1696,34 +1724,33 @@ const foundView = () => {
 }
 // coder: 設計図（型・対応・処理・流れ）を「構造」と「流れ」の 2 つの面に描く。盤面は coderMap が描くので、ここは枠だけ（中身が変わっても作り直さない）。面は #coder が構造、#coder.flow が流れ
 const coderMap = new CoderMap.View()
-const MAP = `<div class="cmap" id="cmap"><header class="chead gut"><a href="#">‹ ${NAME.coder}</a><button type="button" data-m="title"></button>
-  <nav class="ctabs" aria-label="面を選ぶ"><a href="#coder" data-m="struct">構造</a><a href="#coder.flow" data-m="flow">流れ</a></nav></header>
+const MAP = `<div class="cmap" id="cmap"><header class="chead gut"><a href="#">‹ ${NAME.coder}</a><button type="button" data-m="title"></button></header>
   <div class="cvp"><nav class="crumbs" data-m="crumbs" aria-label="今見ている場所"></nav><svg data-m="struct-svg" role="img" aria-label="構造の地図。枠は型、離れて並ぶ箱はどれか 1 つ、罫線で割った行は全部そろう、矢は遷移"><g></g></svg><div class="tip" data-m="struct-tip" hidden></div>
   <svg data-m="flow-svg" role="img" aria-label="流れの地図。線は値、箱は処理。上から下へ進む"><g></g></svg><div class="tip" data-m="flow-tip" hidden></div>
-  <p class="cleg" data-m="legend" aria-label="色の意味"><span data-k="api">API</span><span data-k="db">保存</span><span data-k="new">新</span><span data-k="mod">改</span><span data-k="imp">型に無い</span><span data-k="chk">✓ 確かめ済み</span></p></div></div>`
+  <p class="cleg" data-m="legend" aria-label="色の意味"><span data-k="api">境界</span><span data-k="db">保存</span><span data-k="new">新</span><span data-k="mod">改</span><span data-k="imp">型に無い</span><span data-k="chk">✓ 確かめ済み</span><button type="button" data-m="next" hidden></button></p></div></div>`
 const designed = () => S.model && (S.model.types.length > 0 || S.model.flows.length > 0)
 const coderPage = () => (unready() || !designed() ? `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.coder}</a>${unready() || '<p class="req wait">まだ設計図がありません</p>'}` : MAP)
-// coder のドック: 成果物（PR）・要レビュー・承認。地図が画面を使うので、ページの本体には置かない
-const coderDock = ship => `<div class="rdock gut cdock">${linkActs(ship)}${reviewRow(ship)}${approveAct(ship)}</div>`
 const qaPage = sub => `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.qa}</a>${linkActs('qa')}${unready() || (sub === 'found' ? foundView() : qualityView())}`
-// 自分のページを持つ ship。ページの本体と、ドックの 2 枚のタブ（dock があればそのドック）
+// 自分のページを持つ ship。ページの本体と、ドックのタブ（[サブページ, 名前, 中身が無い]）。links = 成果物のリンクもドックに置く（coder は地図が画面を使うので、本体に置かない）
 const PAGES = {
-  coder: { body: coderPage, dock: coderDock },
+  coder: { body: coderPage, label: '構造と流れ', tabs: () => [['', '構造', !S.model?.types.length], ['flow', '流れ', !S.model?.flows.length]], links: true },
   requirement: { body: requirementPage, label: '要求とテスト', tabs: () => [['', '要求'], ['test', 'テスト']] },
   behavior: { body: behaviorPage, label: '流れとテスト', tabs: () => [['', '流れ'], ['test', `テスト ${testCount()}`]] },
   qa: { body: qaPage, label: '品質と発見', tabs: () => [['', '品質'], ['found', `発見 ${openFindings().length}`]] },
   cs: { body: sub => documentPage('cs', sub === 'unasked' ? 'unaskedSpecs' : 'guide'), label: 'ガイドと聞かずに決めた仕様', tabs: () => [['', 'ガイド'], ['unasked', '聞かずに決めた']] },
   ops: { body: () => documentPage('ops', 'operationsDesign'), label: '運用設計書', tabs: () => [['', '運用設計書']] },
 }
-// ship のページの下のドック: ページの切り替え・要レビュー・レビュー待ちなら承認。tabs は [サブページ, 名前] で、'' が最初のページ
+// ship のページの下のドック。1 段目 = 見る・伝える（ページの切り替えとコメント）、2 段目 = 決める（要レビューと、レビュー待ちなら承認）。'' が最初のページ
+// 中身の無いページは選べず、そこを指されたら最初の選べるページを今のページにする（coder の地図の面の決め方と同じ）
 const pageDock = (ship, sub = '') => {
-  const page = PAGES[ship]
-  const tab = ([to, label]) => `<a href="#${ship}${to ? `.${to}` : ''}"${to === sub ? ' aria-current="page"' : ''}>${esc(label)}</a>`
-  return `<div class="rdock gut"><nav class="seg" aria-label="${page.label}">${page.tabs().map(tab).join('')}</nav>${reviewRow(ship)}${approveAct(ship)}</div>`
+  const page = PAGES[ship], tabs = page.tabs(), now = tabs.find(([to, , off]) => to === sub && !off) ?? tabs.find(([, , off]) => !off)
+  const tab = t => `<a href="#${ship}${t[0] ? `.${t[0]}` : ''}"${t === now ? ' aria-current="page"' : ''}${t[2] ? ' aria-disabled="true"' : ''}>${esc(t[1])}</a>`
+  return `<div class="rdock gut">${page.links ? linkActs(ship) : ''}<div class="drow"><nav class="seg" aria-label="${page.label}">${tabs.map(tab).join('')}</nav>${commentAct(ship)}</div>
+    <div class="drow">${reviewSwitch(ship)}${approveAct(ship)}</div></div>`
 }
 // ドックの中身: ship のページならそのドック、それ以外は あなたの番 のレール
 const dockHtml = (ship, sub) => {
-  if (PAGES[ship]) return (PAGES[ship].dock ?? pageDock)(ship, sub)
+  if (PAGES[ship]) return pageDock(ship, sub)
   const list = items()
   S.at = Math.max(0, Math.min(S.at, list.length - 1))
   if (list.length === 0) return '<div class="dnone gut"><span class="h2">あなたの番</span><span class="cnt">なし</span></div>'
