@@ -24,6 +24,13 @@ describe('forbid-stale-map', () => {
       .toBe('地図がいまのコードとずれている。revise_model で直してから報告する: 型「注文」の code の名前「OrderState」が src/order.ts に無い')
   })
 
+  test('設計図を読めなかったら、照合できていないので収束の報告を拒む（設計図がまだ無いのとは分ける）', async () => {
+    const down = { ...engineWith('coder', model, {}), db: async () => ({ text: 'network error', isError: true as const }) } as Engine
+    expect(await forbidStaleMap(down, converged)).toBe('設計図を読めず、地図をいまのコードと照合できなかった（network error）。もう一度報告する')
+    const broken = { ...engineWith('coder', model, {}), db: async () => ({ text: '{"id":"model","data":' }) } as Engine
+    expect(await forbidStaleMap(broken, converged)).toContain('設計図を読めず、地図をいまのコードと照合できなかった（fleet/coder/deliverables/model を読めなかった（')
+  })
+
   test('収束のほかの報告、coder のほかの ship、設計図がまだ無い coder は止めない', async () => {
     const stale = { 'src/order.ts': '' }
     expect(await forbidStaleMap(engineWith('coder', model, stale), { status: { state: 'working' } })).toBeUndefined()

@@ -28,13 +28,6 @@ describe('code-model', () => {
     expect(revised(base, { logic: [{ ...find, change: '削', also: ['注文を取り消す'] }, { ...find, id: 'new', change: '新' }, { ...find, id: 'old' }] })).toMatchObject({ logic: [{ id: 'find' }, { id: 'new' }, { id: 'old' }] })
   })
 
-  test('新しく足す型は code が要る（破線にできるのは既存の型だけ）。表は要らない', () => {
-    const needed = '型「注文」は 新 なので code が要る（新しく足す形は、コードで名前のある型か作り手にする。素の値なら型にせず、持ち主の holds.prim に書く）'
-    expect(revised(base, { types: [{ ...order, change: '新' }] })).toBe(needed)
-    expect(revised(base, { types: [{ ...order, change: '新', code: 'src/order.ts#OrderState' }] })).toMatchObject({ types: [{ code: 'src/order.ts#OrderState' }] })
-    expect(revised(base, { types: [{ ...order, change: '改' }, { id: 'orders', name: 'orders', world: 'db', form: 'table', columns: [{ name: 'id', type: 'uuid' }], change: '新' }] })).toMatchObject({ types: [{ change: '改' }, { change: '新' }] })
-  })
-
   test('問題が 1 つでもあれば何も通さず、全部を 1 つの文にする', () => {
     const flows: Model['flows'] = [{ id: 'f', name: '確定する', columns: [{ name: '注文' }], start: {}, steps: [{ logic: 'none', span: [0, 0] }] }]
     expect(revised(base, { maps: [{ from: 'order', to: 'none' }], flows })).toBe('対応 order → none の「none」が型にない / 流れ「確定する」の段の処理「none」が logic にない')

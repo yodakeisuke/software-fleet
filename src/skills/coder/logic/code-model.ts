@@ -21,15 +21,12 @@ const empty = (): Model => ({ name: '', worlds: [{ id: 'api', name: '境界 · A
 const merged = (current: Model, input: ModelInput): Model => ({ ...current, ...input })
 // 問題が 1 つでもあれば何も書かずに、全部を 1 つの文にして失敗にする
 const verdict = (model: Model) =>
-  Result.checked(model, [...named(model), ...worlds(model), ...shared(model), ...typed(model), ...References.problems(model), ...Placement.problems(model), ...Flows.problems(model), ...Wires.problems(model)])
+  Result.checked(model, [...named(model), ...worlds(model), ...shared(model), ...References.problems(model), ...Placement.problems(model), ...Flows.problems(model), ...Wires.problems(model)])
 // 設計図には名前がある（最初の呼び出しで name を渡す）
 const named = (model: Model) => (model.name === '' ? ['name がない（この設計図の名前。例: 注文）'] : [])
 // 意味を変えた既存の処理は、ほかに誰が通るかを言わせる（地図に描いた流れだけでは、変更がどこまで効くか分からない）
 const shared = (model: Model) => model.logic.filter(logic => ['改', '削'].includes(logic.change ?? '') && logic.also === undefined)
   .map(logic => `処理「${logic.name}」は ${logic.change} なので also が要る（この処理を通る、流れに描いていないユースケースの名前。無ければ []）`)
-// 新しく足す型は、コードで名前のある物にする（破線 = 型になっていない形は、既存のコードにだけ許す）。表は列がそのままコード
-const typed = (model: Model) => model.types.filter(type => type.change === '新' && type.form !== 'table' && type.code === undefined)
-  .map(type => `型「${type.name}」は 新 なので code が要る（新しく足す形は、コードで名前のある型か作り手にする。素の値なら型にせず、持ち主の holds.prim に書く）`)
 // 世界は api・domain・db が 1 つずつ
 const worlds = (model: Model) => {
   const ids = model.worlds.map(world => world.id).sort()

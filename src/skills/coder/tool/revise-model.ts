@@ -25,7 +25,7 @@ const modelType = object({
   id: text('鍵。部品・対応・fk はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
   many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。箱に重ねるか押すと出る'),
-  code: text('コードでこの形を持つ物を「ファイル#名前」で指す（型・クラス・作り手の関数。ファイルはプロジェクトのルートから。例: src/order/state.ts#OrderState）。lifecycle・kind なら、箱の 1 つ 1 つがその変種になっている型。tool がいまのコードのそのファイルに名前が在るかを確かめ、無ければ拒む。指せない形（素の値・列の値・規約で持っているだけ）は省くと破線の枠で出る。新 の型は省けない。table は要らない'),
+  code: text('コードでこの形を持つ物を「ファイル#名前」で指す（型・クラス・作り手の関数。ファイルはプロジェクトのルートから。例: src/order/state.ts#OrderState）。lifecycle・kind なら、箱の 1 つ 1 つがその変種になっている型。tool がいまのコードのそのファイルに名前が在るかを確かめ、無ければ拒む。指せない形（素の値・列の値・規約で持っているだけ）は省くと破線の枠で出る。table は要らない'),
   objects: list(ref('object'), 'table 以外。lifecycle・kind は取りうる形を並べる（どれか 1 つ）。value・record は 1 つで、項目は holds.parts'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
 }, ['id', 'name', 'world', 'form'])
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
