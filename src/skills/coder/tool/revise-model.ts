@@ -1,7 +1,9 @@
 import type { Engine, FleetTool, JsonSchemaNode, Model, ModelDoc, ModelInput } from '../../../types/fleet'
 import { FleetDb } from '../../../fleet/db/fleet-db'
 import { JsonSchema } from '../../../fleet/schema/json-schema'
+import { Result } from '../../../fleet/logic/result'
 import { CodeModel } from '../logic/code-model'
+import { Pointers } from '../logic/pointers'
 
 const { text, object, choice, list } = JsonSchema
 const number: JsonSchemaNode = { type: 'number' }
@@ -23,7 +25,7 @@ const modelType = object({
   id: text('鍵。部品・対応・fk はこれで指す'), name: text('地図に出る名前。流れの線はこの名前で結ばれる'), world: choice(['api', 'domain', 'db']),
   form: choice(['lifecycle', 'value', 'kind', 'record', 'table'], 'lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表'),
   many: text('親の中に N 個あるときの単位語（例: 行）'), doc: text('1 行の意図。箱に重ねるか押すと出る'),
-  code: text('コードでこの形を持つ物の名前（型・クラス・作り手の関数。例: OrderState）。lifecycle・kind なら、箱の 1 つ 1 つがその変種になっている型。名前を言えない形（素の値・列の値・規約で持っているだけ）は省く。省くと破線の枠で出る。table は要らない'),
+  code: text('コードでこの形を持つ物を「ファイル#名前」で指す（型・クラス・作り手の関数。ファイルはプロジェクトのルートから。例: src/order/state.ts#OrderState）。lifecycle・kind なら、箱の 1 つ 1 つがその変種になっている型。tool がいまのコードのそのファイルに名前が在るかを確かめ、無ければ拒む。指せない形（素の値・列の値・規約で持っているだけ）は省くと破線の枠で出る。table は要らない'),
   objects: list(ref('object'), 'table 以外。lifecycle・kind は取りうる形を並べる（どれか 1 つ）。value・record は 1 つで、項目は holds.parts'), morphisms: list(ref('morphism')), columns: list(ref('column'), 'table のとき。1 つ以上'), change: ref('change'),
 }, ['id', 'name', 'world', 'form'])
 const map = object({ from: text('型の id'), to: text('型の id') }, ['from', 'to'], '世界をまたぐ対応（API → ドメイン → 保存）')
@@ -42,7 +44,7 @@ const flow = object({
 // コードの中の設計図。ページが「構造」と「流れ」の 2 つの地図に投影する
 const spec = {
   name: 'revise_model',
-  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows）はその全体で置き換え、渡さなければ今のまま。1 件でも問題があれば何も書かない',
+  description: 'コードの中の設計図（型・世界をまたぐ対応・処理・流れ）を出す。ページが「構造」と「流れ」の 2 つの地図に投影し、ユーザはスマホでそれを見て構造の品質を判断する。渡した集まり（name・worlds・types・maps・logic・flows）はその全体で置き換え、渡さなければ今のまま。呼ぶたびに、全部の型の code をいまのコードと照合する。1 件でも問題があれば何も書かない',
   inputSchema: { ...object({
     name: text('この設計図の名前（例: 注文）'),
     worlds: list(object({ id: choice(['api', 'domain', 'db']), name: text('地図に出る区画の名前（例: 境界 · API、保存 · RDB）') }, ['id', 'name']), '3 つの世界。名前を変えたいときだけ渡す'),
@@ -54,10 +56,14 @@ const spec = {
   isDeferred: false,
 }
 
-// 今の設計図に渡した集まりを当てて、直した時刻を付け、読んだ版に固定して書き直す。1 件でも問題があれば何も書かない
+// 形と参照が通った設計図の code を、いまのコードと照合する（実線の箱は、コードに在ると確かめた物だけ）
+const linked = async (engine: Engine, model: ModelDoc) => Result.checked(model, Pointers.problems(model, await engine.sources(Pointers.files(model))))
+
+// 今の設計図に渡した集まりを当てて、直した時刻を付け、コードと照合し、読んだ版に固定して書き直す。1 件でも問題があれば何も書かない
 const run = async (engine: Engine, input: unknown) => JsonSchema.check<ModelInput>(spec.inputSchema, input).either(async given => {
   const at = new Date(await engine.now()).toISOString()
-  return FleetDb.revise(engine, FleetDb.paths().model, doc => CodeModel.revise({ ...CodeModel.empty(), ...(doc as Partial<Model> | undefined) }, given).and((model): ModelDoc => ({ ...model, at })), 'ModelRevised')
+  return FleetDb.revise(engine, FleetDb.paths().model, async doc => CodeModel.revise({ ...CodeModel.empty(), ...(doc as Partial<Model> | undefined) }, given)
+    .either(model => linked(engine, { ...model, at }), async error => Result.fail(error)), 'ModelRevised')
 }, async error => ({ deny: error }))
 
 export const reviseModel = { tool: 'mcp__software-fleet__revise_model' as const, spec, run } satisfies FleetTool

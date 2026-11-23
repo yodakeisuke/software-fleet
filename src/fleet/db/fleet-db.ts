@@ -8,6 +8,7 @@ export const FleetDb = {
   revise: (engine: Engine, path: string, next: Next, done: string) => revise(engine, path, next, done),
   create: (engine: Engine, path: string, data: object, done: string) => create(engine, path, data, done),
   read: (engine: Engine, path: string) => read(engine, path),
+  load: (engine: Engine, path: string) => load(engine, path),
   urlOf: (text: string) => urlOf(text),
   isFleet: (url: unknown, fleetUrl: string) => isFleet(url, fleetUrl),
   isSameArtifact: (url: unknown, fleetUrl: string) => isSameArtifact(url, fleetUrl),
@@ -44,8 +45,9 @@ const split = (path: string) => ({ collection: path.slice(0, path.lastIndexOf('/
 // 書けなかった理由
 const refused = (reply: { text?: string; deny?: string }, path: string): ToolReply => ({ deny: reply.deny ?? reply.text ?? `${path} を書けなかった` })
 
-// 今の中身（なければ undefined）から、新しい中身を作る。作れなければ理由
-type Next = (data: Record<string, unknown> | undefined) => { either: <R>(onOk: (value: object) => R, onError: (error: string) => R) => R }
+// 今の中身（なければ undefined）から、新しい中身を作る。作れなければ理由。作るのに外を読むなら Promise で返す
+type Made = { either: <R>(onOk: (value: object) => R, onError: (error: string) => R) => R }
+type Next = (data: Record<string, unknown> | undefined) => Made | Promise<Made>
 
 // 文書を 1 つ書く。今の版を読んでから、その版に固定して書く（古い版への書き込みは DB が拒む）
 const put = (engine: Engine, path: string, data: object, done: string) => revise(engine, path, () => Result.given<Data<object, string>>({ ok: true, value: data }), done)
@@ -55,12 +57,17 @@ const put = (engine: Engine, path: string, data: object, done: string) => revise
 const revise = async (engine: Engine, path: string, next: Next, done: string): Promise<ToolReply> => {
   const session = await engine.fleet()
   if (session === undefined) return { deny: 'このセッションは fleet に乗っていない' }
-  const got = await engine.db(session.url, { action: 'get', ...split(path) })
-  if (got.isError === true || got.deny !== undefined) return { deny: got.deny ?? got.text ?? `${path} を読めなかった` }
-  return (await stored(got.text ?? '')).either(doc => next(doc?.data).either(async data => {
+  return (await fetched(engine, session.url, path)).either(async doc => (await next(doc?.data)).either(async data => {
     const wrote = await engine.db(session.url, { action: 'set', ...split(path), data, ...(doc === undefined ? {} : { if_version: doc.version }) })
     return (await landed(engine, path, data, wrote)) ? { result: done } : refused(wrote, path)
-  }, async error => ({ deny: error })), async error => ({ deny: `${path} を読めなかった（${error}）` }))
+  }, async error => ({ deny: error })), async error => ({ deny: error }))
+}
+
+// 文書を 1 つ、版と一緒に読む。なければ undefined、読めなければ（拒まれた・行が壊れている）理由
+const fetched = async (engine: Engine, url: string, path: string) => {
+  const got = await engine.db(url, { action: 'get', ...split(path) })
+  const refusal = got.isError === true || got.deny !== undefined ? [got.deny ?? got.text ?? `${path} を読めなかった`] : []
+  return (await stored(refusal.length > 0 ? '' : got.text ?? '')).or(error => `${path} を読めなかった（${error}）`).and(doc => Result.checked(doc, refusal))
 }
 
 // 新しい文書を 1 つ書く。id は時刻から作るので、まだない
@@ -77,11 +84,12 @@ const landed = async (engine: Engine, path: string, data: object, wrote: DbReply
 // 鍵の並びによらない JSON（DB は鍵を並べ替えて返す）
 const canonical = (value: unknown) => JSON.stringify(value, (_, inner: unknown) => (inner !== null && typeof inner === 'object' && !Array.isArray(inner) ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => (a < b ? -1 : 1))) : inner))
 
-// 文書を 1 つ読む。なければ undefined
-const read = async (engine: Engine, path: string) => {
+// 文書を 1 つ読む。なければ undefined。読めなかったときも undefined（分けたいときは load）
+const read = async (engine: Engine, path: string) => (await load(engine, path)).either(data => data, () => undefined)
+// 文書を 1 つ読む。なければ undefined、読めなければ理由（無いことと読めないことを分ける）
+const load = async (engine: Engine, path: string) => {
   const session = await engine.fleet()
-  const got = session && (await engine.db(session.url, { action: 'get', ...split(path) }))
-  return (await stored(got?.text ?? '')).either(doc => doc?.data, () => undefined)
+  return session === undefined ? Result.checked<Record<string, unknown> | undefined>(undefined, ['このセッションは fleet に乗っていない']) : (await fetched(engine, session.url, path)).and(doc => doc?.data)
 }
 
 // 文の中の最初の artifact の URL を取る

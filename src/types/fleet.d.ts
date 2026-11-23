@@ -148,7 +148,7 @@ export type Change = '新' | '改' | '削'
 export type World = 'api' | 'domain' | 'db'
 // 型の形。lifecycle = 状態機械（Transition）、value = 値（Computation）、kind = 選択肢（Decision）、record = 境界の項目の直積、table = 表
 export type Form = 'lifecycle' | 'value' | 'kind' | 'record' | 'table'
-// code = コードでこの形を持つ物の名前。名前を言えない形（素の値・列の値・規約で持っているだけ）は、地図が破線の枠で描く。table は列がそのままコードなので要らない
+// code = コードでこの形を持つ物を「ファイル#名前」で指す。mod がそのファイルを読んで名前が在るかを確かめる。指せない形（素の値・列の値・規約で持っているだけ）は、地図が破線の枠で描く。table は列がそのままコードなので要らない
 export type Part = { type: string; as?: string }
 export type Holds = 'unit' | { prim: string; invariant?: string } | { parts: Part[]; invariant?: string }
 // 箱の中の箱: 状態・値・選択肢。型の中で id が鍵。holds を省けば unit
@@ -201,6 +201,8 @@ export type Engine = {
   offer: (tool: ToolDeclaration) => Promise<void>
   // ArtifactData で fleet の DB を読み書きする
   db: (url: string, call: DbCall) => Promise<DbReply>
+  // いまのコードのファイルを読む（プロジェクトのルートからのパス → 中身。読めなければ undefined）
+  sources: (files: readonly string[]) => Promise<Record<string, string | undefined>>
 }
 // LLM が呼ぶ専用 tool。宣言（spec）と処理（run）を 1 つにしたもの。tool は mcp__software-fleet__<spec.name>
 export type FleetTool = { tool: string; spec: ToolDeclaration; run: (engine: Engine, input: unknown) => Promise<ToolReply> }
