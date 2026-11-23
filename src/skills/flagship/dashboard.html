@@ -13,7 +13,8 @@
   --em-rm-bg:oklch(0.89 0.035 165);--em-cmd-bg:oklch(0.88 0.035 240);--em-ev-bg:oklch(0.88 0.055 75);--em-pol-bg:oklch(0.93 0.02 305);
   --em-hot:oklch(0.55 0.09 355);--em-hot-bg:oklch(0.93 0.03 355);
   --cm-edge:oklch(0.62 0.02 240);--cm-api:oklch(0.5 0.15 315);--cm-db:oklch(0.5 0.13 245);--cm-add:oklch(0.5 0.1 155);--cm-mod:oklch(0.52 0.11 65);--cm-add-bg:oklch(0.94 0.05 155);--cm-mod-bg:oklch(0.94 0.06 85);
-  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Hiragino Sans","Yu Gothic UI",Meiryo,monospace; /* 英数は等幅、日本語は本文と同じ字（Windows で MS ゴシックに落とさない） */
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:oklch(0.21 0.018 240);--dim:oklch(0.25 0.021 240);--surface:oklch(0.3 0.024 240);--fg:oklch(0.94 0.006 240);--muted:oklch(0.76 0.015 240);
@@ -111,7 +112,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .logi{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .lt{font-size:13px;font-weight:700}
 .lw{font-size:12px;color:var(--muted)}
-.le{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);word-break:break-all;text-decoration:none}
+.le{font-size:11px;font-family:var(--mono);color:var(--muted);word-break:break-all;text-decoration:none}
 a.le{color:var(--acc)}
 .dock{--bg:var(--chrome);--fg:var(--on-chrome);--muted:var(--on-chrome2);--line:var(--on-chrome2);--acc:var(--on-chrome);--surface:var(--chrome);position:relative;flex:none;display:flex;flex-direction:column;gap:6px;padding-top:12px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--chrome);color:var(--fg)}
 .nav{position:absolute;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:1;display:flex;align-items:center}
@@ -230,7 +231,7 @@ a.le{color:var(--acc)}
 .emc.pol{background:var(--em-pol-bg);box-shadow:0 0 0 1px color-mix(in oklch,var(--em-pol) 45%,transparent)}
 .emk{font-size:9.5px;color:var(--muted)}
 .emt{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;padding-right:16px}
-.emsk{margin:0;flex:1;min-height:0;overflow:hidden;font:6px/1.25 ui-monospace,"SFMono-Regular",Menlo,monospace;color:var(--muted);white-space:pre}
+.emsk{margin:0;flex:1;min-height:0;overflow:hidden;font:6px/1.25 var(--mono);color:var(--muted);white-space:pre}
 .ems{font-weight:700;box-shadow:0 1px 2px var(--shadow)}
 .ems span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .ems.cmd{background:var(--em-cmd-bg)}.ems.rm{background:var(--em-rm-bg)}.ems.ev{background:var(--em-ev-bg)}
@@ -260,7 +261,7 @@ a.le{color:var(--acc)}
 .cw{font-size:11.5px;color:var(--muted)}
 .cmb{flex:1;min-height:40px;text-align:left;font-size:13px;font-weight:700;color:var(--acc)}
 .cdone{align-self:flex-end;font-size:12px;font-weight:700;color:var(--acc);min-height:32px}
-.sk{margin:0;padding:8px 10px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 ui-monospace,"SFMono-Regular",Menlo,monospace;white-space:pre;overflow-x:auto}
+.sk{margin:0;padding:8px 10px;border-radius:3px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font:11px/1.45 var(--mono);white-space:pre;overflow-x:auto}
 .sk.txt{white-space:pre-wrap;overflow-wrap:anywhere}
 .w2{display:inline-block;width:2ch;text-align:center}
 .tk{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -342,7 +343,7 @@ a.le{color:var(--acc)}
 .cvp .row .ti{font-weight:400}
 .cvp .form{fill:var(--muted);font-weight:400}
 .cvp .ml{fill:var(--muted);stroke:var(--bg);paint-order:stroke;stroke-linejoin:round}
-.cvp .prim{fill:var(--muted);font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.cvp .prim{fill:var(--muted);font-family:var(--mono)}
 .cvp .floor .rest,.cvp .floor .form{display:none}
 .cvp .wl{fill:var(--muted);font-weight:600;letter-spacing:.04em}
 .cvp .wl.api{fill:var(--cm-api)}.cvp .wl.db{fill:var(--cm-db)}
@@ -416,15 +417,6 @@ const gone = (r, m) => r.bottom < m.top || r.top > m.bottom || r.right < m.left 
 const low = (r, m) => Math.max(r.top, m.top) + Math.min(r.bottom, m.bottom) > m.top + m.bottom;
 const tspan = (text, cls) => sv('tspan', { class: cls }, [text]);
 const textWidth = (s, f) => f * [...s].reduce((a, ch) => a + (ch.charCodeAt(0) < 0x2000 ? .6 : 1), 0);
-// 幅に入る行に折る。行の後ろ半分に空白があれば、そこで切る
-const wrapTo = (text, room, f) => {
-  const out = []; let cur = '';
-  for (const ch of text) {
-    if (cur && textWidth(cur + ch, f) > room) { const cut = cur.lastIndexOf(' ') + 1, at = cut > cur.length / 2 ? cut : cur.length; out.push(cur.slice(0, at).trimEnd()); cur = cur.slice(at); }
-    cur += ch;
-  }
-  return [...out, cur];
-};
 const max = a => Math.max(0, ...a), sum = a => a.reduce((x, y) => x + y, 0);
 const sizeOf = e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; };
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -446,11 +438,11 @@ const legendOf = (M, face) => {
 
 // ---------- 構造の配置。文法は 3 つ: 枠 = 型、離れて並ぶ箱 = どれか 1 つ（状態・種類）、1 つの箱を罫線で割った行 = 全部そろう（組）。矢 = 遷移
 // 寸法は入れ子 1 段ごとに .5 倍の世界単位。開く深さ OPEN より深い箱は名前だけの大きさに畳む（場所は、いま読めるものにだけ使う）
-const unitAt = d => 64 * Math.pow(.5, d), DEEP = 7, MAXS = 14; // DEEP より深い入れ子と、自分を含む型は、名前だけの行にする
+const unitAt = d => 64 * Math.pow(.5, d), DEEP = 7, MAXS = 14, MINS = 10 / (unitAt(1) * .96); // DEEP より深い入れ子と、自分を含む型は、名前だけの行にする
 const openAt = D => (D <= 0 ? 0 : 14 / unitAt(D)); // 深さ D の箱が開く（中身が読める）倍率
 const partsOf = o => (o.holds && o.holds.parts) || [];
 const Structure = () => {
-  let M, T, OPEN = 0, far = 1, plain = false, inner = {}, memo = { shelf: {}, wrap: {} }, VW = 0; // 折り返しの並びは、全部開いた図で一度決めて、どの段でも変えない。VW = 縦長の画面の幅（横長は 0）
+  let M, T, OPEN = 0, far = 1, plain = false, inner = {}, memo = { shelf: {}, wrap: {} }; // 折り返しの並びは、全部開いた図で一度決めて、どの段でも変えない
   const unit = d => { far = Math.max(far, d); return unitAt(d); }; // far = この設計図でいちばん深い箱の深さ（寄れる上限を決める）
   const use = model => { M = model; T = Object.fromEntries(M.types.map(t => [t.id, t])); plain = typesPlain(M); far = 1; inner = {}; memo = { shelf: {}, wrap: {} }; };
   const shutBox = n => { if (n.within) { n.change = n.within; n.minW += textWidth(' ' + n.within, n.ft); } if (n.d === 1 && !OPEN) { n.minW += textWidth(n.label + n.many, n.ft * .2); n.ft *= 1.2; } n.w = n.minW + n.ft * .4; n.h = 2 * n.pad * .7 + n.ft * 1.4; n.leaf = true; return n; };
@@ -462,17 +454,12 @@ const Structure = () => {
   };
   const sized = (n, top) => { n.w = Math.max(2 * n.pad + n.rec.w, n.minW); n.h = top + n.rec.h + n.pad; n.rec.w = n.w - 2 * n.pad; n.rec.rows.forEach(r => { r.w = n.rec.w; }); return n; };
   const stack = rows => { let y = 0; rows.forEach(r => { r.x = 0; r.y = y; y += r.h; }); return { kind: 'rec', rows, w: max(rows.map(r => r.w)), h: y, x: 0, y: 0 }; };
-  // 名前 … 型 の 1 行。縦長の画面で、読める倍率にしたとき幅に入らない行は、型を名前の下に折り返す（列名は左端、型は右端で、なぞらないと並べて読めなくなる）
-  const fold = (n, nameW, d) => {
-    const one = nameW + n.ft * 2 + textWidth(n.prim, n.ft), room = VW > 0 ? (VW - 32) / (openAt(d) * 1.05) - unitAt(d - 1) : Infinity;
-    if (one > room) n.two = wrapTo(n.prim, room - 2 * n.pad, n.ft);
-    n.w = n.two ? Math.max(nameW, 2 * n.pad + max(n.two.map(l => textWidth(l, n.ft)))) : one; n.h = 2 * n.pad + n.ft * 1.4 * (n.two ? 1 + n.two.length : 1);
-    return n;
-  };
+  // 名前 … 型 の 1 行
+  const pair = (n, nameW) => { n.w = nameW + n.ft * 2 + textWidth(n.prim, n.ft); n.h = 2 * n.pad + n.ft * 1.4; return n; };
   // 1 行だけの行（表の列）。組の行と同じ深さ・同じ字の大きさ（表が開く倍率で、ちょうど読める）
   const line = (label, right, d, change, bold) => {
     const F = unit(d), ft = F * .72, pad = F * .28;
-    return fold({ kind: 'frame', row: true, line: true, d, F, ft, pad, label, many: '', prim: right, change, bold, x: 0, y: 0 }, 2 * pad + textWidth(label + (change ? ' ' + change : ''), ft), d);
+    return pair({ kind: 'frame', row: true, line: true, d, F, ft, pad, label, many: '', prim: right, change, bold, x: 0, y: 0 }, 2 * pad + textWidth(label + (change ? ' ' + change : ''), ft));
   };
   // at の無い状態機械: 戻る矢を除いた最長経路の段を列にする（流れは左から右）
   const ranked = (objs, arrows, idx) => {
@@ -542,10 +529,7 @@ const Structure = () => {
     const holds = o.holds || 'unit', head = o.name + (o.change ? ' ' + o.change : '');
     const q = { kind: 'obj', t, o, d, f, pad, name: o.name, inv: holds === 'unit' ? undefined : holds.invariant, change: o.change, x: 0, y: 0 };
     if (holds === 'unit') { q.w = 2 * pad + textWidth(head, f); q.h = 2 * pad + f * 1.3; return q; }
-    if (holds.prim) { // 素の値の説明。縦長の画面では、この箱が開く倍率で幅に入るように折る（折らないと、寄っても 1 行が画面の外へ伸びる）
-      const fp = f * .85, room = VW > 0 ? (VW - 32) / (openAt(d) * 1.05) - 2 * pad - unitAt(d) : Infinity;
-      q.prim = wrapTo(holds.prim, room, fp); q.w = 2 * pad + Math.max(textWidth(head, f), max(q.prim.map(l => textWidth(l, fp)))); q.h = 2 * pad + f * 1.3 + f * 1.25 * q.prim.length; return q;
-    }
+    if (holds.prim) { const fp = f * .85; q.prim = holds.prim; q.w = 2 * pad + Math.max(textWidth(head, f), textWidth(q.prim, fp)); q.h = 2 * pad + f * 1.3 + f * 1.25; return q; } // 素の値の説明
     q.need = d + 1;
     if (d + 1 > OPEN) { const within = !plain && !o.change && holds.parts.some(p => T[p.type].change || innerOf(T[p.type])); if (within) q.change = '改'; q.w = 2 * pad + textWidth(head + (within ? ' 改' : ''), f); q.h = 2 * pad + f * 1.3; return q; }
     const top = pad + f * 1.3;
@@ -575,7 +559,7 @@ const Structure = () => {
       n.inv = holds.invariant; n.doc = t.doc;
       if (holds === 'unit') { n.w = n.minW; n.h = 2 * pad + ft * 1.4; n.leaf = true; return n; }
       // 素の値は 1 行: 名前 … 型。型の字が読めない遠さでは、ほかの箱と同じく名前だけに畳む（広い空の箱にしない）
-      if (holds.prim) { n.need = d; if (d > OPEN) return shutBox(n); n.prim = holds.prim; return fold(n, n.minW, d); }
+      if (holds.prim) { n.need = d; if (d > OPEN) return shutBox(n); n.prim = holds.prim; return pair(n, n.minW); }
       n.need = d + 1; if (d + 1 > OPEN) return shutBox(n);
       n.rec = record(holds.parts, d + 1, sub); n.rec.x = pad; n.rec.y = top;
       return sized(n, top);
@@ -620,40 +604,44 @@ const Structure = () => {
   };
   // 最上位に並べる型: ほかの型の部品になっていない型（書いた順）。自分を含む型（木）は自分の部品に数えない
   const tops = () => { const used = new Set(M.types.flatMap(t => (t.objects || []).flatMap(partsOf).map(p => p.type).filter(id => id !== t.id))); return M.types.filter(t => !used.has(t.id)); };
-  // 図を組む。世界ごとに最上位の型を棚に詰める。縦長の画面は世界を縦に、横長は横に
-  const place = (D, v) => {
-    OPEN = D; VW = v.h > v.w ? v.w : 0;
-    const tall = v.h > v.w, F0 = unitAt(0), gap = unitAt(1) * .9, top = F0 * 1.7, shown = tops();
+  // 図を組む。世界を左から右へ並べ、世界ごとに最上位の型を棚に詰める。配置は設計図だけで決まり、画面には依らない（画面は地図を覗く窓。どの画面でも同じ 1 枚を、動かして寄って見る）
+  const place = D => {
+    OPEN = D;
+    const F0 = unitAt(0), gap = unitAt(1) * .9, top = F0 * 1.7, shown = tops();
     const cols = WORLDS.map(id => M.worlds.find(w => w.id === id)).map(w => ({ w, top, frames: shown.filter(t => t.world === w.id).map(t => frame(t, undefined, 1, false, [])) })).filter(c => c.frames.length);
-    const widest = max(cols.flatMap(c => c.frames.map(f => f.w)));
-    let X = 0, Y = 0, W = 0, H = 0;
+    let X = 0, W = 0, H = 0;
     for (const c of cols) {
-      const limit = tall ? Math.max(widest, (v.w - 24) / (openAt(OPEN + 1) * .96)) : Math.max(max(c.frames.map(f => f.w)), F0 * 9);
+      const limit = Math.max(max(c.frames.map(f => f.w)), F0 * 9);
       let x = 0, y = top, rowH = 0, cw = 0;
       const fresh = !memo.shelf[c.w.id], brk = memo.shelf[c.w.id] ||= [];
       c.frames.forEach((f, i) => {
-        if (fresh) brk[i] = x > 0 && (tall || x + f.w > limit); // 縦長の画面は 1 列。開いても下へ伸びるだけ
+        if (fresh) brk[i] = x > 0 && x + f.w > limit;
         if (brk[i]) { x = 0; y += rowH + gap; rowH = 0; }
-        f.x = X + x; f.y = Y + y; x += f.w + gap; rowH = Math.max(rowH, f.h); cw = Math.max(cw, x - gap);
+        f.x = X + x; f.y = y; x += f.w + gap; rowH = Math.max(rowH, f.h); cw = Math.max(cw, x - gap);
       });
-      const ch = y + rowH;
-      c.x = X; c.y = Y; W = Math.max(W, X + cw); H = Math.max(H, Y + ch);
-      if (tall) Y += ch + F0 * 2; else X += cw + F0 * 2;
+      c.x = X; c.y = 0; W = Math.max(W, X + cw); H = Math.max(H, y + rowH);
+      X += cw + F0 * 2;
     }
     return { depth: D, cols, W, H };
   };
   // 寄れるのは、いちばん深い箱の字が楽に読める倍率まで。その先は何も増えず、余白だけの白い画面に落ちる
-  const clamp = (p, v, s) => Math.min(MAXS, openAt(far) * 2, Math.max(.3, Math.min(v.w / p.W, v.h / p.H) * .5, s));
-  // 全体: 幅に合わせ、上から。縦に長い図は続きをドラッグで見る
-  const fitAll = (p, v) => { const s = clamp(p, v, (v.h > v.w ? v.w / p.W : Math.min(v.w / p.W, v.h / p.H)) * .94); return { s, tx: Math.max(12, (v.w - p.W * s) / 2), ty: 16 }; };
-  // 最初の画面: 画面に収まって名前が読める範囲で、いちばん深くまで開いた図
+  // 引けるのは、畳んだ型の名前が 10px で読める倍率（MINS）まで。下限は図の大きさに依らない（開いた図と畳んだ図で下限が違うと、引くたびに開いて閉じてを繰り返す）
+  const clamp = s => Math.min(MAXS, openAt(far) * 2, Math.max(MINS, s));
+  const fitAll = (p, v) => clamp(Math.min(v.w / p.W, v.h / p.H) * .94);
+  // 最初の画面: 全体が収まって名前が読める範囲で、いちばん深くまで開いた図。畳んでも収まらない地図は、名前が読める大きさで左上から（続きは動かして見る）
   const home = v => {
-    memo = { shelf: {}, wrap: {} }; place(DEEP, v);
-    let D = 0; while (D < DEEP && fitAll(place(D + 1, v), v).s >= openAt(D + 1)) D++;
-    const placed = place(D, v), s = Math.min(fitAll(placed, v).s, openAt(D + 1) * .96);
-    return { placed, cam: { s, tx: Math.max(12, (v.w - placed.W * s) / 2), ty: 16 } };
+    memo = { shelf: {}, wrap: {} }; place(DEEP);
+    let D = 0; while (D < DEEP && fitAll(place(D + 1), v) >= openAt(D + 1)) D++;
+    const placed = place(D), s = Math.min(D ? fitAll(placed, v) : Infinity, openAt(D + 1) * .96);
+    // 最初の世界の名前を上の帯のすぐ下に置く
+    return { placed, cam: { s, tx: Math.max(16, (v.w - placed.W * s) / 2), ty: 26 - label(placed, s) } };
   };
-  return { use, place, home, clamp, order: v => place(DEEP, v) };
+  // 世界の名前の上の端（画面の px）。図の上の端はここ
+  const label = (p, s) => (p.cols.length ? p.cols[0].top * s - Math.min(64 * s, 16) : 0);
+  // 動かせる範囲。地図が画面に収まる向きは画面の中に置き、収まらない向きは端より先の空きを見せない（引けば全体が見え、どこで引いても地図が隅へ逃げない）
+  const span = (t, len, room, head) => Math.min(Math.max(t, Math.min(head, room - 16 - len)), Math.max(head, room - 16 - len));
+  const bound = (p, v, c) => { const top = label(p, c.s); return { s: c.s, tx: span(c.tx, p.W * c.s, v.w, 16), ty: span(c.ty + top, p.H * c.s - top, v.h, 26) - top }; };
+  return { use, place, home, clamp, bound, order: () => place(DEEP) };
 };
 // 倍率から開く深さを決める。境目では少し粘る（行ったり来たりで図が組み変わらないように）
 const levelOf = (s, open) => { let D = 0; while (D < DEEP && s >= openAt(D + 1)) D++; return D < open && s > openAt(open) * .93 ? open : D; };
@@ -794,14 +782,14 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     mark(g, name, q.change); note(g, q);
     g.append(name);
     nodes.push({ g, n: q, key, need: q.need, x: AX, y: AY, w: q.w, h: q.h, label: q.name });
-    if (q.prim) g.append(sv('text', { x: q.pad, y: q.pad + q.f * 1.3 + q.f * .6, 'font-size': q.f * .85, class: 'prim mid' }, q.prim.map((l, k) => sv('tspan', { x: q.pad, dy: k ? '1.47em' : 0 }, [l]))));
+    if (q.prim) g.append(sv('text', { x: q.pad, y: q.pad + q.f * 1.3 + q.f * .6, 'font-size': q.f * .85, class: 'prim mid' }, [q.prim]));
     if (q.rec) g.append(renderRecord(q.rec, AX, AY, key));
     return g;
   };
   const renderFrame = (n, parent, ax, ay, key) => {
     const g = sv('g', { class: 'cat' + (n.row ? ' row' : n.t && loose(n.t) ? ' imp' : ''), transform: `translate(${n.x} ${n.y})` }), AX = ax + n.x, AY = ay + n.y;
     g.append(sv('rect', { width: n.w, height: n.h, rx: n.row ? 0 : n.F * .06, class: n.row ? 'row-r' : 'frame-r' }));
-    const oneLine = (n.prim !== undefined && !n.two) || n.leaf, ty = oneLine ? n.h / 2 : n.two ? n.pad + n.ft * .7 : n.pad + n.ft * .5;
+    const ty = n.prim !== undefined || n.leaf ? n.h / 2 : n.pad + n.ft * .5;
     const title = sv('text', { x: n.pad, y: ty, 'font-size': n.ft, class: 'ti mid' }, []);
     if (n.bold >= 0) title.append(n.label.slice(0, n.bold), tspan(n.label.slice(n.bold), 'form'));
     else if (n.row && n.short && n.label !== n.short) title.append(n.short, tspan(n.label.slice(n.short.length), 'rest')); else title.append(n.label);
@@ -812,7 +800,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     if (n.t) { g.dataset.type = n.t.id; (byType[n.t.id] ||= []).push(g); }
     if (!n.line) nodes.push({ g, n, key, need: n.need, x: AX, y: AY, w: n.w, h: n.h, head: n.row || n.leaf || n.prim !== undefined ? 0 : n.pad + n.ft * 1.35, label: n.label });
     const inner = sv('g');
-    if (n.prim !== undefined) inner.append(sv('text', n.two ? { x: n.pad, y: n.pad + n.ft * 2.1, 'font-size': n.ft, class: 'prim mid' } : { x: n.w - n.pad, y: n.h / 2, 'font-size': n.ft, 'text-anchor': 'end', class: 'prim mid' }, n.two ? n.two.map((l, k) => sv('tspan', { x: n.pad, dy: k ? '1.4em' : 0 }, [l])) : [n.prim]));
+    if (n.prim !== undefined) inner.append(sv('text', { x: n.w - n.pad, y: n.h / 2, 'font-size': n.ft, 'text-anchor': 'end', class: 'prim mid' }, [n.prim]));
     if (n.rec) inner.append(renderRecord(n.rec, AX, AY, key));
     if (n.boxes) {
       n.arrowEls = [...n.lanes.map(a => ({ m: a.m, els: arrow(n, a) })), ...n.loops.map(m => ({ m, els: loop(n, m) }))];
@@ -836,7 +824,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     texts = [...world.querySelectorAll('text')].map(t => ({ t, f: +t.getAttribute('font-size'), max: capOf(t), b: t._b, min: t.classList.contains('ml') ? 9 : t.classList.contains('prim') ? 9.5 : MIN })); // 素の値の説明は、箱が開く倍率で読める（開いたのに行が空、にしない）
     showTip(null);
   };
-  const build = D => draw(eng.place(D, view()));
+  const build = D => draw(eng.place(D));
 
   // 1 つ奥の情報。箱に重ねる（指は押す）と、意図と不変条件の吹き出しが出る
   // dock = 指で押したとき。吹き出しは盤面の端に留める（箱の脇に出すと、見比べたい隣の箱を隠す）。押した箱が下半分なら上端へ
@@ -893,7 +881,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     for (const m of marks) {
       const n = nodes.find(n => n.key === m.key); if (!n) continue;
       // 箱が閉じて小さくなったら、指は箱の中の同じ割合の所に残す（開いた箱の右端で引いても、閉じた箱が画面の外へ飛ばない）
-      const tx = px - (n.x + m.u * Math.min(1, n.w / m.w)) * cam.s, ty = py - (n.y + m.v * Math.min(1, n.h / m.h)) * cam.s;
+      const { tx, ty } = eng.bound(P, view(), { s: cam.s, tx: px - (n.x + m.u * Math.min(1, n.w / m.w)) * cam.s, ty: py - (n.y + m.v * Math.min(1, n.h / m.h)) * cam.s });
       shift = { x: tx - cam.tx, y: ty - cam.ty }; cam.tx = tx; cam.ty = ty; break;
     }
     world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`); // 組み直した図を、すぐ合わせたカメラで置く（置く前に画面の位置を測ると、押した箱が画面の外に見えて吹き出しが消える）
@@ -928,8 +916,9 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   };
   const apply = () => {
     if (!hold) { const D = levelOf(cam.s, P.depth); if (D !== P.depth) { const v = view(), p = aim || [v.w / 2, v.h / 2]; relevel(D, p[0], p[1]); } }
+    cam = eng.bound(P, view(), cam);
     world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`);
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); if (!moving) cam = keepInk(svg, world, cam); crumbs(); placeTip(); });
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); crumbs(); placeTip(); });
   };
   const put = (c, at) => { cam = c; if (at) aim = at; shift = null; apply(); return shift; };
   // keep = 動いている間は開く深さを変えない（寄る先の深さはもう決めてある）
@@ -938,8 +927,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     moving = true; hold = !!keep;
     glideCam(cam, c, put, () => { moving = false; hold = false; apply(); });
   };
-  const clamp = s => eng.clamp(P, view(), s);
-  const fitRect = (x, y, w, h) => { const v = view(), s = clamp(Math.min(v.w / w, v.h / h) * .9); return { s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; };
+  const fitRect = (x, y, w, h) => { const v = view(), s = eng.clamp(Math.min(v.w / w, v.h / h) * .9); return { s, tx: (v.w - w * s) / 2 - x * s, ty: (v.h - h * s) / 2 - y * s }; };
   const home = () => { const h = eng.home(view()); touched = false; pinned = traced = shown = null; draw(h.placed); hold = false; cam = h.cam; apply(); };
   // 箱に寄る: その箱の中身が開く深さに組み直す。倍率は、もう読めていて箱が収まるなら変えない（押すたびに寄り具合を変えない）。
   // 読めなければ読める所まで寄り、収まらなければ収まる所まで引く。画面より大きい箱は左上を合わせる。収まって見えている箱は動かさない（center = 流れの面から来たときは中央へ）
@@ -954,7 +942,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     setCam({ s, tx: inX ? cam.tx : n.w * s > v.w - 32 ? 16 - n.x * s : v.w / 2 - (n.x + n.w / 2) * s, ty: inY ? cam.ty : n.h * s > v.h - 32 ? 16 - n.y * s : v.h / 2 - (n.y + n.h / 2) * s }, true, true);
     return n;
   };
-  const zoomAt = (k, px, py, animate = true) => { aim = [px, py]; const s = clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
+  const zoomAt = (k, px, py, animate = true) => { aim = [px, py]; const s = eng.clamp(cam.s * k), q = s / cam.s; setCam({ s, tx: px - (px - cam.tx) * q, ty: py - (py - cam.ty) * q }, animate); };
   // 今いる場所: 画面の中央を含み、画面の幅をほぼ占めていて、見出しが画面の上に出てしまった箱を外から順に（見出しが見えているなら、地図が自分で言っている）
   const crumbs = () => {
     const v = view(), wx = (v.w / 2 - cam.tx) / cam.s, wy = (v.h / 2 - cam.ty) / cam.s, top = -cam.ty / cam.s;
@@ -971,7 +959,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
   const stateOf = t => { const g = t.closest && t.closest('.pt'), n = g && nodes.find(n => n.g === g); return n ? n.key : null; };
   const typed = g => { const c = g && g.closest('.cat[data-type]'); return c && M.maps.some(m => m.from === c.dataset.type || m.to === c.dataset.type) ? c.dataset.type : null; };
   const local = gestures(svg, {
-    cam: () => cam, put, clamp, zoomAt, touch: () => { touched = true; },
+    cam: () => cam, put, clamp: eng.clamp, zoomAt, touch: () => { touched = true; },
     hover: e => {
       if (moving) return;
       const t = noted(e, e.target);
@@ -1003,7 +991,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     open: (model, keep) => {
       M = model; eng.use(M);
       if (!keep || !touched) return home();
-      pinned = traced = shown = null; eng.order(view()); build(P.depth); hold = false; apply();
+      pinned = traced = shown = null; eng.order(); build(P.depth); hold = false; apply();
     },
     home,
     resize: () => { if (!touched) home(); },
@@ -1076,12 +1064,12 @@ const Flow = (() => {
     bx.forEach((b, i) => { const [a, c] = b.st.span; b.x = colX[a] - PAD; b.y = by[i]; b.w = sum(cw.slice(a, c + 1)) - 12; });
     return { flow: fl, whole, colX, gaps, gy, boxes: bx, by, segs, w: x, h: y };
   };
-  // 流れを並べる。文字が元の大きさで読める倍率で、横に入るだけ並べて折り返す（続きは下へ）。無理なら、添え書きが読める下限で
-  const place = (M, v) => {
-    const plain = flowsPlain(M), lays = M.flows.map(fl => layout(M, fl, plain)), GX = 64, GY = 56;
+  // 流れを並べる。決まった幅（ROW）に入るだけ横に並べて折り返す（続きは下へ）。並びは設計図だけで決まり、画面には依らない
+  const place = M => {
+    const plain = flowsPlain(M), lays = M.flows.map(fl => layout(M, fl, plain)), GX = 64, GY = 56, ROW = 1200;
     const pack = k => { const at = []; let y = 0, w = 0; for (let i = 0; i < lays.length; i += k) { let x = 0, h = 0; lays.slice(i, i + k).forEach(l => { at.push([x, y]); x += l.w + GX; h = Math.max(h, l.h); }); w = Math.max(w, x - GX); y += h + GY; } return { at, w, h: y - GY }; };
-    let best = pack(1);
-    for (const want of [1, READ]) { let k = lays.length; while (k > 1 && v.w / pack(k).w * .96 < want) k--; if (k > 1 || v.w / pack(1).w * .96 >= want) { best = pack(k); break; } }
+    let k = lays.length; while (k > 1 && pack(k).w > ROW) k--;
+    const best = pack(k);
     return { flows: lays, at: best.at, W: best.w, H: best.h };
   };
   return { place };
@@ -1128,7 +1116,7 @@ const flowFace = (svg, world, tipEl, jump) => {
   };
   const build = () => {
     texts = []; boxes = []; lastS = 0; world.replaceChildren();
-    const p = Flow.place(M, view()); W = p.W; H = p.H;
+    const p = Flow.place(M); W = p.W; H = p.H;
     p.flows.forEach((l, i) => world.append(render(l, p.at[i][0], p.at[i][1], i)));
   };
 
@@ -1700,7 +1688,7 @@ const MAP = `<div class="cmap" id="cmap"><header class="chead gut"><a href="#">�
   <nav class="ctabs" aria-label="面を選ぶ"><a href="#coder" data-m="struct">構造</a><a href="#coder.flow" data-m="flow">流れ</a></nav></header>
   <div class="cvp"><nav class="crumbs" data-m="crumbs" aria-label="今見ている場所"></nav><svg data-m="struct-svg" role="img" aria-label="構造の地図。枠は型、離れて並ぶ箱はどれか 1 つ、罫線で割った行は全部そろう、矢は遷移"><g></g></svg><div class="tip" data-m="struct-tip" hidden></div>
   <svg data-m="flow-svg" role="img" aria-label="流れの地図。線は値、箱は処理。上から下へ進む"><g></g></svg><div class="tip" data-m="flow-tip" hidden></div>
-  <p class="cleg" data-m="legend" aria-label="色の意味"><span data-k="api">API</span><span data-k="db">保存</span><span data-k="new">新</span><span data-k="mod">改</span><span data-k="imp">型に無い</span><span data-k="chk">✓ 確かめ済み</span></p></div></div>`
+  <p class="cleg" data-m="legend" aria-label="色の意味"><span data-k="api">境界</span><span data-k="db">保存</span><span data-k="new">新</span><span data-k="mod">改</span><span data-k="imp">型に無い</span><span data-k="chk">✓ 確かめ済み</span></p></div></div>`
 const designed = () => S.model && (S.model.types.length > 0 || S.model.flows.length > 0)
 const coderPage = () => (unready() || !designed() ? `<a class="rhead" href="#"><span aria-hidden="true">‹</span>${NAME.coder}</a>${unready() || '<p class="req wait">まだ設計図がありません</p>'}` : MAP)
 // coder のドック: 成果物（PR）・要レビュー・承認。地図が画面を使うので、ページの本体には置かない

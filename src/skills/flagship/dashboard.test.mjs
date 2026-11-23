@@ -9,7 +9,7 @@ const CoderMap = new Function(`${source}\nreturn CoderMap`)()
 const PHONE = { w: 390, h: 796 }, WIDE = { w: 1280, h: 800 }
 // 構造の配置。深さ D まで開いた図（最初に全部開いた図で折り返しの並びを決める）
 const structure = model => { const engine = CoderMap.Structure(); engine.use(model); return engine }
-const placed = (model, D, v = WIDE) => { const engine = structure(model); engine.order(v); return engine.place(D, v) }
+const placed = (model, D) => { const engine = structure(model); engine.order(); return engine.place(D) }
 const frames = board => board.cols.flatMap(col => col.frames)
 const frameOf = (board, id) => frames(board).find(frame => frame.t.id === id)
 // 状態（箱）の id → [列, 行]
@@ -239,8 +239,6 @@ test('最上位は部品になっていない型だけを書いた順に並べ�
   assert.deepEqual(board.cols.map(col => col.w.id), ['api', 'domain', 'db'])
   assert.deepEqual(board.cols[1].frames.map(frame => frame.t.id), ['order', 'shipment', 'stock'])
   assert(board.cols[0].x < board.cols[1].x && board.cols[1].x < board.cols[2].x)
-  const tall = placed(MODEL, 0, PHONE)
-  assert(tall.cols[0].y < tall.cols[1].y && tall.cols[1].y < tall.cols[2].y)
 })
 
 test('自分を含む型（木）も最上位に出て、中の自分は名前だけの行になる', () => {
@@ -261,23 +259,46 @@ test('開いていない箱は名前の大きさで、開くと中身のぶん�
 })
 
 test('折り返しの並びは最初に一度決めて、どの深さに開いても変えない', () => {
-  for (const v of [PHONE, WIDE]) {
-    const engine = structure(MODEL)
-    engine.home(v)
-    const breaks = D => engine.place(D, v).cols.map(col => col.frames.map(frame => frame.x === col.x))
-    for (let D = 1; D <= CoderMap.DEEP; D++) assert.deepEqual(breaks(D), breaks(0))
-  }
-  // 縦長の画面は 1 列
-  assert(placed(MODEL, 2, PHONE).cols.every(col => col.frames.every(frame => frame.x === col.x)))
+  const engine = structure(MODEL)
+  engine.home(WIDE)
+  const breaks = D => engine.place(D).cols.map(col => col.frames.map(frame => frame.x === col.x))
+  for (let D = 1; D <= CoderMap.DEEP; D++) assert.deepEqual(breaks(D), breaks(0))
 })
 
-test('最初の画面は、収まって名前が読める範囲でいちばん深く開く', () => {
+test('最初の画面は、全体が収まって名前が読める範囲でいちばん深く開く。畳んでも収まらなければ、名前が読める大きさで左上から', () => {
   const phone = structure(MODEL).home(PHONE), wide = structure(MODEL).home(WIDE)
-  assert.equal(phone.placed.depth, 0)
   assert.equal(wide.placed.depth, 1)
-  for (const { placed: board, cam } of [phone, wide]) assert(cam.s < CoderMap.openAt(board.depth + 1) && board.W * cam.s <= (board === phone.placed ? PHONE : WIDE).w)
+  assert(wide.cam.s < CoderMap.openAt(2) && wide.placed.W * wide.cam.s <= WIDE.w)
+  assert.equal(phone.placed.depth, 0)
+  assert(phone.placed.W * phone.cam.s > PHONE.w)
+  assert.equal(phone.cam.s, CoderMap.openAt(1) * 0.96)
+  assert.equal(phone.cam.tx, 16)
   const small = structure(machine(['a', 'b'], [['a', 'b']])).home(WIDE)
   assert(small.placed.depth >= 1)
+})
+
+test('配置は画面に依らない。どの画面でも同じ 1 枚で、画面が決めるのは最初に見る場所と倍率だけ', () => {
+  const spots = board => frames(board).map(frame => [frame.t.id, frame.x, frame.y, frame.w, frame.h])
+  for (const v of [PHONE, WIDE]) { const { placed: board } = structure(MODEL).home(v); assert.deepEqual(spots(board), spots(placed(MODEL, board.depth))) }
+})
+
+test('引ける下限は図の大きさにも画面にも依らない（依ると、引くたびに開いて閉じてを繰り返す）', () => {
+  const engine = structure(MODEL)
+  const floors = [PHONE, WIDE].map(v => { engine.home(v); return engine.clamp(0) })
+  assert.equal(floors[0], floors[1])
+  assert(floors[0] < CoderMap.openAt(1) * 0.93)
+})
+
+test('動かせる範囲: 画面に収まる向きは画面の中に置き、収まらない向きは端より先の空きを見せない', () => {
+  const engine = structure(MODEL), { placed: board, cam } = engine.home(PHONE)
+  const far = engine.bound(board, PHONE, { s: cam.s, tx: 9999, ty: 9999 }), near = engine.bound(board, PHONE, { s: cam.s, tx: -9999, ty: -9999 })
+  // 幅は収まらない: 左の端より左、右の端より右は見せない
+  assert.equal(far.tx, 16)
+  assert.equal(near.tx + board.W * cam.s, PHONE.w - 16)
+  // 高さは収まる: 上にも下にも、はみ出さない
+  assert.equal(near.ty, cam.ty)
+  assert.equal(far.ty + board.H * cam.s, PHONE.h - 16)
+  assert.deepEqual(engine.bound(board, PHONE, cam), cam)
 })
 
 test('倍率が上がると 1 段ずつ開き、境目では少し粘る', () => {
@@ -304,13 +325,13 @@ test('中に変更がある箱は畳んでいても「改」を告げ、自分�
 })
 
 test('流れの箱の種類: ドメインは出す線の型の形から決まり、✓ と ×N が付いた線も型に結ぶ', () => {
-  const kinds = id => CoderMap.Flow.place(MODEL, WIDE).flows.find(lay => lay.flow.id === id).boxes.map(box => box.kind)
+  const kinds = id => CoderMap.Flow.place(MODEL).flows.find(lay => lay.flow.id === id).boxes.map(box => box.kind)
   assert.deepEqual(kinds('confirm'), ['ユースケース', '入出力', '計算', 'ユースケース', '遷移', '入出力'])
   assert.deepEqual(kinds('cancel').slice(2, 4), ['判断', '遷移'])
   assert.equal(kinds('ship')[3], 'ドメイン')
   const model = structuredClone(MODEL)
   model.flows.find(flow => flow.id === 'reserve').steps[1].out[1].name = '引当済の明細 ✓ ×N'
-  assert.equal(CoderMap.Flow.place(model, WIDE).flows.find(lay => lay.flow.id === 'reserve').boxes[1].kind, '遷移')
+  assert.equal(CoderMap.Flow.place(model).flows.find(lay => lay.flow.id === 'reserve').boxes[1].kind, '遷移')
   // 結び方は src/skills/coder/logic/wires.ts の写し
   assert.equal(CoderMap.typeOf(MODEL, '確定済の注文 ×N ✓').id, 'order')
   assert.equal(CoderMap.typeOf(MODEL, '注文の要約 ×N').id, 'summary')
@@ -319,7 +340,7 @@ test('流れの箱の種類: ドメインは出す線の型の形から決まり
 })
 
 test('流れの線は生まれてから受ける箱まで 1 本で、箱の脇を通る線はその箱が切らない', () => {
-  const lay = CoderMap.Flow.place(MODEL, WIDE).flows.find(l => l.flow.id === 'confirm')
+  const lay = CoderMap.Flow.place(MODEL).flows.find(l => l.flow.id === 'confirm')
   const runs = name => lay.segs.filter(seg => seg.w.name === name).map(seg => [seg.c, seg.g0, seg.open ? 'end' : seg.to])
   // 注文〈下書き〉は 2 段目で生まれ、3・4 段目（合計・与信）の脇を通って 5 段目に入る
   assert.deepEqual(runs('注文〈下書き〉'), [[1, 2, 4]])
@@ -330,10 +351,10 @@ test('流れの線は生まれてから受ける箱まで 1 本で、箱の脇�
 test('丸ごと新しい流れは題名に 1 度だけ印を出し、箱には処理そのものの印だけを残す', () => {
   const model = structuredClone(MODEL)
   model.flows.find(flow => flow.id === 'cancel').steps.forEach(step => { step.change = '新' })
-  const cancel = CoderMap.Flow.place(model, WIDE).flows.find(lay => lay.flow.id === 'cancel')
+  const cancel = CoderMap.Flow.place(model).flows.find(lay => lay.flow.id === 'cancel')
   assert.equal(cancel.whole, '新')
   assert.deepEqual(cancel.boxes.map(box => box.ch), [undefined, undefined, undefined, undefined, '新', '改'])
-  const ship = CoderMap.Flow.place(MODEL, WIDE).flows.find(lay => lay.flow.id === 'ship')
+  const ship = CoderMap.Flow.place(MODEL).flows.find(lay => lay.flow.id === 'ship')
   assert.equal(ship.whole, undefined)
   assert.equal(ship.boxes[3].ch, '削')
 })
@@ -363,9 +384,9 @@ test('凡例は、その面のその設計図に出ている色だけ', () => {
 test('型がまだ無い・流れがまだ無い・段がまだ無い設計図も置ける', () => {
   const noTypes = { ...MODEL, types: [], maps: [], flows: [{ id: 'f', name: '空の流れ', columns: [{ name: '値' }], start: { 0: '値' }, steps: [] }] }
   assert.deepEqual(structure(noTypes).home(PHONE).placed.cols, [])
-  assert.equal(CoderMap.Flow.place(noTypes, PHONE).flows[0].whole, undefined)
+  assert.equal(CoderMap.Flow.place(noTypes).flows[0].whole, undefined)
   assert.deepEqual(CoderMap.legendOf(noTypes, 'struct'), { api: false, db: false, new: false, mod: false, imp: false, chk: false })
-  assert.deepEqual(CoderMap.Flow.place({ ...MODEL, flows: [] }, PHONE).flows, [])
+  assert.deepEqual(CoderMap.Flow.place({ ...MODEL, flows: [] }).flows, [])
   const unit = { id: 'ok', name: '受け付けた', world: 'api', form: 'record', objects: [{ id: 'v', name: '受け付けた' }] }
   assert.equal(frameOf(placed({ ...MODEL, types: [...MODEL.types, unit] }, 2), 'ok').leaf, true)
 })
@@ -374,7 +395,7 @@ test('配置は設計図を書き換えない（書き換えると、同じ設�
   const before = JSON.stringify(MODEL)
   structure(MODEL).home(PHONE)
   for (let D = 0; D <= CoderMap.DEEP; D++) placed(MODEL, D)
-  CoderMap.Flow.place(MODEL, PHONE)
+  CoderMap.Flow.place(MODEL)
   assert.equal(JSON.stringify(MODEL), before)
 })
 
