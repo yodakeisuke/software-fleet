@@ -280,11 +280,14 @@ test('最初の画面は、収まって名前が読める範囲でいちばん�
   assert(small.placed.depth >= 1)
 })
 
-test('縦長の画面では、世界の間は開いた深さの単位で取り、寄っても画面の上の空白は育たない。最初の画面は左の端から', () => {
-  // 世界の間 = 上の世界の最後の箱の下から、下の世界の最初の箱の上まで
+test('縦長の画面では、世界の間は寄っても育たず、同じ世界の型の間より狭くならない。最初の画面は左の端から', () => {
+  // 世界の間 = 上の世界の最後の箱の下から、下の世界の最初の箱の上まで（下の世界の名前の場所を含む）
   const between = board => { const [above, below] = board.cols; return below.frames[0].y - Math.max(...above.frames.map(frame => frame.y + frame.h)) }
-  const phone = D => between(placed(MODEL, D, PHONE))
-  for (let D = 0; D < 3; D++) assert(Math.abs(phone(D + 1) - phone(D) / 2) < 1e-6)
+  // 型の間 = 同じ世界で上下に並ぶ箱の間のいちばん狭い所
+  const within = board => Math.min(...board.cols.flatMap(col => { const ys = [...col.frames].sort((a, b) => a.y - b.y); return ys.slice(1).map((frame, i) => frame.y - (ys[i].y + ys[i].h)).filter(gap => gap > 0) }))
+  const phone = D => placed(MODEL, D, PHONE)
+  for (let D = 0; D < 4; D++) assert(between(phone(D + 1)) < between(phone(D)))
+  for (let D = 0; D <= 4; D++) assert(between(phone(D)) > within(phone(D)))
   // 横長は世界を横に並べるので、名前の場所はどの深さでも同じ
   assert.equal(placed(MODEL, 2, WIDE).cols[0].top, placed(MODEL, 0, WIDE).cols[0].top)
   assert.equal(structure(MODEL).home(PHONE).cam.tx, 16)
