@@ -441,6 +441,8 @@ const legendOf = (M, face) => {
 const unitAt = d => 64 * Math.pow(.5, d), DEEP = 7, MAXS = 14, MINS = 10 / (unitAt(1) * .96); // DEEP より深い入れ子と、自分を含む型は、名前だけの行にする
 const openAt = D => (D <= 0 ? 0 : 14 / unitAt(D)); // 深さ D の箱が開く（中身が読める）倍率
 const partsOf = o => (o.holds && o.holds.parts) || [];
+// 動かせる範囲（1 つの向き）。地図が画面に収まる向きは画面の中に置き、収まらない向きは端より先の空きを見せない（引けば全体が見え、どこで引いても地図が隅へ逃げない）
+const span = (t, len, room, head) => Math.min(Math.max(t, Math.min(head, room - 16 - len)), Math.max(head, room - 16 - len));
 const Structure = () => {
   let M, T, OPEN = 0, far = 1, plain = false, inner = {}, memo = { shelf: {}, wrap: {} }; // 折り返しの並びは、全部開いた図で一度決めて、どの段でも変えない
   const unit = d => { far = Math.max(far, d); return unitAt(d); }; // far = この設計図でいちばん深い箱の深さ（寄れる上限を決める）
@@ -624,9 +626,9 @@ const Structure = () => {
     }
     return { depth: D, cols, W, H };
   };
-  // 寄れるのは、いちばん深い箱の字が楽に読める倍率まで。その先は何も増えず、余白だけの白い画面に落ちる
+  // 寄れるのは、いちばん深い箱の字が育ちきる倍率まで（開く倍率の 1.35 倍で、どの字も上限の大きさに届く）。その先は何も増えず、余白だけの白い画面に落ちる
   // 引けるのは、畳んだ型の名前が 10px で読める倍率（MINS）まで。下限は図の大きさに依らない（開いた図と畳んだ図で下限が違うと、引くたびに開いて閉じてを繰り返す）
-  const clamp = s => Math.min(MAXS, openAt(far) * 2, Math.max(MINS, s));
+  const clamp = s => Math.min(MAXS, openAt(far) * 1.35, Math.max(MINS, s));
   const fitAll = (p, v) => clamp(Math.min(v.w / p.W, v.h / p.H) * .94);
   // 最初の画面: 全体が収まって名前が読める範囲で、いちばん深くまで開いた図。畳んでも収まらない地図は、名前が読める大きさで左上から（続きは動かして見る）
   const home = v => {
@@ -638,8 +640,6 @@ const Structure = () => {
   };
   // 世界の名前の上の端（画面の px）。図の上の端はここ
   const label = (p, s) => (p.cols.length ? p.cols[0].top * s - Math.min(64 * s, 16) : 0);
-  // 動かせる範囲。地図が画面に収まる向きは画面の中に置き、収まらない向きは端より先の空きを見せない（引けば全体が見え、どこで引いても地図が隅へ逃げない）
-  const span = (t, len, room, head) => Math.min(Math.max(t, Math.min(head, room - 16 - len)), Math.max(head, room - 16 - len));
   const bound = (p, v, c) => { const top = label(p, c.s); return { s: c.s, tx: span(c.tx, p.W * c.s, v.w, 16), ty: span(c.ty + top, p.H * c.s - top, v.h, 26) - top }; };
   return { use, place, home, clamp, bound, order: () => place(DEEP) };
 };
@@ -918,7 +918,7 @@ const structFace = (svg, world, tipEl, crumbsEl) => {
     if (!hold) { const D = levelOf(cam.s, P.depth); if (D !== P.depth) { const v = view(), p = aim || [v.w / 2, v.h / 2]; relevel(D, p[0], p[1]); } }
     cam = eng.bound(P, view(), cam);
     world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`);
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); crumbs(); placeTip(); });
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); if (!moving) cam = keepInk(svg, world, cam); crumbs(); placeTip(); });
   };
   const put = (c, at) => { cam = c; if (at) aim = at; shift = null; apply(); return shift; };
   // keep = 動いている間は開く深さを変えない（寄る先の深さはもう決めてある）
@@ -1132,6 +1132,7 @@ const flowFace = (svg, world, tipEl, jump) => {
     }
   };
   const apply = () => {
+    const v = view(); cam = { s: cam.s, tx: span(cam.tx, W * cam.s, v.w, 16), ty: span(cam.ty, H * cam.s, v.h, 16) };
     world.setAttribute('transform', `matrix(${cam.s} 0 0 ${cam.s} ${cam.tx} ${cam.ty})`);
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; lod(); cam = keepInk(svg, world, cam); placeTip(); });
   };
